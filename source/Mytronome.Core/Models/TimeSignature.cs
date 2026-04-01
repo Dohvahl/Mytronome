@@ -1,5 +1,3 @@
-using System.ComponentModel;
-
 namespace Mytronome.Core.Models;
 
 /// <summary>
@@ -8,8 +6,8 @@ namespace Mytronome.Core.Models;
 /// </summary>
 public readonly record struct TimeSignature
 {
-    private readonly int _numerator;
-    private readonly int _denominator;
+    public int Numerator { get; }
+    public int Denominator { get; }
 
     public TimeSignature(int numerator, int denominator)
     {
@@ -20,14 +18,14 @@ public readonly record struct TimeSignature
 			throw new ArgumentOutOfRangeException(nameof(denominator), "The denominator must be a power of 2.");
 		}
 
-        _numerator = numerator;
-        _denominator = denominator;
+        Numerator = numerator;
+        Denominator = denominator;
     }
 
     /// <summary>
     /// How many beats the metronome counts per measure before resetting.
     /// </summary>
-    public readonly int BeatsPerMeasure => _numerator;
+    public readonly int BeatsPerMeasure => Numerator;
 
     // Common presets
     private static readonly TimeSignature CommonTime = new(4, 4);
@@ -45,7 +43,7 @@ public readonly record struct TimeSignature
         CommonTime, Waltz, SixEight, TwoFour, FiveFour, SevenEight
     ];
 
-    public readonly override string ToString() => $"{_numerator}/{_denominator}";
+    public readonly override string ToString() => $"{Numerator}/{Denominator}";
 
-	private static bool IsPowerOfTwo(int value) => (value & (value - 1)) == 0;
+	private static bool IsPowerOfTwo(int value) => value > 0 && (value & (value - 1)) == 0;
 }
