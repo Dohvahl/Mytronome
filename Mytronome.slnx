@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/source/">
+    <Project Path="source/Mytronome.Cli/Mytronome.Cli.csproj" />
+    <Project Path="source/Mytronome.Core.Tests/Mytronome.Core.Tests.csproj" />
+    <Project Path="source/Mytronome.Core/Mytronome.Core.csproj" />
+    <Project Path="source/Mytronome.Infrastructure/Mytronome.Infrastructure.csproj" />
+  </Folder>
+</Solution>
