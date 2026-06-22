@@ -14,6 +14,8 @@ const DEFAULT_TIME_SIGNATURE: TimeSignature = { beats: 4, noteValue: 4 };
  */
 export function useMetronome() {
   const metronomeRef = useRef<Metronome | null>(null);
+  // Pending visual-flash timers, so we can cancel them on stop/unmount.
+  const beatTimersRef = useRef<number[]>([]);
 
   const [bpm, setBpmState] = useState(DEFAULT_BPM);
   const [timeSignature, setTimeSignatureState] =
@@ -33,13 +35,21 @@ export function useMetronome() {
         // onBeat fires when a beat is *scheduled* (up to ~100ms early). Wait
         // until it actually sounds before flashing the visual, so they line up.
         const delayMs = Math.max(0, (beat.time - engine.currentTime) * 1000);
-        window.setTimeout(() => setCurrentBeat(beat.beatIndex), delayMs);
+        const timerId = window.setTimeout(() => {
+          setCurrentBeat(beat.beatIndex);
+          beatTimersRef.current = beatTimersRef.current.filter(
+            (id) => id !== timerId,
+          );
+        }, delayMs);
+        beatTimersRef.current.push(timerId);
       },
     });
     metronomeRef.current = engine;
 
     return () => {
       engine.dispose();
+      beatTimersRef.current.forEach((id) => window.clearTimeout(id));
+      beatTimersRef.current = [];
       metronomeRef.current = null;
     };
   }, []);
@@ -51,6 +61,9 @@ export function useMetronome() {
 
   const stop = () => {
     metronomeRef.current?.stop();
+    // Cancel any visual flashes still queued from already-scheduled beats.
+    beatTimersRef.current.forEach((id) => window.clearTimeout(id));
+    beatTimersRef.current = [];
     setIsRunning(false);
     setCurrentBeat(-1);
   };

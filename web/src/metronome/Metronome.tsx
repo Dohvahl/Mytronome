@@ -1,15 +1,27 @@
 import { useMetronome } from './useMetronome';
+import { BeatIndicator } from './BeatIndicator';
+import { TimeSignaturePicker } from './TimeSignaturePicker';
 import './Metronome.css';
 
 const MIN_BPM = 40;
 const MAX_BPM = 320;
 
 export function Metronome() {
-  const { bpm, isRunning, toggle, setBpm } = useMetronome();
+  const {
+    bpm,
+    timeSignature,
+    isRunning,
+    currentBeat,
+    toggle,
+    setBpm,
+    setTimeSignature,
+  } = useMetronome();
 
   return (
     <div className="metronome">
       <h1>Mytronome</h1>
+
+      <BeatIndicator beats={timeSignature.beats} currentBeat={currentBeat} />
 
       <div className="tempo-row">
         <button
@@ -48,6 +60,8 @@ export function Metronome() {
         value={bpm}
         onChange={(e) => setBpm(Number(e.target.value))}
       />
+
+      <TimeSignaturePicker value={timeSignature} onChange={setTimeSignature} />
 
       <button
         className={`play ${isRunning ? 'running' : ''}`}
