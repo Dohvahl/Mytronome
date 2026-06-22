@@ -41,6 +41,20 @@ export function updatePreset(
   };
 }
 
+/** True if two settings are musically identical (bpm, meter, and accents). */
+export function samePresetSettings(
+  a: PresetSettings,
+  b: PresetSettings,
+): boolean {
+  return (
+    a.bpm === b.bpm &&
+    a.timeSignature.beats === b.timeSignature.beats &&
+    a.timeSignature.noteValue === b.timeSignature.noteValue &&
+    a.pattern.length === b.pattern.length &&
+    a.pattern.every((emphasis, i) => emphasis === b.pattern[i])
+  );
+}
+
 function copyLabel(label: string): string {
   const base = label.trim() === '' ? 'Preset' : label.trim();
   return `${base} (copy)`;

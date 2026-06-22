@@ -5,6 +5,8 @@ import { TimeSignaturePicker } from './TimeSignaturePicker';
 import { EditableNumber } from './EditableNumber';
 import { useKeyHeld, useWheelAdjust } from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
+import { usePresets } from '../presets/usePresets';
+import { samePresetSettings } from '@mytronome/presets';
 import './Metronome.css';
 
 const MIN_BPM = 40;
@@ -24,8 +26,19 @@ export function Metronome() {
     applySettings,
   } = useMetronome();
 
+  const { presets, savePreset, editPreset, copyPreset, deletePreset } =
+    usePresets();
+
   // Left presets drawer open/closed.
   const [presetsOpen, setPresetsOpen] = useState(false);
+  // Id of the most recently loaded preset, so we can show its (live) label.
+  const [loadedPresetId, setLoadedPresetId] = useState<string | null>(null);
+
+  const current = { bpm, timeSignature, pattern };
+  // Looked up fresh each render, so a rename in the drawer updates the header.
+  const loadedPreset = presets.find((p) => p.id === loadedPresetId);
+  const isModified =
+    loadedPreset !== undefined && !samePresetSettings(current, loadedPreset);
 
   // Holding Shift makes the +/- buttons step by 10 — but ignore Shift while the
   // presets drawer is open, so typing a capitalized label can't hijack tempo.
@@ -72,16 +85,33 @@ export function Metronome() {
         aria-hidden={!presetsOpen}
       >
         <PresetsPanel
-          current={{ bpm, timeSignature, pattern }}
-          onLoad={(settings) => {
-            applySettings(settings);
+          presets={presets}
+          current={current}
+          onLoad={(preset) => {
+            applySettings(preset);
+            setLoadedPresetId(preset.id);
             setPresetsOpen(false);
           }}
+          onSave={savePreset}
+          onUpdate={(preset, settings) => editPreset(preset, settings)}
+          onRename={(preset, label) => editPreset(preset, { label })}
+          onCopy={copyPreset}
+          onDelete={deletePreset}
         />
       </aside>
 
       <div className="metronome">
-        <h1>Mytronome</h1>
+        <div className="loaded-preset">
+          {loadedPreset?.label}
+          {loadedPreset?.label && isModified ? (
+            <span
+              className="loaded-modified"
+              title="Settings changed since this preset was loaded"
+            >
+              {' *'}
+            </span>
+          ) : null}
+        </div>
 
       <BeatIndicator
         pattern={pattern}

@@ -1,23 +1,35 @@
 import { useState } from 'react';
-import type { PresetSettings } from '@mytronome/presets';
-import { usePresets } from './usePresets';
+import type { Preset, PresetSettings } from '@mytronome/presets';
 import { PresetItem } from './PresetItem';
 import './Presets.css';
 
 interface Props {
+  presets: Preset[];
   /** The metronome's current settings, used by "Save current" and "Update". */
   current: PresetSettings;
-  /** Apply a saved preset's settings to the live metronome. */
-  onLoad: (settings: PresetSettings) => void;
+  onLoad: (preset: Preset) => void;
+  onSave: (settings: PresetSettings, label: string) => void;
+  /** Overwrite a preset's settings with the current ones ("Update"). */
+  onUpdate: (preset: Preset, settings: PresetSettings) => void;
+  onRename: (preset: Preset, label: string) => void;
+  onCopy: (preset: Preset) => void;
+  onDelete: (id: string) => void;
 }
 
-export function PresetsPanel({ current, onLoad }: Props) {
-  const { presets, savePreset, editPreset, copyPreset, deletePreset } =
-    usePresets();
+export function PresetsPanel({
+  presets,
+  current,
+  onLoad,
+  onSave,
+  onUpdate,
+  onRename,
+  onCopy,
+  onDelete,
+}: Props) {
   const [label, setLabel] = useState('');
 
   const handleSave = () => {
-    void savePreset(current, label);
+    onSave(current, label);
     setLabel('');
   };
 
@@ -48,11 +60,11 @@ export function PresetsPanel({ current, onLoad }: Props) {
             <PresetItem
               key={preset.id}
               preset={preset}
-              onLoad={(p) => onLoad(p)}
-              onUpdateToCurrent={(p) => void editPreset(p, current)}
-              onRename={(p, newLabel) => void editPreset(p, { label: newLabel })}
-              onCopy={(p) => void copyPreset(p)}
-              onDelete={(p) => void deletePreset(p.id)}
+              onLoad={onLoad}
+              onUpdateToCurrent={(p) => onUpdate(p, current)}
+              onRename={onRename}
+              onCopy={onCopy}
+              onDelete={(p) => onDelete(p.id)}
             />
           ))}
         </ul>
