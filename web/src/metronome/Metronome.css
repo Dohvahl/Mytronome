@@ -1,0 +1,85 @@
+.metronome {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.tempo-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.step {
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
+  line-height: 1;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.step:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.tempo-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tempo-display input {
+  width: 150px;
+  text-align: center;
+  font: 600 64px/1 var(--heading);
+  color: var(--text-h);
+  border: none;
+  background: transparent;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.tempo-display input:focus {
+  outline: none;
+}
+/* Hide the number input's spinner arrows for a cleaner display. */
+.tempo-display input::-webkit-outer-spin-button,
+.tempo-display input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.tempo-display .unit {
+  font-size: 14px;
+  letter-spacing: 3px;
+  color: var(--text);
+}
+
+.tempo-slider {
+  width: 100%;
+  max-width: 320px;
+  accent-color: var(--accent);
+}
+
+.play {
+  width: 160px;
+  padding: 14px 0;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.play.running {
+  background: var(--accent);
+  color: #fff;
+}

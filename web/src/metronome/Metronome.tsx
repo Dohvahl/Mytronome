@@ -1,0 +1,60 @@
+import { useMetronome } from './useMetronome';
+import './Metronome.css';
+
+const MIN_BPM = 40;
+const MAX_BPM = 320;
+
+export function Metronome() {
+  const { bpm, isRunning, toggle, setBpm } = useMetronome();
+
+  return (
+    <div className="metronome">
+      <h1>Mytronome</h1>
+
+      <div className="tempo-row">
+        <button
+          className="step"
+          onClick={() => setBpm(bpm - 1)}
+          aria-label="Decrease tempo"
+        >
+          &minus;
+        </button>
+
+        <label className="tempo-display">
+          <input
+            type="number"
+            min={MIN_BPM}
+            max={MAX_BPM}
+            value={bpm}
+            onChange={(e) => setBpm(Number(e.target.value))}
+          />
+          <span className="unit">BPM</span>
+        </label>
+
+        <button
+          className="step"
+          onClick={() => setBpm(bpm + 1)}
+          aria-label="Increase tempo"
+        >
+          +
+        </button>
+      </div>
+
+      <input
+        className="tempo-slider"
+        type="range"
+        min={MIN_BPM}
+        max={MAX_BPM}
+        value={bpm}
+        onChange={(e) => setBpm(Number(e.target.value))}
+      />
+
+      <button
+        className={`play ${isRunning ? 'running' : ''}`}
+        onClick={toggle}
+      >
+        {isRunning ? 'Stop' : 'Start'}
+      </button>
+    </div>
+  );
+}
