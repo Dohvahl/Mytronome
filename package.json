@@ -5,6 +5,7 @@
   "description": "A cross-platform metronome. Accurate client-side tick; presets with local/cloud/server storage.",
   "workspaces": [
     "metronome-engine",
+    "presets",
     "web"
   ]
 }
