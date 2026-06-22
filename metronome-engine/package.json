@@ -1,0 +1,9 @@
+{
+  "name": "@mytronome/engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Framework-agnostic metronome tick engine (Web Audio scheduler, tempo, time signature).",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}
