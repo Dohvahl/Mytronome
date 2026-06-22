@@ -1,6 +1,8 @@
 import { useMetronome } from './useMetronome';
 import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
+import { EditableNumber } from './EditableNumber';
+import { useWheelAdjust } from './hooks';
 import './Metronome.css';
 
 const MIN_BPM = 40;
@@ -18,6 +20,14 @@ export function Metronome() {
     setTimeSignature,
     cycleBeat,
   } = useMetronome();
+
+  // Scroll wheel over the tempo display or the slider nudges BPM by 1.
+  const tempoWheelRef = useWheelAdjust<HTMLDivElement>((dir) =>
+    setBpm(bpm + dir),
+  );
+  const sliderWheelRef = useWheelAdjust<HTMLInputElement>((dir) =>
+    setBpm(bpm + dir),
+  );
 
   return (
     <div className="metronome">
@@ -38,16 +48,17 @@ export function Metronome() {
           &minus;
         </button>
 
-        <label className="tempo-display">
-          <input
-            type="number"
+        <div className="tempo-display" ref={tempoWheelRef}>
+          <EditableNumber
+            className="bpm-number"
+            value={bpm}
             min={MIN_BPM}
             max={MAX_BPM}
-            value={bpm}
-            onChange={(e) => setBpm(Number(e.target.value))}
+            onCommit={setBpm}
+            ariaLabel="Tempo in BPM"
           />
           <span className="unit">BPM</span>
-        </label>
+        </div>
 
         <button
           className="step"
@@ -65,6 +76,7 @@ export function Metronome() {
         max={MAX_BPM}
         value={bpm}
         onChange={(e) => setBpm(Number(e.target.value))}
+        ref={sliderWheelRef}
       />
 
       <TimeSignaturePicker value={timeSignature} onChange={setTimeSignature} />

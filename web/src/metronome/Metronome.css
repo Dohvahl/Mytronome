@@ -35,30 +35,43 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-.tempo-display input {
-  width: 150px;
-  text-align: center;
-  font: 600 64px/1 var(--heading);
-  color: var(--text-h);
-  border: none;
-  background: transparent;
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-.tempo-display input:focus {
-  outline: none;
-}
-/* Hide the number input's spinner arrows for a cleaner display. */
-.tempo-display input::-webkit-outer-spin-button,
-.tempo-display input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+  cursor: default;
 }
 .tempo-display .unit {
   font-size: 14px;
   letter-spacing: 3px;
   color: var(--text);
+}
+
+/* Reusable double-click-to-edit number (the tempo display; later the beats). */
+.editable-number {
+  font: inherit;
+  color: var(--text-h);
+  text-align: center;
+}
+span.editable-number {
+  cursor: inherit;
+}
+input.editable-number {
+  width: 2.3em;
+  border: none;
+  background: transparent;
+  cursor: text;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+input.editable-number:focus {
+  outline: none;
+}
+input.editable-number::-webkit-outer-spin-button,
+input.editable-number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Big tempo number */
+.bpm-number {
+  font: 600 64px/1 var(--heading);
 }
 
 .tempo-slider {
