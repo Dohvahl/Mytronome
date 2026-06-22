@@ -3,6 +3,7 @@ import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
 import { EditableNumber } from './EditableNumber';
 import { useKeyHeld, useWheelAdjust } from './hooks';
+import { PresetsPanel } from '../presets/PresetsPanel';
 import './Metronome.css';
 
 const MIN_BPM = 40;
@@ -19,6 +20,7 @@ export function Metronome() {
     setBpm,
     setTimeSignature,
     cycleBeat,
+    applySettings,
   } = useMetronome();
 
   // Holding Shift makes the +/- buttons step by 10 instead of 1.
@@ -91,6 +93,11 @@ export function Metronome() {
       >
         {isRunning ? 'Stop' : 'Start'}
       </button>
+
+      <PresetsPanel
+        current={{ bpm, timeSignature, pattern }}
+        onLoad={applySettings}
+      />
     </div>
   );
 }
