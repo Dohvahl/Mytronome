@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMetronome } from './useMetronome';
 import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
@@ -23,9 +24,14 @@ export function Metronome() {
     applySettings,
   } = useMetronome();
 
-  // Holding Shift makes the +/- buttons step by 10 instead of 1.
+  // Left presets drawer open/closed.
+  const [presetsOpen, setPresetsOpen] = useState(false);
+
+  // Holding Shift makes the +/- buttons step by 10 — but ignore Shift while the
+  // presets drawer is open, so typing a capitalized label can't hijack tempo.
   const shiftHeld = useKeyHeld('Shift');
-  const step = shiftHeld ? 10 : 1;
+  const stepBoost = shiftHeld && !presetsOpen;
+  const step = stepBoost ? 10 : 1;
 
   // Scroll wheel over the tempo display or the slider nudges BPM (±10 with Shift).
   const tempoWheelRef = useWheelAdjust<HTMLDivElement>((dir) =>
@@ -36,8 +42,46 @@ export function Metronome() {
   );
 
   return (
-    <div className="metronome">
-      <h1>Mytronome</h1>
+    <>
+      <button
+        className="menu-toggle"
+        onClick={() => setPresetsOpen((open) => !open)}
+        aria-label="Toggle presets panel"
+        aria-expanded={presetsOpen}
+      >
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <path d="M3 6h18M3 12h18M3 18h18" />
+        </svg>
+      </button>
+
+      {presetsOpen && (
+        <div className="sidebar-backdrop" onClick={() => setPresetsOpen(false)} />
+      )}
+
+      <aside
+        className={`sidebar ${presetsOpen ? 'open' : ''}`}
+        aria-hidden={!presetsOpen}
+      >
+        <PresetsPanel
+          current={{ bpm, timeSignature, pattern }}
+          onLoad={(settings) => {
+            applySettings(settings);
+            setPresetsOpen(false);
+          }}
+        />
+      </aside>
+
+      <div className="metronome">
+        <h1>Mytronome</h1>
 
       <BeatIndicator
         pattern={pattern}
@@ -47,11 +91,11 @@ export function Metronome() {
 
       <div className="tempo-row">
         <button
-          className={`step ${shiftHeld ? 'step-10' : ''}`}
+          className={`step ${stepBoost ? 'step-10' : ''}`}
           onClick={() => setBpm(bpm - step)}
           aria-label={`Decrease tempo by ${step}`}
         >
-          {shiftHeld ? '−10' : '−'}
+          {stepBoost ? '−10' : '−'}
         </button>
 
         <div className="tempo-display" ref={tempoWheelRef}>
@@ -67,11 +111,11 @@ export function Metronome() {
         </div>
 
         <button
-          className={`step ${shiftHeld ? 'step-10' : ''}`}
+          className={`step ${stepBoost ? 'step-10' : ''}`}
           onClick={() => setBpm(bpm + step)}
           aria-label={`Increase tempo by ${step}`}
         >
-          {shiftHeld ? '+10' : '+'}
+          {stepBoost ? '+10' : '+'}
         </button>
       </div>
 
@@ -93,11 +137,7 @@ export function Metronome() {
       >
         {isRunning ? 'Stop' : 'Start'}
       </button>
-
-      <PresetsPanel
-        current={{ bpm, timeSignature, pattern }}
-        onLoad={applySettings}
-      />
-    </div>
+      </div>
+    </>
   );
 }

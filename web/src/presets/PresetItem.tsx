@@ -39,6 +39,7 @@ export function PresetItem({
     setRenaming(false);
   };
 
+  const hasLabel = preset.label.trim() !== '';
   const summary = `${preset.bpm} BPM · ${preset.timeSignature.beats}/${preset.timeSignature.noteValue}`;
 
   return (
@@ -63,8 +64,8 @@ export function PresetItem({
             onClick={() => onLoad(preset)}
             title="Load this preset"
           >
-            <span className="preset-label">{preset.label || 'Untitled'}</span>
-            <span className="preset-summary">{summary}</span>
+            <span className="preset-label">{hasLabel ? preset.label : summary}</span>
+            {hasLabel && <span className="preset-summary">{summary}</span>}
           </button>
         )}
       </div>
