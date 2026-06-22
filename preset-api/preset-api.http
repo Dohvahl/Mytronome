@@ -1,0 +1,26 @@
+@host = http://localhost:5046
+
+### List all presets
+GET {{host}}/api/presets
+Accept: application/json
+
+### Create or overwrite a preset (upsert)
+PUT {{host}}/api/presets/demo-1
+Content-Type: application/json
+
+{
+  "id": "demo-1",
+  "label": "Practice",
+  "bpm": 100,
+  "timeSignature": { "beats": 4, "noteValue": 4 },
+  "pattern": ["accent", "normal", "normal", "normal"],
+  "createdAt": 0,
+  "updatedAt": 0
+}
+
+### Get one preset
+GET {{host}}/api/presets/demo-1
+Accept: application/json
+
+### Delete a preset
+DELETE {{host}}/api/presets/demo-1

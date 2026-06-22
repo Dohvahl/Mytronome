@@ -5,6 +5,10 @@ node_modules/
 dist/
 build/
 
+# .NET build output
+bin/
+obj/
+
 # Logs
 *.log
 npm-debug.log*
