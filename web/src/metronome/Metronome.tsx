@@ -2,7 +2,7 @@ import { useMetronome } from './useMetronome';
 import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
 import { EditableNumber } from './EditableNumber';
-import { useWheelAdjust } from './hooks';
+import { useKeyHeld, useWheelAdjust } from './hooks';
 import './Metronome.css';
 
 const MIN_BPM = 40;
@@ -21,12 +21,16 @@ export function Metronome() {
     cycleBeat,
   } = useMetronome();
 
-  // Scroll wheel over the tempo display or the slider nudges BPM by 1.
+  // Holding Shift makes the +/- buttons step by 10 instead of 1.
+  const shiftHeld = useKeyHeld('Shift');
+  const step = shiftHeld ? 10 : 1;
+
+  // Scroll wheel over the tempo display or the slider nudges BPM (±10 with Shift).
   const tempoWheelRef = useWheelAdjust<HTMLDivElement>((dir) =>
-    setBpm(bpm + dir),
+    setBpm(bpm + (dir * step)),
   );
   const sliderWheelRef = useWheelAdjust<HTMLInputElement>((dir) =>
-    setBpm(bpm + dir),
+    setBpm(bpm + (dir * step)),
   );
 
   return (
@@ -41,11 +45,11 @@ export function Metronome() {
 
       <div className="tempo-row">
         <button
-          className="step"
-          onClick={() => setBpm(bpm - 1)}
-          aria-label="Decrease tempo"
+          className={`step ${shiftHeld ? 'step-10' : ''}`}
+          onClick={() => setBpm(bpm - step)}
+          aria-label={`Decrease tempo by ${step}`}
         >
-          &minus;
+          {shiftHeld ? '−10' : '−'}
         </button>
 
         <div className="tempo-display" ref={tempoWheelRef}>
@@ -61,11 +65,11 @@ export function Metronome() {
         </div>
 
         <button
-          className="step"
-          onClick={() => setBpm(bpm + 1)}
-          aria-label="Increase tempo"
+          className={`step ${shiftHeld ? 'step-10' : ''}`}
+          onClick={() => setBpm(bpm + step)}
+          aria-label={`Increase tempo by ${step}`}
         >
-          +
+          {shiftHeld ? '+10' : '+'}
         </button>
       </div>
 

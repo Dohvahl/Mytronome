@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Attaches a non-passive `wheel` listener to the returned ref. Calls `onStep`
@@ -29,4 +29,34 @@ export function useWheelAdjust<T extends HTMLElement>(
   }, []);
 
   return ref;
+}
+
+/**
+ * Tracks whether a given key (e.g. 'Shift') is currently held down, so the UI
+ * can react live. Resets on window blur so the held state can't get "stuck" if
+ * the key is released while the window is unfocused.
+ */
+export function useKeyHeld(targetKey: string): boolean {
+  const [held, setHeld] = useState(false);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === targetKey) setHeld(true);
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.key === targetKey) setHeld(false);
+    };
+    const reset = () => setHeld(false);
+
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    window.addEventListener('blur', reset);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+      window.removeEventListener('blur', reset);
+    };
+  }, [targetKey]);
+
+  return held;
 }

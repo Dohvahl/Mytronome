@@ -30,6 +30,11 @@
   border-color: var(--accent-border);
   color: var(--accent);
 }
+/* When Shift is held the buttons read "-10"/"+10" — smaller so they fit. */
+.step-10 {
+  font-size: 22px;
+  font-weight: 600;
+}
 
 .tempo-display {
   display: flex;
