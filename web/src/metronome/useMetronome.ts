@@ -112,6 +112,21 @@ export function useMetronome() {
     setPatternState(next);
   };
 
+  // Apply a full saved configuration at once (used when loading a preset).
+  const applySettings = (settings: {
+    bpm: number;
+    timeSignature: TimeSignature;
+    pattern: BeatEmphasis[];
+  }) => {
+    const engine = metronomeRef.current;
+    engine?.setBpm(settings.bpm);
+    engine?.setTimeSignature(settings.timeSignature);
+    engine?.setPattern(settings.pattern);
+    setBpmState(engine?.tempo ?? settings.bpm);
+    setTimeSignatureState(settings.timeSignature);
+    setPatternState(settings.pattern);
+  };
+
   return {
     bpm,
     timeSignature,
@@ -124,5 +139,6 @@ export function useMetronome() {
     setBpm,
     setTimeSignature,
     cycleBeat,
+    applySettings,
   };
 }
