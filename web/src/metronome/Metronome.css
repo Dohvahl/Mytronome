@@ -49,8 +49,18 @@
 }
 
 /* Reusable double-click-to-edit number (the tempo display; later the beats). */
+/* Both states share one box; the border is transparent when displaying so
+   entering edit mode adds no size and nothing reflows. */
 .editable-number {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 2.6em;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   font: inherit;
+  height: 1.3em;
+  line-height: calc(1.3em - 2px);
   color: var(--text-h);
   text-align: center;
 }
@@ -58,11 +68,8 @@ span.editable-number {
   cursor: inherit;
 }
 input.editable-number {
-  width: 2.3em;
-  padding: 0 4px;
-  border: 1px solid var(--accent-border);
-  border-radius: 8px;
-  background: var(--accent-bg);
+  background-color: var(--accent-bg);
+  border-color: var(--accent-border);
   cursor: text;
   appearance: textfield;
   -moz-appearance: textfield;
@@ -78,7 +85,9 @@ input.editable-number::-webkit-inner-spin-button {
 
 /* Big tempo number */
 .bpm-number {
-  font: 600 64px/1 var(--heading);
+  font-weight: 600;
+  font-size: 64px;
+  font-family: var(--heading);
 }
 
 .tempo-slider {
@@ -184,7 +193,9 @@ input.editable-number::-webkit-inner-spin-button {
   cursor: default;
 }
 .ts-number {
-  font: 600 44px/1 var(--heading);
+  font-weight: 600;
+  font-size: 44px;
+  font-family: var(--heading);
   color: var(--text-h);
 }
 .ts-slash {
@@ -192,19 +203,29 @@ input.editable-number::-webkit-inner-spin-button {
   color: var(--text);
 }
 /* The unit's edit-mode dropdown, sized to match the big number */
-.ts-unit-select {
-  padding: 0 26px 0 10px;
-  border: 1px solid var(--accent-border);
+/* Shared box for the unit's display (span) and edit (select) states. */
+.ts-unit {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 2.8em;
+  height: 1.3em;
+  line-height: calc(1.3em - 2px);
+  padding: 0 22px;
+  border: 1px solid transparent;
   border-radius: 8px;
+  text-align: center;
+  background-color: transparent;
+  appearance: none;
+}
+select.ts-unit {
+  border-color: var(--accent-border);
   background-color: var(--accent-bg);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23aa3bff' stroke-width='2'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
   background-size: 12px 8px;
   cursor: pointer;
-  appearance: none;
-  text-align: center;
 }
-.ts-unit-select:focus {
+select.ts-unit:focus {
   outline: none;
 }

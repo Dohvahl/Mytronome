@@ -91,7 +91,7 @@ function EditableUnit({ value, options, onChange }: EditableUnitProps) {
     return (
       <select
         ref={selectRef}
-        className="ts-number ts-unit-select"
+        className="ts-number ts-unit"
         value={value}
         onChange={(e) => {
           onChange(Number(e.target.value));
@@ -111,7 +111,7 @@ function EditableUnit({ value, options, onChange }: EditableUnitProps) {
 
   return (
     <span
-      className="ts-number"
+      className="ts-number ts-unit"
       onDoubleClick={() => setEditing(true)}
       title="Double-click to choose"
     >
