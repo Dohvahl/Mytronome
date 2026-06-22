@@ -1,9 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 import type { TimeSignature } from '@mytronome/engine';
 import {
   COMMON_TIME_SIGNATURES,
   NOTE_VALUES,
   isSameSignature,
 } from './timeSignatures';
+import { EditableNumber } from './EditableNumber';
 
 interface Props {
   value: TimeSignature;
@@ -12,58 +14,108 @@ interface Props {
 
 const MIN_BEATS = 1;
 const MAX_BEATS = 16;
+const CUSTOM = 'custom';
 
-/**
- * A presentational ("dumb") component: it renders the current time signature
- * and reports changes via `onChange`. It holds no state of its own — the parent
- * owns the value. This is the common React pattern of lifting state up.
- */
 export function TimeSignaturePicker({ value, onChange }: Props) {
+  // Which preset (if any) matches the current value; otherwise it's "Custom".
+  const matchedPreset = COMMON_TIME_SIGNATURES.find((ts) =>
+    isSameSignature(ts.value, value),
+  );
+
+  const selectPreset = (label: string) => {
+    const preset = COMMON_TIME_SIGNATURES.find((ts) => ts.label === label);
+    if (preset) onChange(preset.value);
+  };
+
   return (
     <div className="time-signature">
-      <div className="ts-presets">
+      {/* #5 — presets as a dropdown */}
+      <select
+        className="ts-presets"
+        value={matchedPreset ? matchedPreset.label : CUSTOM}
+        onChange={(e) => selectPreset(e.target.value)}
+        aria-label="Common time signatures"
+      >
+        {!matchedPreset && (
+          <option value={CUSTOM} disabled>
+            Custom ({value.beats}/{value.noteValue})
+          </option>
+        )}
         {COMMON_TIME_SIGNATURES.map((ts) => (
-          <button
-            key={ts.label}
-            className={`ts-preset ${isSameSignature(ts.value, value) ? 'active' : ''}`}
-            onClick={() => onChange(ts.value)}
-          >
+          <option key={ts.label} value={ts.label}>
             {ts.label}
-          </button>
+          </option>
         ))}
-      </div>
+      </select>
 
+      {/* #6 — big manual display; double-click a part to edit it */}
       <div className="ts-manual">
-        <input
-          type="number"
+        <EditableNumber
+          className="ts-number"
+          value={value.beats}
           min={MIN_BEATS}
           max={MAX_BEATS}
-          value={value.beats}
-          onChange={(e) =>
-            onChange({ ...value, beats: clampBeats(Number(e.target.value)) })
-          }
-          aria-label="Beats per measure"
+          onCommit={(beats) => onChange({ ...value, beats })}
+          ariaLabel="Beats per measure"
         />
-        <span className="ts-divider">/</span>
-        <select
+        <span className="ts-slash">/</span>
+        <EditableUnit
           value={value.noteValue}
-          onChange={(e) =>
-            onChange({ ...value, noteValue: Number(e.target.value) })
-          }
-          aria-label="Beat unit"
-        >
-          {NOTE_VALUES.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+          options={NOTE_VALUES}
+          onChange={(noteValue) => onChange({ ...value, noteValue })}
+        />
       </div>
     </div>
   );
 }
 
-function clampBeats(n: number): number {
-  if (Number.isNaN(n)) return MIN_BEATS;
-  return Math.max(MIN_BEATS, Math.min(MAX_BEATS, Math.round(n)));
+interface EditableUnitProps {
+  value: number;
+  options: readonly number[];
+  onChange: (value: number) => void;
+}
+
+/**
+ * Shows the beat unit as plain text. Double-clicking reveals a dropdown to pick
+ * a value; choosing one (or clicking away) returns to the text display.
+ */
+function EditableUnit({ value, options, onChange }: EditableUnitProps) {
+  const [editing, setEditing] = useState(false);
+  const selectRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    if (editing) selectRef.current?.focus();
+  }, [editing]);
+
+  if (editing) {
+    return (
+      <select
+        ref={selectRef}
+        className="ts-number ts-unit-select"
+        value={value}
+        onChange={(e) => {
+          onChange(Number(e.target.value));
+          setEditing(false);
+        }}
+        onBlur={() => setEditing(false)}
+        aria-label="Beat unit"
+      >
+        {options.map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  return (
+    <span
+      className="ts-number"
+      onDoubleClick={() => setEditing(true)}
+      title="Double-click to choose"
+    >
+      {value}
+    </span>
+  );
 }
