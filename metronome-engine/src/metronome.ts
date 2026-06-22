@@ -1,4 +1,4 @@
-import type { BeatInfo, TimeSignature } from './types';
+import type { BeatEmphasis, BeatInfo, TimeSignature } from './types';
 
 export interface MetronomeOptions {
   /** Starting tempo in beats per minute. Default 120. */
@@ -6,15 +6,25 @@ export interface MetronomeOptions {
   /** Starting time signature. Default 4/4. */
   timeSignature?: TimeSignature;
   /**
+   * Per-beat emphasis pattern (one entry per beat). Defaults to the downbeat
+   * accented and the rest normal.
+   */
+  pattern?: BeatEmphasis[];
+  /**
    * Called once per beat, at the moment the beat is *scheduled* (slightly
-   * before it sounds). `beat.time` is the audio-clock time it will play, so a
-   * UI can flash a visual indicator exactly on time. See `currentTime`.
+   * before it sounds), including muted beats. `beat.time` is the audio-clock
+   * time it will play, so a UI can flash a visual indicator exactly on time.
    */
   onBeat?: (beat: BeatInfo) => void;
 }
 
 const MIN_BPM = 40;
 const MAX_BPM = 320;
+
+/** Build the default emphasis pattern for a given beat count: downbeat only. */
+export function defaultPattern(beats: number): BeatEmphasis[] {
+  return Array.from({ length: beats }, (_, i) => (i === 0 ? 'accent' : 'normal'));
+}
 
 /**
  * A sample-accurate metronome built on the Web Audio API.
@@ -32,6 +42,7 @@ export class Metronome {
   private audioContext: AudioContext | null = null;
   private bpm: number;
   private timeSignature: TimeSignature;
+  private pattern: BeatEmphasis[];
   private readonly onBeat?: (beat: BeatInfo) => void;
 
   private isRunning = false;
@@ -47,6 +58,7 @@ export class Metronome {
   constructor(options: MetronomeOptions = {}) {
     this.bpm = clampBpm(options.bpm ?? 120);
     this.timeSignature = options.timeSignature ?? { beats: 4, noteValue: 4 };
+    this.pattern = options.pattern ?? defaultPattern(this.timeSignature.beats);
     this.onBeat = options.onBeat;
   }
 
@@ -78,6 +90,11 @@ export class Metronome {
     if (this.nextBeatIndex >= timeSignature.beats) {
       this.nextBeatIndex = 0;
     }
+  }
+
+  /** Replace the per-beat emphasis pattern. Safe to call while running. */
+  setPattern(pattern: BeatEmphasis[]): void {
+    this.pattern = pattern;
   }
 
   /** Start ticking. Must be triggered by a user gesture (browser autoplay rule). */
@@ -124,14 +141,17 @@ export class Metronome {
       this.nextBeatTime <
       this.audioContext.currentTime + this.scheduleAheadTime
     ) {
-      const isAccent = this.nextBeatIndex === 0;
-      this.scheduleClick(this.nextBeatTime, isAccent);
+      // Read the pattern defensively in case its length lags a meter change.
+      const emphasis =
+        this.pattern[this.nextBeatIndex] ??
+        (this.nextBeatIndex === 0 ? 'accent' : 'normal');
 
-      this.onBeat?.({
-        beatIndex: this.nextBeatIndex,
-        isAccent,
-        time: this.nextBeatTime,
-      });
+      if (emphasis !== 'muted') {
+        this.scheduleClick(this.nextBeatTime, emphasis === 'accent');
+      }
+
+      // Always notify the UI — muted beats still advance the visual indicator.
+      this.onBeat?.({ beatIndex: this.nextBeatIndex, time: this.nextBeatTime });
 
       this.nextBeatTime += secondsPerBeat;
       this.nextBeatIndex = (this.nextBeatIndex + 1) % this.timeSignature.beats;

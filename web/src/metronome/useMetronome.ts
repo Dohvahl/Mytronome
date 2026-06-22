@@ -1,16 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
-import { Metronome, type TimeSignature } from '@mytronome/engine';
+import {
+  Metronome,
+  defaultPattern,
+  type BeatEmphasis,
+  type TimeSignature,
+} from '@mytronome/engine';
 
 const DEFAULT_BPM = 120;
 const DEFAULT_TIME_SIGNATURE: TimeSignature = { beats: 4, noteValue: 4 };
+
+// Clicking a beat cycles through these in order.
+const NEXT_EMPHASIS: Record<BeatEmphasis, BeatEmphasis> = {
+  accent: 'muted',
+  normal: 'accent',
+  muted: 'normal',
+};
 
 /**
  * Bridges the framework-agnostic Metronome engine to React.
  *
  * The engine instance lives in a ref (it must survive re-renders and isn't
  * itself "render data"). React state mirrors the bits the UI needs to display
- * (bpm, time signature, running, current beat) so the screen updates when they
- * change.
+ * (bpm, time signature, accent pattern, running, current beat) so the screen
+ * updates when they change.
  */
 export function useMetronome() {
   const metronomeRef = useRef<Metronome | null>(null);
@@ -20,17 +32,18 @@ export function useMetronome() {
   const [bpm, setBpmState] = useState(DEFAULT_BPM);
   const [timeSignature, setTimeSignatureState] =
     useState<TimeSignature>(DEFAULT_TIME_SIGNATURE);
+  const [pattern, setPatternState] = useState<BeatEmphasis[]>(() =>
+    defaultPattern(DEFAULT_TIME_SIGNATURE.beats),
+  );
   const [isRunning, setIsRunning] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
 
   // Create the engine when the component mounts; dispose it when it unmounts.
-  // Doing this in an effect (not during render) keeps it correct under React
-  // StrictMode, which deliberately mounts -> unmounts -> remounts in dev to
-  // surface cleanup bugs.
   useEffect(() => {
     const engine = new Metronome({
       bpm: DEFAULT_BPM,
       timeSignature: DEFAULT_TIME_SIGNATURE,
+      pattern: defaultPattern(DEFAULT_TIME_SIGNATURE.beats),
       onBeat: (beat) => {
         // onBeat fires when a beat is *scheduled* (up to ~100ms early). Wait
         // until it actually sounds before flashing the visual, so they line up.
@@ -61,7 +74,6 @@ export function useMetronome() {
 
   const stop = () => {
     metronomeRef.current?.stop();
-    // Cancel any visual flashes still queued from already-scheduled beats.
     beatTimersRef.current.forEach((id) => window.clearTimeout(id));
     beatTimersRef.current = [];
     setIsRunning(false);
@@ -78,13 +90,32 @@ export function useMetronome() {
   };
 
   const setTimeSignature = (value: TimeSignature) => {
-    metronomeRef.current?.setTimeSignature(value);
+    const engine = metronomeRef.current;
+    // Changing the beat COUNT resets the accent pattern to default; changing
+    // only the note value keeps the pattern you've set.
+    const nextPattern =
+      value.beats === timeSignature.beats
+        ? pattern
+        : defaultPattern(value.beats);
+    engine?.setTimeSignature(value);
+    engine?.setPattern(nextPattern);
     setTimeSignatureState(value);
+    setPatternState(nextPattern);
+  };
+
+  const cycleBeat = (index: number) => {
+    const engine = metronomeRef.current;
+    const next = pattern.map((emphasis, i) =>
+      i === index ? NEXT_EMPHASIS[emphasis] : emphasis,
+    );
+    engine?.setPattern(next);
+    setPatternState(next);
   };
 
   return {
     bpm,
     timeSignature,
+    pattern,
     isRunning,
     currentBeat,
     start,
@@ -92,5 +123,6 @@ export function useMetronome() {
     toggle,
     setBpm,
     setTimeSignature,
+    cycleBeat,
   };
 }

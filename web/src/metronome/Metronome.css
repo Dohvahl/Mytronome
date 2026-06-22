@@ -88,25 +88,48 @@
 .beat-indicator {
   display: flex;
   gap: 14px;
-  min-height: 24px;
+  min-height: 28px;
   align-items: center;
 }
 .beat-dot {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: transparent;
+  cursor: pointer;
   transition: transform 0.06s ease, background 0.06s ease,
-    border-color 0.06s ease;
+    border-color 0.06s ease, opacity 0.06s ease;
 }
-.beat-dot.accent {
+.beat-dot:hover {
   border-color: var(--accent-border);
 }
-.beat-dot.active {
-  background: var(--accent);
+
+/* Resting look per emphasis */
+.beat-dot.accent {
   border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.beat-dot.muted {
+  border-style: dashed;
+  opacity: 0.4;
+}
+
+/* The currently sounding beat: scaled up and filled */
+.beat-dot.active {
   transform: scale(1.3);
+}
+.beat-dot.active.accent {
+  background: var(--accent);
+}
+.beat-dot.active.normal {
+  background: var(--text-h);
+  border-color: var(--text-h);
+}
+.beat-dot.active.muted {
+  opacity: 0.7;
+  background: var(--accent-bg);
 }
 
 /* --- Time signature --- */

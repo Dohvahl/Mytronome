@@ -1,23 +1,35 @@
+import type { BeatEmphasis } from '@mytronome/engine';
+
 interface Props {
-  /** Number of beats in the measure (one dot each). */
-  beats: number;
+  /** One entry per beat: 'normal' | 'accent' | 'muted'. */
+  pattern: BeatEmphasis[];
   /** Zero-based index of the currently sounding beat, or -1 when stopped. */
   currentBeat: number;
+  /** Called with a beat's index when its dot is clicked (to cycle emphasis). */
+  onCycle: (index: number) => void;
 }
 
-/** A row of dots — one per beat. Beat 0 is the accent; the live beat lights up. */
-export function BeatIndicator({ beats, currentBeat }: Props) {
+/**
+ * A row of clickable dots — one per beat. Each dot's resting look reflects its
+ * emphasis (normal / accent / muted); the currently sounding beat lights up.
+ * Clicking a dot cycles its emphasis.
+ */
+export function BeatIndicator({ pattern, currentBeat, onCycle }: Props) {
   return (
     <div className="beat-indicator">
-      {Array.from({ length: beats }, (_, i) => {
-        const classNames = [
-          'beat-dot',
-          i === 0 ? 'accent' : '',
-          i === currentBeat ? 'active' : '',
-        ]
+      {pattern.map((emphasis, i) => {
+        const classNames = ['beat-dot', emphasis, i === currentBeat ? 'active' : '']
           .filter(Boolean)
           .join(' ');
-        return <span key={i} className={classNames} />;
+        return (
+          <button
+            key={i}
+            type="button"
+            className={classNames}
+            onClick={() => onCycle(i)}
+            aria-label={`Beat ${i + 1}: ${emphasis}. Click to change.`}
+          />
+        );
       })}
     </div>
   );

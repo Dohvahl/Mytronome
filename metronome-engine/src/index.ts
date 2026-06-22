@@ -1,3 +1,3 @@
-export { Metronome } from './metronome';
+export { Metronome, defaultPattern } from './metronome';
 export type { MetronomeOptions } from './metronome';
-export type { BeatInfo, TimeSignature } from './types';
+export type { BeatEmphasis, BeatInfo, TimeSignature } from './types';

@@ -10,18 +10,24 @@ export function Metronome() {
   const {
     bpm,
     timeSignature,
+    pattern,
     isRunning,
     currentBeat,
     toggle,
     setBpm,
     setTimeSignature,
+    cycleBeat,
   } = useMetronome();
 
   return (
     <div className="metronome">
       <h1>Mytronome</h1>
 
-      <BeatIndicator beats={timeSignature.beats} currentBeat={currentBeat} />
+      <BeatIndicator
+        pattern={pattern}
+        currentBeat={currentBeat}
+        onCycle={cycleBeat}
+      />
 
       <div className="tempo-row">
         <button
