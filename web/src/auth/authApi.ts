@@ -26,6 +26,20 @@ export async function loginRequest(
   return (await res.json()) as LoginResponse;
 }
 
+export async function refreshRequest(
+  refreshToken: string,
+): Promise<LoginResponse> {
+  const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken }),
+  });
+  if (!res.ok) {
+    throw new Error(`Token refresh failed (${res.status}).`);
+  }
+  return (await res.json()) as LoginResponse;
+}
+
 export async function registerRequest(
   email: string,
   password: string,

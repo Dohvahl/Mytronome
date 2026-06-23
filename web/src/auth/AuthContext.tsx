@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { getAuthToken, setAuthToken } from './token';
+import { getAuthToken, setTokens } from './token';
 import { loginRequest, registerRequest } from './authApi';
 
 const EMAIL_KEY = 'mytronome.authEmail';
@@ -32,9 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<AuthValue>(() => {
-    const apply = (nextToken: string | null, nextEmail: string | null) => {
-      setAuthToken(nextToken);
-      setToken(nextToken);
+    const apply = (
+      accessToken: string | null,
+      refreshToken: string | null,
+      nextEmail: string | null,
+    ) => {
+      setTokens(accessToken, refreshToken);
+      setToken(accessToken);
       if (nextEmail) localStorage.setItem(EMAIL_KEY, nextEmail);
       else localStorage.removeItem(EMAIL_KEY);
       setEmail(nextEmail);
@@ -45,14 +49,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: token !== null,
       signIn: async (em, pw) => {
         const res = await loginRequest(em, pw);
-        apply(res.accessToken, em);
+        apply(res.accessToken, res.refreshToken, em);
       },
       register: async (em, pw) => {
         await registerRequest(em, pw);
         const res = await loginRequest(em, pw); // auto sign-in after registering
-        apply(res.accessToken, em);
+        apply(res.accessToken, res.refreshToken, em);
       },
-      signOut: () => apply(null, null),
+      signOut: () => apply(null, null, null),
     };
   }, [token, email]);
 
