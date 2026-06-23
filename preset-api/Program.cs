@@ -1,12 +1,17 @@
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PresetApi.Data;
 using PresetApi.Models;
 using PresetApi.Stores;
+using PresetApi.Validation;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Don't advertise the server software in responses.
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
 // Generates the OpenAPI document (served at /openapi/v1.json in development).
 builder.Services.AddOpenApi();
@@ -30,14 +35,31 @@ builder.Services
     .AddEntityFrameworkStores<PresetDbContext>();
 builder.Services.AddAuthorization();
 
-// Allow the Vite dev client to call this API from the browser.
+// Rate limiting, partitioned by client IP. The "auth" policy guards the
+// login/register endpoints against brute-force attempts.
+const string AuthRateLimit = "auth";
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(AuthRateLimit, http =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+            }));
+});
+
+// Allow the Vite dev client to call this API from the browser — scoped to the
+// dev origin and only the methods/headers we actually use.
 const string WebClientPolicy = "web-client";
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(WebClientPolicy, policy =>
         policy.WithOrigins("http://localhost:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+            .WithMethods("GET", "POST", "PUT", "DELETE")
+            .WithHeaders("Content-Type", "Authorization"));
 });
 
 var app = builder.Build();
@@ -51,6 +73,16 @@ if (!EF.IsDesignTime)
     db.Database.Migrate();
 }
 
+// Baseline security headers on every response. (No Content-Security-Policy here —
+// it would break the Scalar docs UI; the web app's CSP is set by nginx instead.)
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -62,11 +94,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(WebClientPolicy);
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 // Identity endpoints: POST /api/auth/register, /api/auth/login, /api/auth/refresh, ...
-app.MapGroup("/api/auth").MapIdentityApi<IdentityUser>();
+var auth = app.MapGroup("/api/auth").RequireRateLimiting(AuthRateLimit);
+auth.MapIdentityApi<IdentityUser>();
 
 // --- Preset endpoints (require a logged-in user; scoped to that user) ------
 var presets = app.MapGroup("/api/presets").RequireAuthorization();
@@ -83,6 +118,10 @@ presets.MapPut("/{id}", async (string id, Preset preset, ClaimsPrincipal user, I
 {
     if (preset.Id != id)
         return Results.BadRequest("The preset id in the body must match the URL.");
+
+    var errors = PresetValidator.Validate(preset);
+    if (errors.Count > 0)
+        return Results.ValidationProblem(errors);
 
     await store.SaveAsync(UserId(user), preset);
     return Results.NoContent();
