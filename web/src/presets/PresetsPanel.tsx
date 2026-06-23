@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Preset, PresetSettings } from '@mytronome/presets';
+import type { StorageLocation } from './usePresets';
 import { PresetItem } from './PresetItem';
 import './Presets.css';
 
@@ -7,6 +8,10 @@ interface Props {
   presets: Preset[];
   /** The metronome's current settings, used by "Save current" and "Update". */
   current: PresetSettings;
+  location: StorageLocation;
+  loading: boolean;
+  error: string | null;
+  onLocationChange: (location: StorageLocation) => void;
   onLoad: (preset: Preset) => void;
   onSave: (settings: PresetSettings, label: string) => void;
   /** Overwrite a preset's settings with the current ones ("Update"). */
@@ -19,6 +24,10 @@ interface Props {
 export function PresetsPanel({
   presets,
   current,
+  location,
+  loading,
+  error,
+  onLocationChange,
   onLoad,
   onSave,
   onUpdate,
@@ -37,6 +46,25 @@ export function PresetsPanel({
     <section className="presets">
       <h2>Presets</h2>
 
+      <div
+        className="storage-switch"
+        role="group"
+        aria-label="Preset storage location"
+      >
+        <button
+          className={location === 'local' ? 'active' : ''}
+          onClick={() => onLocationChange('local')}
+        >
+          Local
+        </button>
+        <button
+          className={location === 'server' ? 'active' : ''}
+          onClick={() => onLocationChange('server')}
+        >
+          Server
+        </button>
+      </div>
+
       <div className="preset-save">
         <input
           className="preset-label-input"
@@ -52,9 +80,15 @@ export function PresetsPanel({
         </button>
       </div>
 
-      {presets.length === 0 ? (
+      {loading && <p className="preset-empty">Loading…</p>}
+
+      {!loading && error && <p className="preset-error">{error}</p>}
+
+      {!loading && !error && presets.length === 0 && (
         <p className="preset-empty">No presets yet — set a tempo and save it.</p>
-      ) : (
+      )}
+
+      {!loading && presets.length > 0 && (
         <ul className="preset-list">
           {presets.map((preset) => (
             <PresetItem

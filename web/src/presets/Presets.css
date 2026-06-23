@@ -88,6 +88,38 @@
   white-space: nowrap;
 }
 
+/* Local / Server segmented switch */
+.storage-switch {
+  display: flex;
+  align-self: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.storage-switch button {
+  padding: 6px 18px;
+  border: none;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s, color 0.15s;
+}
+.storage-switch button:hover {
+  color: var(--accent);
+}
+.storage-switch button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.preset-error {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  color: #e5484d;
+}
+
 .preset-empty {
   color: var(--text);
   text-align: center;

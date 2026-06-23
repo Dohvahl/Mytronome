@@ -26,8 +26,17 @@ export function Metronome() {
     applySettings,
   } = useMetronome();
 
-  const { presets, savePreset, editPreset, copyPreset, deletePreset } =
-    usePresets();
+  const {
+    presets,
+    location,
+    setLocation,
+    loading,
+    error,
+    savePreset,
+    editPreset,
+    copyPreset,
+    deletePreset,
+  } = usePresets();
 
   // Left presets drawer open/closed.
   const [presetsOpen, setPresetsOpen] = useState(false);
@@ -87,6 +96,10 @@ export function Metronome() {
         <PresetsPanel
           presets={presets}
           current={current}
+          location={location}
+          loading={loading}
+          error={error}
+          onLocationChange={setLocation}
           onLoad={(preset) => {
             applySettings(preset);
             setLoadedPresetId(preset.id);
