@@ -108,6 +108,7 @@ function AccountModal({ onClose }: { onClose: () => void }) {
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
               autoComplete="email"
+              maxLength={256}
               required
             />
             <input
@@ -116,6 +117,7 @@ function AccountModal({ onClose }: { onClose: () => void }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              maxLength={128}
               required
             />
             {error && <p className="auth-error">{error}</p>}

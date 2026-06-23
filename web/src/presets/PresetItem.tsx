@@ -56,6 +56,7 @@ export function PresetItem({
               else if (e.key === 'Escape') setRenaming(false);
             }}
             onBlur={commitRename}
+            maxLength={200}
             placeholder="Label"
           />
         ) : (

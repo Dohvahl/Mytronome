@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using PresetApi.Auth;
 using PresetApi.Data;
 using PresetApi.Models;
 using PresetApi.Stores;
@@ -32,7 +33,8 @@ builder.Services.AddScoped<IPresetStore, EfPresetStore>();
 // storing users in the same MySQL database via EF Core.
 builder.Services
     .AddIdentityApiEndpoints<IdentityUser>()
-    .AddEntityFrameworkStores<PresetDbContext>();
+    .AddEntityFrameworkStores<PresetDbContext>()
+    .AddPasswordValidator<MaxLengthPasswordValidator<IdentityUser>>();
 builder.Services.AddAuthorization();
 
 // Rate limiting, partitioned by client IP. The "auth" policy guards the

@@ -88,6 +88,7 @@ export function PresetsPanel({
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSave();
           }}
+          maxLength={200}
           placeholder="Label (optional)"
         />
         <button className="preset-save-btn" onClick={handleSave}>
