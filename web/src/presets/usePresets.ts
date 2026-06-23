@@ -9,7 +9,7 @@ import {
 } from '@mytronome/presets';
 import { LocalStoragePresetStore } from './localStoragePresetStore';
 import { ApiPresetStore } from './apiPresetStore';
-import { isAuthenticated } from '../auth/token';
+import { useAuth } from '../auth/AuthContext';
 
 export type StorageLocation = 'local' | 'server';
 
@@ -36,9 +36,11 @@ export function usePresets() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { isAuthenticated } = useAuth();
+
   // Which storage options are usable right now. Local is always available;
-  // Server only once the user is signed in (a token exists). Cloud joins later.
-  const availableLocations: StorageLocation[] = isAuthenticated()
+  // Server only once the user is signed in. Cloud joins later.
+  const availableLocations: StorageLocation[] = isAuthenticated
     ? ['local', 'server']
     : ['local'];
 

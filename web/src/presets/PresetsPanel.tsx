@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Preset, PresetSettings } from '@mytronome/presets';
 import type { StorageLocation } from './usePresets';
 import { PresetItem } from './PresetItem';
+import { AuthPanel } from '../auth/AuthPanel';
 import './Presets.css';
 
 const LOCATION_LABELS: Record<string, string> = {
@@ -52,6 +53,8 @@ export function PresetsPanel({
   return (
     <section className="presets">
       <h2>Presets</h2>
+
+      <AuthPanel />
 
       {availableLocations.length > 1 && (
         <div

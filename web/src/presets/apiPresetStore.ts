@@ -1,21 +1,31 @@
 import type { Preset, PresetStore } from '@mytronome/presets';
+import { API_BASE } from '../apiBase';
+import { getAuthToken } from '../auth/token';
 
-// Base URL of the preset API. Override with VITE_API_BASE_URL if needed.
-const API_BASE = (
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5046'
-).replace(/\/$/, '');
+function authHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function checkOk(res: Response, action: string): void {
+  if (res.ok) return;
+  if (res.status === 401) {
+    throw new Error('Your session has expired — please sign in again.');
+  }
+  throw new Error(`Couldn't ${action} (${res.status}).`);
+}
 
 /**
- * A PresetStore that talks to the C#/.NET REST API. Implements the exact same
- * interface as LocalStoragePresetStore, so the rest of the app is unaware which
- * one is in use.
+ * A PresetStore that talks to the C#/.NET REST API, authenticated with the
+ * stored bearer token. Same interface as LocalStoragePresetStore, so nothing
+ * else in the app knows which store is in use.
  */
 export class ApiPresetStore implements PresetStore {
   async list(): Promise<Preset[]> {
-    const res = await fetch(`${API_BASE}/api/presets`);
-    if (!res.ok) {
-      throw new Error(`Couldn't load presets from the server (${res.status}).`);
-    }
+    const res = await fetch(`${API_BASE}/api/presets`, {
+      headers: authHeaders(),
+    });
+    checkOk(res, 'load presets from the server');
     return (await res.json()) as Preset[];
   }
 
@@ -24,22 +34,19 @@ export class ApiPresetStore implements PresetStore {
       `${API_BASE}/api/presets/${encodeURIComponent(preset.id)}`,
       {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(preset),
       },
     );
-    if (!res.ok) {
-      throw new Error(`Couldn't save the preset to the server (${res.status}).`);
-    }
+    checkOk(res, 'save the preset to the server');
   }
 
   async remove(id: string): Promise<void> {
     const res = await fetch(`${API_BASE}/api/presets/${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      headers: authHeaders(),
     });
-    // 404 means it's already gone — treat as success.
-    if (!res.ok && res.status !== 404) {
-      throw new Error(`Couldn't delete the preset on the server (${res.status}).`);
-    }
+    if (res.status === 404) return; // already gone
+    checkOk(res, 'delete the preset on the server');
   }
 }
