@@ -1,5 +1,5 @@
 import type { Preset, PresetStore } from '@mytronome/presets';
-import { API_BASE } from '../apiBase';
+import { API_BASE, UnauthorizedError } from '../apiBase';
 import { getAuthToken } from '../auth/token';
 
 function authHeaders(): Record<string, string> {
@@ -10,7 +10,7 @@ function authHeaders(): Record<string, string> {
 function checkOk(res: Response, action: string): void {
   if (res.ok) return;
   if (res.status === 401) {
-    throw new Error('Your session has expired — please sign in again.');
+    throw new UnauthorizedError();
   }
   throw new Error(`Couldn't ${action} (${res.status}).`);
 }

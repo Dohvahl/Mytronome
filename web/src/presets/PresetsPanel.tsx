@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Preset, PresetSettings } from '@mytronome/presets';
 import type { StorageLocation } from './usePresets';
 import { PresetItem } from './PresetItem';
-import { AuthPanel } from '../auth/AuthPanel';
+import { AccountControl } from '../auth/AccountControl';
 import './Presets.css';
 
 const LOCATION_LABELS: Record<string, string> = {
@@ -18,6 +18,7 @@ interface Props {
   availableLocations: StorageLocation[];
   loading: boolean;
   error: string | null;
+  sessionExpired: boolean;
   onLocationChange: (location: StorageLocation) => void;
   onLoad: (preset: Preset) => void;
   onSave: (settings: PresetSettings, label: string) => void;
@@ -35,6 +36,7 @@ export function PresetsPanel({
   availableLocations,
   loading,
   error,
+  sessionExpired,
   onLocationChange,
   onLoad,
   onSave,
@@ -54,7 +56,11 @@ export function PresetsPanel({
     <section className="presets">
       <h2>Presets</h2>
 
-      <AuthPanel />
+      {sessionExpired && (
+        <p className="preset-notice">
+          Your session expired — please sign in again.
+        </p>
+      )}
 
       {availableLocations.length > 1 && (
         <div
@@ -112,6 +118,8 @@ export function PresetsPanel({
           ))}
         </ul>
       )}
+
+      <AccountControl />
     </section>
   );
 }

@@ -40,6 +40,8 @@
   height: 100dvh;
   box-sizing: border-box;
   padding: 64px 16px 16px;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   border-right: 1px solid var(--border);
   box-shadow: var(--shadow);
@@ -53,6 +55,7 @@
 
 .presets {
   width: 100%;
+  flex: 1;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -193,6 +196,106 @@
   text-align: center;
   font-size: 14px;
   color: #e5484d;
+}
+
+/* Account footer (pinned to the bottom of the drawer) */
+.account-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.account-email {
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-button {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  font-size: 14px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.account-button:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Account modal */
+.account-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.account-modal {
+  position: relative;
+  z-index: 41;
+  width: 320px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.account-modal h3 {
+  margin: 0 0 4px;
+  text-align: center;
+  color: var(--text-h);
+}
+.account-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.account-signed-in {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+.account-status {
+  margin: 0;
+  text-align: center;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.preset-notice {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(229, 72, 77, 0.12);
+  color: #e5484d;
+  font-size: 13px;
+  text-align: center;
 }
 
 .preset-empty {

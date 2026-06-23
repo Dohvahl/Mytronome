@@ -9,6 +9,7 @@ import {
 } from '@mytronome/presets';
 import { LocalStoragePresetStore } from './localStoragePresetStore';
 import { ApiPresetStore } from './apiPresetStore';
+import { UnauthorizedError } from '../apiBase';
 import { useAuth } from '../auth/AuthContext';
 
 export type StorageLocation = 'local' | 'server';
@@ -35,8 +36,10 @@ export function usePresets() {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Separate from `error` (which the fallback reload clears) so it can persist.
+  const [sessionExpired, setSessionExpired] = useState(false);
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, signOut } = useAuth();
 
   // Which storage options are usable right now. Local is always available;
   // Server only once the user is signed in. Cloud joins later.
@@ -68,22 +71,39 @@ export function usePresets() {
       setPresets(all);
     } catch (e) {
       setPresets([]);
-      setError(errorMessage(e));
+      if (e instanceof UnauthorizedError) {
+        setSessionExpired(true);
+        signOut(); // expired/invalid token -> sign out and fall back to Local
+      } else {
+        setError(errorMessage(e));
+      }
     } finally {
       setLoading(false);
     }
-  }, [store]);
+  }, [store, signOut]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Signing back in clears the expired notice.
+  useEffect(() => {
+    if (isAuthenticated) setSessionExpired(false);
+  }, [isAuthenticated]);
+
+  const dismissSessionExpired = useCallback(() => setSessionExpired(false), []);
 
   // Run a mutating store op, then refresh; surface errors instead of throwing.
   const mutate = async (op: () => Promise<void>) => {
     try {
       await op();
     } catch (e) {
-      setError(errorMessage(e));
+      if (e instanceof UnauthorizedError) {
+        setSessionExpired(true);
+        signOut();
+      } else {
+        setError(errorMessage(e));
+      }
       return;
     }
     await refresh();
@@ -114,6 +134,8 @@ export function usePresets() {
     setLocation,
     loading,
     error,
+    sessionExpired,
+    dismissSessionExpired,
     savePreset,
     editPreset,
     copyPreset,

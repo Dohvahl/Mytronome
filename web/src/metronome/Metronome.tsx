@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMetronome } from './useMetronome';
 import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
@@ -33,6 +33,8 @@ export function Metronome() {
     setLocation,
     loading,
     error,
+    sessionExpired,
+    dismissSessionExpired,
     savePreset,
     editPreset,
     copyPreset,
@@ -43,6 +45,11 @@ export function Metronome() {
   const [presetsOpen, setPresetsOpen] = useState(false);
   // Id of the most recently loaded preset, so we can show its (live) label.
   const [loadedPresetId, setLoadedPresetId] = useState<string | null>(null);
+
+  // The "session expired" notice persists until the drawer is closed.
+  useEffect(() => {
+    if (!presetsOpen) dismissSessionExpired();
+  }, [presetsOpen, dismissSessionExpired]);
 
   const current = { bpm, timeSignature, pattern };
   // Looked up fresh each render, so a rename in the drawer updates the header.
@@ -101,6 +108,7 @@ export function Metronome() {
           availableLocations={availableLocations}
           loading={loading}
           error={error}
+          sessionExpired={sessionExpired}
           onLocationChange={setLocation}
           onLoad={(preset) => {
             applySettings(preset);
