@@ -35,5 +35,16 @@ services:
     ports:
       - "5046:8080"
 
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: mytronome-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
 volumes:
   mysql-data:

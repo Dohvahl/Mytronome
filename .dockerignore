@@ -1,0 +1,9 @@
+# Keep the build context small and reproducible.
+**/node_modules
+**/dist
+**/bin
+**/obj
+.git
+*.log
+# Never ship local secrets into an image.
+.env
