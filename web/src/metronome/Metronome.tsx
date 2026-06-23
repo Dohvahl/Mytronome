@@ -29,6 +29,7 @@ export function Metronome() {
   const {
     presets,
     location,
+    availableLocations,
     setLocation,
     loading,
     error,
@@ -97,6 +98,7 @@ export function Metronome() {
           presets={presets}
           current={current}
           location={location}
+          availableLocations={availableLocations}
           loading={loading}
           error={error}
           onLocationChange={setLocation}

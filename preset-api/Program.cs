@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PresetApi.Data;
 using PresetApi.Models;
@@ -20,6 +22,13 @@ builder.Services.AddDbContext<PresetDbContext>(options =>
         mysql => mysql.EnableRetryOnFailure()));
 
 builder.Services.AddScoped<IPresetStore, EfPresetStore>();
+
+// ASP.NET Core Identity with token-based API endpoints (register/login/refresh),
+// storing users in the same MySQL database via EF Core.
+builder.Services
+    .AddIdentityApiEndpoints<IdentityUser>()
+    .AddEntityFrameworkStores<PresetDbContext>();
+builder.Services.AddAuthorization();
 
 // Allow the Vite dev client to call this API from the browser.
 const string WebClientPolicy = "web-client";
@@ -53,24 +62,37 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(WebClientPolicy);
 
-// --- Preset endpoints -----------------------------------------------------
-var presets = app.MapGroup("/api/presets");
+app.UseAuthentication();
+app.UseAuthorization();
 
-presets.MapGet("/", (IPresetStore store) => store.ListAsync());
+// Identity endpoints: POST /api/auth/register, /api/auth/login, /api/auth/refresh, ...
+app.MapGroup("/api/auth").MapIdentityApi<IdentityUser>();
 
-presets.MapGet("/{id}", async (string id, IPresetStore store) =>
-    await store.GetAsync(id) is { } preset ? Results.Ok(preset) : Results.NotFound());
+// --- Preset endpoints (require a logged-in user; scoped to that user) ------
+var presets = app.MapGroup("/api/presets").RequireAuthorization();
 
-presets.MapPut("/{id}", async (string id, Preset preset, IPresetStore store) =>
+presets.MapGet("/", (ClaimsPrincipal user, IPresetStore store) =>
+    store.ListAsync(UserId(user)));
+
+presets.MapGet("/{id}", async (string id, ClaimsPrincipal user, IPresetStore store) =>
+    await store.GetAsync(UserId(user), id) is { } preset
+        ? Results.Ok(preset)
+        : Results.NotFound());
+
+presets.MapPut("/{id}", async (string id, Preset preset, ClaimsPrincipal user, IPresetStore store) =>
 {
     if (preset.Id != id)
         return Results.BadRequest("The preset id in the body must match the URL.");
 
-    await store.SaveAsync(preset);
+    await store.SaveAsync(UserId(user), preset);
     return Results.NoContent();
 });
 
-presets.MapDelete("/{id}", async (string id, IPresetStore store) =>
-    await store.RemoveAsync(id) ? Results.NoContent() : Results.NotFound());
+presets.MapDelete("/{id}", async (string id, ClaimsPrincipal user, IPresetStore store) =>
+    await store.RemoveAsync(UserId(user), id) ? Results.NoContent() : Results.NotFound());
 
 app.Run();
+
+// The authenticated user's id (Identity stores it as the NameIdentifier claim).
+static string UserId(ClaimsPrincipal user) =>
+    user.FindFirstValue(ClaimTypes.NameIdentifier)!;

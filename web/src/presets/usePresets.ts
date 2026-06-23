@@ -9,6 +9,7 @@ import {
 } from '@mytronome/presets';
 import { LocalStoragePresetStore } from './localStoragePresetStore';
 import { ApiPresetStore } from './apiPresetStore';
+import { isAuthenticated } from '../auth/token';
 
 export type StorageLocation = 'local' | 'server';
 
@@ -35,13 +36,25 @@ export function usePresets() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // One store per location; rebuilt only when the location changes.
+  // Which storage options are usable right now. Local is always available;
+  // Server only once the user is signed in (a token exists). Cloud joins later.
+  const availableLocations: StorageLocation[] = isAuthenticated()
+    ? ['local', 'server']
+    : ['local'];
+
+  // If the saved choice isn't currently usable (e.g. "server" while signed out),
+  // fall back to Local — without forgetting the saved preference.
+  const effectiveLocation: StorageLocation = availableLocations.includes(location)
+    ? location
+    : 'local';
+
+  // One store per location; rebuilt only when the effective location changes.
   const store = useMemo<PresetStore>(
     () =>
-      location === 'server'
+      effectiveLocation === 'server'
         ? new ApiPresetStore()
         : new LocalStoragePresetStore(),
-    [location],
+    [effectiveLocation],
   );
 
   const refresh = useCallback(async () => {
@@ -94,7 +107,8 @@ export function usePresets() {
 
   return {
     presets,
-    location,
+    location: effectiveLocation,
+    availableLocations,
     setLocation,
     loading,
     error,

@@ -4,11 +4,17 @@ import type { StorageLocation } from './usePresets';
 import { PresetItem } from './PresetItem';
 import './Presets.css';
 
+const LOCATION_LABELS: Record<string, string> = {
+  local: 'Local',
+  server: 'Server',
+};
+
 interface Props {
   presets: Preset[];
   /** The metronome's current settings, used by "Save current" and "Update". */
   current: PresetSettings;
   location: StorageLocation;
+  availableLocations: StorageLocation[];
   loading: boolean;
   error: string | null;
   onLocationChange: (location: StorageLocation) => void;
@@ -25,6 +31,7 @@ export function PresetsPanel({
   presets,
   current,
   location,
+  availableLocations,
   loading,
   error,
   onLocationChange,
@@ -46,24 +53,23 @@ export function PresetsPanel({
     <section className="presets">
       <h2>Presets</h2>
 
-      <div
-        className="storage-switch"
-        role="group"
-        aria-label="Preset storage location"
-      >
-        <button
-          className={location === 'local' ? 'active' : ''}
-          onClick={() => onLocationChange('local')}
+      {availableLocations.length > 1 && (
+        <div
+          className="storage-switch"
+          role="group"
+          aria-label="Preset storage location"
         >
-          Local
-        </button>
-        <button
-          className={location === 'server' ? 'active' : ''}
-          onClick={() => onLocationChange('server')}
-        >
-          Server
-        </button>
-      </div>
+          {availableLocations.map((loc) => (
+            <button
+              key={loc}
+              className={location === loc ? 'active' : ''}
+              onClick={() => onLocationChange(loc)}
+            >
+              {LOCATION_LABELS[loc] ?? loc}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="preset-save">
         <input

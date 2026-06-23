@@ -4,34 +4,54 @@ using PresetApi.Models;
 
 namespace PresetApi.Stores;
 
-/// <summary>A PresetStore backed by MySQL through EF Core.</summary>
+/// <summary>A PresetStore backed by MySQL through EF Core, scoped per owner.</summary>
 public class EfPresetStore(PresetDbContext db) : IPresetStore
 {
-	// AsNoTracking: reads don't need change-tracking, so skip its overhead.
-	public async Task<IReadOnlyList<Preset>> ListAsync() =>
-		await db.Presets.AsNoTracking().ToListAsync();
+    public async Task<IReadOnlyList<Preset>> ListAsync(string ownerId) =>
+        await db.Presets.AsNoTracking()
+            .Where(p => EF.Property<string>(p, "OwnerId") == ownerId)
+            .ToListAsync();
 
-	public async Task<Preset?> GetAsync(string id) =>
-		await db.Presets.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+    public async Task<Preset?> GetAsync(string ownerId, string id) =>
+        await db.Presets.AsNoTracking()
+            .Where(p => EF.Property<string>(p, "OwnerId") == ownerId && p.Id == id)
+            .FirstOrDefaultAsync();
 
-	public async Task SaveAsync(Preset preset)
-	{
-		// Upsert: update if the id already exists, otherwise insert.
-		var exists = await db.Presets.AnyAsync(p => p.Id == preset.Id);
-		if (exists)
-			db.Presets.Update(preset);
-		else
-			db.Presets.Add(preset);
-		await db.SaveChangesAsync();
-	}
+    public async Task SaveAsync(string ownerId, Preset preset)
+    {
+        // Only treat it as an update if THIS owner already has that id (tracked,
+        // so the changes are saved). Otherwise insert and stamp the owner.
+        var existing = await db.Presets
+            .Where(p => EF.Property<string>(p, "OwnerId") == ownerId && p.Id == preset.Id)
+            .FirstOrDefaultAsync();
 
-	public async Task<bool> RemoveAsync(string id)
-	{
-		var preset = await db.Presets.FindAsync(id);
-		if (preset is null)
-			return false;
-		db.Presets.Remove(preset);
-		await db.SaveChangesAsync();
-		return true;
-	}
+        if (existing is null)
+        {
+            var entry = db.Presets.Add(preset);
+            entry.Property("OwnerId").CurrentValue = ownerId;
+        }
+        else
+        {
+            existing.Label = preset.Label;
+            existing.Bpm = preset.Bpm;
+            existing.TimeSignature = preset.TimeSignature;
+            existing.Pattern = preset.Pattern;
+            existing.CreatedAt = preset.CreatedAt;
+            existing.UpdatedAt = preset.UpdatedAt;
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    public async Task<bool> RemoveAsync(string ownerId, string id)
+    {
+        var preset = await db.Presets
+            .Where(p => EF.Property<string>(p, "OwnerId") == ownerId && p.Id == id)
+            .FirstOrDefaultAsync();
+        if (preset is null)
+            return false;
+        db.Presets.Remove(preset);
+        await db.SaveChangesAsync();
+        return true;
+    }
 }
