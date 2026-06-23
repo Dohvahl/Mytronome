@@ -10,6 +10,8 @@ export interface MetronomeOptions {
    * accented and the rest normal.
    */
   pattern?: BeatEmphasis[];
+  /** Master output volume, 0 (silent) to 1 (full). Default 1. */
+  volume?: number;
   /**
    * Called once per beat, at the moment the beat is *scheduled* (slightly
    * before it sounds), including muted beats. `beat.time` is the audio-clock
@@ -43,6 +45,8 @@ export class Metronome {
   private bpm: number;
   private timeSignature: TimeSignature;
   private pattern: BeatEmphasis[];
+  private volume: number;
+  private masterGain: GainNode | null = null;
   private readonly onBeat?: (beat: BeatInfo) => void;
 
   private isRunning = false;
@@ -59,6 +63,7 @@ export class Metronome {
     this.bpm = clampBpm(options.bpm ?? 120);
     this.timeSignature = options.timeSignature ?? { beats: 4, noteValue: 4 };
     this.pattern = options.pattern ?? defaultPattern(this.timeSignature.beats);
+    this.volume = clamp01(options.volume ?? 1);
     this.onBeat = options.onBeat;
   }
 
@@ -97,6 +102,19 @@ export class Metronome {
     this.pattern = pattern;
   }
 
+  /** Master output volume, 0 (silent) to 1 (full). Safe to call while running. */
+  setVolume(volume: number): void {
+    this.volume = clamp01(volume);
+    if (this.masterGain && this.audioContext) {
+      // Short ramp avoids a click when the level jumps.
+      this.masterGain.gain.setTargetAtTime(
+        this.volume,
+        this.audioContext.currentTime,
+        0.01,
+      );
+    }
+  }
+
   /** Start ticking. Must be triggered by a user gesture (browser autoplay rule). */
   start(): void {
     if (this.isRunning) return;
@@ -106,6 +124,10 @@ export class Metronome {
     // the constructor.
     if (!this.audioContext) {
       this.audioContext = new AudioContext();
+      // All clicks route through a master gain so one volume scales them all.
+      this.masterGain = this.audioContext.createGain();
+      this.masterGain.gain.value = this.volume;
+      this.masterGain.connect(this.audioContext.destination);
     }
     void this.audioContext.resume();
 
@@ -130,6 +152,7 @@ export class Metronome {
     this.stop();
     void this.audioContext?.close();
     this.audioContext = null;
+    this.masterGain = null;
   }
 
   /** Runs every `lookaheadMs`; schedules every beat due within the lookahead window. */
@@ -177,7 +200,7 @@ export class Metronome {
     gain.gain.exponentialRampToValueAtTime(peak, time + 0.001);
     gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
 
-    osc.connect(gain).connect(ctx.destination);
+    osc.connect(gain).connect(this.masterGain ?? ctx.destination);
     osc.start(time);
     osc.stop(time + duration);
   }
@@ -185,4 +208,8 @@ export class Metronome {
 
 function clampBpm(bpm: number): number {
   return Math.max(MIN_BPM, Math.min(MAX_BPM, Math.round(bpm)));
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
 }

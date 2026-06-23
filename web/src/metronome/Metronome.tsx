@@ -3,6 +3,7 @@ import { useMetronome } from './useMetronome';
 import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
 import { EditableNumber } from './EditableNumber';
+import { VolumeControl } from './VolumeControl';
 import { useKeyHeld, useWheelAdjust } from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
 import { usePresets } from '../presets/usePresets';
@@ -19,8 +20,10 @@ export function Metronome() {
     pattern,
     isRunning,
     currentBeat,
+    volume,
     toggle,
     setBpm,
+    setVolume,
     setTimeSignature,
     cycleBeat,
     applySettings,
@@ -101,6 +104,7 @@ export function Metronome() {
         className={`sidebar ${presetsOpen ? 'open' : ''}`}
         aria-hidden={!presetsOpen}
       >
+        <VolumeControl volume={volume} onChange={setVolume} />
         <PresetsPanel
           presets={presets}
           current={current}

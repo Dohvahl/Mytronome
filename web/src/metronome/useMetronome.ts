@@ -16,6 +16,13 @@ const NEXT_EMPHASIS: Record<BeatEmphasis, BeatEmphasis> = {
   muted: 'normal',
 };
 
+const VOLUME_KEY = 'mytronome.volume';
+
+function readSavedVolume(): number {
+  const saved = Number(localStorage.getItem(VOLUME_KEY));
+  return Number.isFinite(saved) && saved >= 0 && saved <= 1 ? saved : 1;
+}
+
 /**
  * Bridges the framework-agnostic Metronome engine to React.
  *
@@ -37,6 +44,7 @@ export function useMetronome() {
   );
   const [isRunning, setIsRunning] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
+  const [volume, setVolumeState] = useState(readSavedVolume);
 
   // Create the engine when the component mounts; dispose it when it unmounts.
   useEffect(() => {
@@ -44,6 +52,7 @@ export function useMetronome() {
       bpm: DEFAULT_BPM,
       timeSignature: DEFAULT_TIME_SIGNATURE,
       pattern: defaultPattern(DEFAULT_TIME_SIGNATURE.beats),
+      volume: readSavedVolume(),
       onBeat: (beat) => {
         // onBeat fires when a beat is *scheduled* (up to ~100ms early). Wait
         // until it actually sounds before flashing the visual, so they line up.
@@ -87,6 +96,13 @@ export function useMetronome() {
     if (!engine) return;
     engine.setBpm(value);
     setBpmState(engine.tempo); // mirror back the clamped, rounded value
+  };
+
+  const setVolume = (value: number) => {
+    const v = Math.max(0, Math.min(1, value));
+    metronomeRef.current?.setVolume(v);
+    setVolumeState(v);
+    localStorage.setItem(VOLUME_KEY, String(v));
   };
 
   const setTimeSignature = (value: TimeSignature) => {
@@ -133,10 +149,12 @@ export function useMetronome() {
     pattern,
     isRunning,
     currentBeat,
+    volume,
     start,
     stop,
     toggle,
     setBpm,
+    setVolume,
     setTimeSignature,
     cycleBeat,
     applySettings,
