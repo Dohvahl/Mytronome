@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useWheelAdjust } from './hooks';
 
 interface Props {
   value: number;
@@ -104,11 +105,20 @@ export function SubdivisionControl({ value, onChange }: Props) {
     };
   }, [open]);
 
+  const subdWheelRef = useWheelAdjust<HTMLButtonElement>((dir) => {
+	const currentIndex = SUBDIVISIONS.findIndex((s) => s.value === value);
+	const nextIndex = currentIndex - dir;
+	if (nextIndex >= 0 && nextIndex < SUBDIVISIONS.length) {
+	  onChange(SUBDIVISIONS[nextIndex].value);
+	}
+  });
+
   return (
     <div className="subdivision-picker" ref={pickerRef}>
         <button
           type="button"
           className="subdivision-trigger"
+          ref={subdWheelRef}
           onClick={() => setOpen((o) => !o)}
           aria-haspopup="listbox"
           aria-expanded={open}
