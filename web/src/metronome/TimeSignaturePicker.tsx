@@ -65,6 +65,16 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing, draftBeats, draftNote]);
 
+  const tsPresetsWheelRef = useWheelAdjust<HTMLButtonElement>((dir) => {
+	const currentIndex = COMMON_TIME_SIGNATURES.findIndex(
+	  (ts) => ts.label === matchedPreset?.label,
+	);
+	const nextIndex = currentIndex - dir;
+	if (nextIndex >= 0 && nextIndex < COMMON_TIME_SIGNATURES.length) {
+	  selectPreset(COMMON_TIME_SIGNATURES[nextIndex].label);
+	}
+  });
+
   return (
     <div className="time-signature">
       {/* Presets dropdown — kept in code, hidden from the layout for now. */}
@@ -92,6 +102,7 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
       <button
         type="button"
         className="ts-trigger"
+		ref={tsPresetsWheelRef}
         onClick={open}
         aria-haspopup="dialog"
         aria-expanded={editing}
