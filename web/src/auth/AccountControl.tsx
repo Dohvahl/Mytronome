@@ -62,6 +62,8 @@ function AccountModal({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const isSignin = mode === 'signin';
+
   return (
     <div className="account-backdrop" onClick={onClose}>
       <div
@@ -81,15 +83,13 @@ function AccountModal({ onClose }: { onClose: () => void }) {
 
         {isAuthenticated ? (
           <div className="account-signed-in">
-            <h3>Account</h3>
+            <h2 className="auth-title">Account</h2>
             <p className="account-status">
-              Signed in as
-              <br />
-              <strong>{email}</strong>
+              Signed in as <strong>{email}</strong>
             </p>
             <button
               type="button"
-              className="auth-submit"
+              className="auth-primary"
               onClick={() => {
                 signOut();
                 onClose();
@@ -99,9 +99,14 @@ function AccountModal({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         ) : (
-          <form className="auth-panel" onSubmit={submit}>
-            <h3>{mode === 'signin' ? 'Sign in' : 'Create account'}</h3>
-            <p className="auth-prompt">Sign in to use server storage.</p>
+          <form className="auth-form" onSubmit={submit}>
+            <h2 className="auth-title">{isSignin ? 'Log in' : 'Create account'}</h2>
+            {!isSignin && (
+              <p className="auth-subtitle">
+                Create an account to sync your presets to the server.
+              </p>
+            )}
+
             <input
               type="email"
               placeholder="Email"
@@ -116,25 +121,28 @@ function AccountModal({ onClose }: { onClose: () => void }) {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              autoComplete={isSignin ? 'current-password' : 'new-password'}
               maxLength={128}
               required
             />
+
             {error && <p className="auth-error">{error}</p>}
-            <button type="submit" className="auth-submit" disabled={busy}>
-              {busy ? '…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+
+            <button type="submit" className="auth-primary" disabled={busy}>
+              {busy ? '…' : isSignin ? 'Log in' : 'Create account'}
             </button>
+
             <button
               type="button"
-              className="auth-toggle"
+              className="auth-switch"
               onClick={() => {
-                setMode(mode === 'signin' ? 'signup' : 'signin');
+                setMode(isSignin ? 'signup' : 'signin');
                 setError(null);
               }}
             >
-              {mode === 'signin'
-                ? 'Need an account? Create one'
-                : 'Have an account? Sign in'}
+              {isSignin
+                ? "Don't have an account yet?"
+                : 'Already have an account? Log in'}
             </button>
           </form>
         )}

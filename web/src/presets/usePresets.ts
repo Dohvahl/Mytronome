@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createPreset,
   duplicatePreset,
@@ -9,10 +9,12 @@ import {
 } from '@mytronome/presets';
 import { LocalStoragePresetStore } from './localStoragePresetStore';
 import { ApiPresetStore } from './apiPresetStore';
+import { GoogleDrivePresetStore } from '../cloud/googleDrivePresetStore';
 import { UnauthorizedError } from '../apiBase';
 import { useAuth } from '../auth/AuthContext';
+import { useDrive } from '../cloud/DriveContext';
 
-export type StorageLocation = 'local' | 'server';
+export type StorageLocation = 'local' | 'server' | 'cloud';
 
 const LOCATION_KEY = 'mytronome.storageLocation';
 
@@ -70,12 +72,15 @@ export function usePresets() {
   const [sessionExpired, setSessionExpired] = useState(false);
 
   const { isAuthenticated, signOut } = useAuth();
+  const { connected: driveConnected } = useDrive();
 
   // Which storage options are usable right now. Local is always available;
-  // Server only once the user is signed in. Cloud joins later.
-  const availableLocations: StorageLocation[] = isAuthenticated
-    ? ['local', 'server']
-    : ['local'];
+  // Server once signed in; Cloud once Google Drive is connected.
+  const availableLocations: StorageLocation[] = [
+    'local',
+    ...(isAuthenticated ? (['server'] as StorageLocation[]) : []),
+    ...(driveConnected ? (['cloud'] as StorageLocation[]) : []),
+  ];
 
   // If the saved choice isn't currently usable (e.g. "server" while signed out),
   // fall back to Local — without forgetting the saved preference.
@@ -84,13 +89,16 @@ export function usePresets() {
     : 'local';
 
   // One store per location; rebuilt only when the effective location changes.
-  const store = useMemo<PresetStore>(
-    () =>
-      effectiveLocation === 'server'
-        ? new ApiPresetStore()
-        : new LocalStoragePresetStore(),
-    [effectiveLocation],
-  );
+  const store = useMemo<PresetStore>(() => {
+    switch (effectiveLocation) {
+      case 'server':
+        return new ApiPresetStore();
+      case 'cloud':
+        return new GoogleDrivePresetStore();
+      default:
+        return new LocalStoragePresetStore();
+    }
+  }, [effectiveLocation]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -124,20 +132,34 @@ export function usePresets() {
 
   const dismissSessionExpired = useCallback(() => setSessionExpired(false), []);
 
-  // Run a mutating store op, then refresh; surface errors instead of throwing.
-  const mutate = async (op: () => Promise<void>) => {
-    try {
-      await op();
-    } catch (e) {
-      if (e instanceof UnauthorizedError) {
-        setSessionExpired(true);
-        signOut();
-      } else {
-        setError(errorMessage(e));
-      }
-      return;
-    }
-    await refresh();
+  // Latest presets for event handlers (avoids stale closures across renders).
+  const presetsRef = useRef(presets);
+  presetsRef.current = presets;
+
+  // Optimistically set the list (instant UI) and remember the order.
+  const commit = (next: Preset[]) => {
+    presetsRef.current = next;
+    setPresets(next);
+    setError(null);
+    writeOrder(effectiveLocation, next.map((p) => p.id));
+  };
+
+  // Serialize background writes so concurrent ops can't clobber each other
+  // (the cloud store read-modify-writes a single file).
+  const writeChain = useRef<Promise<unknown>>(Promise.resolve());
+
+  const enqueueWrite = (op: () => Promise<void>) => {
+    writeChain.current = writeChain.current
+      .then(() => op())
+      .catch((e) => {
+        if (e instanceof UnauthorizedError) {
+          setSessionExpired(true);
+          signOut();
+        } else {
+          setError(errorMessage(e));
+          void refresh(); // reconcile the optimistic change with the store
+        }
+      });
   };
 
   const setLocation = (next: StorageLocation) => {
@@ -145,27 +167,43 @@ export function usePresets() {
     setLocationState(next);
   };
 
-  const savePreset = (settings: PresetSettings, label: string) =>
-    mutate(() => store.save(createPreset(settings, label)));
+  const savePreset = (settings: PresetSettings, label: string) => {
+    const preset = createPreset(settings, label);
+    commit([preset, ...presetsRef.current]); // new presets go to the top
+    enqueueWrite(() => store.save(preset));
+  };
 
   const editPreset = (
     preset: Preset,
     changes: Partial<PresetSettings & { label: string }>,
-  ) => mutate(() => store.save(updatePreset(preset, changes)));
+  ) => {
+    const updated = updatePreset(preset, changes);
+    commit(presetsRef.current.map((p) => (p.id === preset.id ? updated : p)));
+    enqueueWrite(() => store.save(updated));
+  };
 
-  const copyPreset = (preset: Preset) =>
-    mutate(() => store.save(duplicatePreset(preset)));
+  const copyPreset = (preset: Preset) => {
+    const copy = duplicatePreset(preset);
+    const current = presetsRef.current;
+    const index = current.findIndex((p) => p.id === preset.id);
+    const next = [...current];
+    next.splice(index + 1, 0, copy); // place the copy right after the original
+    commit(next);
+    enqueueWrite(() => store.save(copy));
+  };
 
-  const deletePreset = (id: string) => mutate(() => store.remove(id));
+  const deletePreset = (id: string) => {
+    commit(presetsRef.current.filter((p) => p.id !== id));
+    enqueueWrite(() => store.remove(id));
+  };
 
   // Front-end only: reorder the visible presets and remember it per location.
   const reorderPresets = (orderedIds: string[]) => {
-    const byId = new Map(presets.map((p) => [p.id, p] as const));
+    const byId = new Map(presetsRef.current.map((p) => [p.id, p] as const));
     const next = orderedIds
       .map((id) => byId.get(id))
       .filter((p): p is Preset => p !== undefined);
-    setPresets(next);
-    writeOrder(effectiveLocation, next.map((p) => p.id));
+    commit(next);
   };
 
   return {
