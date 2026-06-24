@@ -12,6 +12,8 @@ export interface MetronomeOptions {
   pattern?: BeatEmphasis[];
   /** Master output volume, 0 (silent) to 1 (full). Default 1. */
   volume?: number;
+  /** Clicks per beat: 1 = beat only, 2 = eighths, 3 = triplets, 4 = sixteenths… */
+  subdivisions?: number;
   /**
    * Called once per beat, at the moment the beat is *scheduled* (slightly
    * before it sounds), including muted beats. `beat.time` is the audio-clock
@@ -22,10 +24,33 @@ export interface MetronomeOptions {
 
 const MIN_BPM = 40;
 const MAX_BPM = 320;
+const MAX_SUBDIVISIONS = 16;
 
-/** Build the default emphasis pattern for a given beat count: downbeat only. */
-export function defaultPattern(beats: number): BeatEmphasis[] {
-  return Array.from({ length: beats }, (_, i) => (i === 0 ? 'accent' : 'normal'));
+type ClickLevel = 'accent' | 'normal' | 'sub';
+
+const CLICK_TONES: Record<ClickLevel, { frequency: number; peak: number }> = {
+  accent: { frequency: 1500, peak: 0.6 }, // loud, high downbeat
+  normal: { frequency: 1000, peak: 0.4 }, // the other main beats
+  sub: { frequency: 1200, peak: 0.18 }, // quiet in-between subdivision tick
+};
+
+/** Compound meters (6/8, 9/8, 12/8, …) group their beats in threes. */
+export function isCompound(timeSignature: TimeSignature): boolean {
+  const { beats, noteValue } = timeSignature;
+  return (noteValue === 8 || noteValue === 16) && beats >= 6 && beats % 3 === 0;
+}
+
+/**
+ * The default emphasis pattern: accent the downbeat, plus — in a compound meter
+ * — the start of each group of three, so 6/8 feels like 2, 9/8 like 3, and 12/8
+ * like 4 (instead of six even clicks like 6/4).
+ */
+export function defaultPattern(timeSignature: TimeSignature): BeatEmphasis[] {
+  const compound = isCompound(timeSignature);
+  return Array.from({ length: timeSignature.beats }, (_, i) => {
+    const groupStart = compound ? i % 3 === 0 : i === 0;
+    return groupStart ? 'accent' : 'normal';
+  });
 }
 
 /**
@@ -46,12 +71,14 @@ export class Metronome {
   private timeSignature: TimeSignature;
   private pattern: BeatEmphasis[];
   private volume: number;
+  private subdivisions: number;
   private masterGain: GainNode | null = null;
   private readonly onBeat?: (beat: BeatInfo) => void;
 
   private isRunning = false;
-  private nextBeatTime = 0; // audio-clock time (s) of the next beat to schedule
+  private nextBeatTime = 0; // audio-clock time (s) of the next tick to schedule
   private nextBeatIndex = 0; // which beat of the measure comes next
+  private subIndex = 0; // subdivision within the current beat (0 = the beat)
   private timerId: number | null = null;
 
   /** Schedule beats this far (seconds) into the future. */
@@ -62,8 +89,9 @@ export class Metronome {
   constructor(options: MetronomeOptions = {}) {
     this.bpm = clampBpm(options.bpm ?? 120);
     this.timeSignature = options.timeSignature ?? { beats: 4, noteValue: 4 };
-    this.pattern = options.pattern ?? defaultPattern(this.timeSignature.beats);
+    this.pattern = options.pattern ?? defaultPattern(this.timeSignature);
     this.volume = clamp01(options.volume ?? 1);
+    this.subdivisions = clampSubdivisions(options.subdivisions ?? 1);
     this.onBeat = options.onBeat;
   }
 
@@ -115,6 +143,14 @@ export class Metronome {
     }
   }
 
+  /** Clicks per beat (1 = beat only, 2 = eighths, …). Safe to call while running. */
+  setSubdivisions(subdivisions: number): void {
+    this.subdivisions = clampSubdivisions(subdivisions);
+    if (this.subIndex >= this.subdivisions) {
+      this.subIndex = 0;
+    }
+  }
+
   /** Start ticking. Must be triggered by a user gesture (browser autoplay rule). */
   start(): void {
     if (this.isRunning) return;
@@ -133,6 +169,7 @@ export class Metronome {
 
     this.isRunning = true;
     this.nextBeatIndex = 0;
+    this.subIndex = 0;
     this.nextBeatTime = this.audioContext.currentTime + 0.05; // brief lead-in
     this.timerId = window.setInterval(() => this.scheduler(), this.lookaheadMs);
   }
@@ -155,41 +192,53 @@ export class Metronome {
     this.masterGain = null;
   }
 
-  /** Runs every `lookaheadMs`; schedules every beat due within the lookahead window. */
+  /** Runs every `lookaheadMs`; schedules every tick due within the lookahead window. */
   private scheduler(): void {
     if (!this.audioContext) return;
-    const secondsPerBeat = 60 / this.bpm;
 
     while (
       this.nextBeatTime <
       this.audioContext.currentTime + this.scheduleAheadTime
     ) {
-      // Read the pattern defensively in case its length lags a meter change.
-      const emphasis =
-        this.pattern[this.nextBeatIndex] ??
-        (this.nextBeatIndex === 0 ? 'accent' : 'normal');
+      const secondsPerBeat = 60 / this.bpm;
 
-      if (emphasis !== 'muted') {
-        this.scheduleClick(this.nextBeatTime, emphasis === 'accent');
+      if (this.subIndex === 0) {
+        // The main beat: apply its emphasis and notify the UI.
+        const emphasis =
+          this.pattern[this.nextBeatIndex] ??
+          (this.nextBeatIndex === 0 ? 'accent' : 'normal');
+
+        if (emphasis !== 'muted') {
+          this.scheduleClick(
+            this.nextBeatTime,
+            emphasis === 'accent' ? 'accent' : 'normal',
+          );
+        }
+
+        // Always notify — muted beats still advance the visual indicator.
+        this.onBeat?.({ beatIndex: this.nextBeatIndex, time: this.nextBeatTime });
+      } else {
+        // An in-between subdivision: a softer tick (audio only, no visual).
+        this.scheduleClick(this.nextBeatTime, 'sub');
       }
 
-      // Always notify the UI — muted beats still advance the visual indicator.
-      this.onBeat?.({ beatIndex: this.nextBeatIndex, time: this.nextBeatTime });
-
-      this.nextBeatTime += secondsPerBeat;
-      this.nextBeatIndex = (this.nextBeatIndex + 1) % this.timeSignature.beats;
+      this.nextBeatTime += secondsPerBeat / this.subdivisions;
+      this.subIndex += 1;
+      if (this.subIndex >= this.subdivisions) {
+        this.subIndex = 0;
+        this.nextBeatIndex = (this.nextBeatIndex + 1) % this.timeSignature.beats;
+      }
     }
   }
 
   /** Schedule one short click tone at the given audio-clock time. */
-  private scheduleClick(time: number, isAccent: boolean): void {
+  private scheduleClick(time: number, level: ClickLevel): void {
     const ctx = this.audioContext!;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    // The downbeat is higher-pitched and a touch louder than the other beats.
-    osc.frequency.value = isAccent ? 1500 : 1000;
-    const peak = isAccent ? 0.6 : 0.4;
+    const { frequency, peak } = CLICK_TONES[level];
+    osc.frequency.value = frequency;
     const duration = 0.05;
 
     // A fast attack then exponential decay makes a crisp "tick" rather than a
@@ -212,4 +261,8 @@ function clampBpm(bpm: number): number {
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
+}
+
+function clampSubdivisions(value: number): number {
+  return Math.max(1, Math.min(MAX_SUBDIVISIONS, Math.round(value)));
 }

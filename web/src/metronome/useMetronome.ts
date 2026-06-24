@@ -23,6 +23,13 @@ function readSavedVolume(): number {
   return Number.isFinite(saved) && saved >= 0 && saved <= 1 ? saved : 1;
 }
 
+const SUBDIVISIONS_KEY = 'mytronome.subdivisions';
+
+function readSavedSubdivisions(): number {
+  const saved = Number(localStorage.getItem(SUBDIVISIONS_KEY));
+  return Number.isInteger(saved) && saved >= 1 && saved <= 16 ? saved : 1;
+}
+
 /**
  * Bridges the framework-agnostic Metronome engine to React.
  *
@@ -40,19 +47,21 @@ export function useMetronome() {
   const [timeSignature, setTimeSignatureState] =
     useState<TimeSignature>(DEFAULT_TIME_SIGNATURE);
   const [pattern, setPatternState] = useState<BeatEmphasis[]>(() =>
-    defaultPattern(DEFAULT_TIME_SIGNATURE.beats),
+    defaultPattern(DEFAULT_TIME_SIGNATURE),
   );
   const [isRunning, setIsRunning] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
   const [volume, setVolumeState] = useState(readSavedVolume);
+  const [subdivisions, setSubdivisionsState] = useState(readSavedSubdivisions);
 
   // Create the engine when the component mounts; dispose it when it unmounts.
   useEffect(() => {
     const engine = new Metronome({
       bpm: DEFAULT_BPM,
       timeSignature: DEFAULT_TIME_SIGNATURE,
-      pattern: defaultPattern(DEFAULT_TIME_SIGNATURE.beats),
+      pattern: defaultPattern(DEFAULT_TIME_SIGNATURE),
       volume: readSavedVolume(),
+      subdivisions: readSavedSubdivisions(),
       onBeat: (beat) => {
         // onBeat fires when a beat is *scheduled* (up to ~100ms early). Wait
         // until it actually sounds before flashing the visual, so they line up.
@@ -105,6 +114,12 @@ export function useMetronome() {
     localStorage.setItem(VOLUME_KEY, String(v));
   };
 
+  const setSubdivisions = (value: number) => {
+    metronomeRef.current?.setSubdivisions(value);
+    setSubdivisionsState(value);
+    localStorage.setItem(SUBDIVISIONS_KEY, String(value));
+  };
+
   const setTimeSignature = (value: TimeSignature) => {
     const engine = metronomeRef.current;
     // Changing the beat COUNT resets the accent pattern to default; changing
@@ -112,7 +127,7 @@ export function useMetronome() {
     const nextPattern =
       value.beats === timeSignature.beats
         ? pattern
-        : defaultPattern(value.beats);
+        : defaultPattern(value);
     engine?.setTimeSignature(value);
     engine?.setPattern(nextPattern);
     setTimeSignatureState(value);
@@ -150,11 +165,13 @@ export function useMetronome() {
     isRunning,
     currentBeat,
     volume,
+    subdivisions,
     start,
     stop,
     toggle,
     setBpm,
     setVolume,
+    setSubdivisions,
     setTimeSignature,
     cycleBeat,
     applySettings,

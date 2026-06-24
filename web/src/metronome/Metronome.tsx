@@ -4,10 +4,12 @@ import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
 import { EditableNumber } from './EditableNumber';
 import { VolumeControl } from './VolumeControl';
+import { SubdivisionControl } from './SubdivisionControl';
 import { useKeyHeld, useResizableWidth, useWheelAdjust } from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
 import { usePresets } from '../presets/usePresets';
 import { samePresetSettings } from '@mytronome/presets';
+import { isCompound } from '@mytronome/engine';
 import './Metronome.css';
 
 const MIN_BPM = 40;
@@ -21,9 +23,11 @@ export function Metronome() {
     isRunning,
     currentBeat,
     volume,
+    subdivisions,
     toggle,
     setBpm,
     setVolume,
+    setSubdivisions,
     setTimeSignature,
     cycleBeat,
     applySettings,
@@ -164,6 +168,7 @@ export function Metronome() {
         pattern={pattern}
         currentBeat={currentBeat}
         onCycle={cycleBeat}
+        beatsPerGroup={isCompound(timeSignature) ? 3 : 0}
       />
 
       <div className="tempo-row">
@@ -206,7 +211,10 @@ export function Metronome() {
         ref={sliderWheelRef}
       />
 
-      <TimeSignaturePicker value={timeSignature} onChange={setTimeSignature} />
+      <div className="meter-row">
+        <TimeSignaturePicker value={timeSignature} onChange={setTimeSignature} />
+        <SubdivisionControl value={subdivisions} onChange={setSubdivisions} />
+      </div>
 
       <button
         className={`play ${isRunning ? 'running' : ''}`}
