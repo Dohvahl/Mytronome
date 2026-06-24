@@ -216,7 +216,11 @@ export function Metronome() {
 
       <div className="meter-row">
         <TimeSignaturePicker value={timeSignature} onChange={setTimeSignature} />
-        <SubdivisionControl value={subdivisions} onChange={setSubdivisions} />
+        <SubdivisionControl
+          value={subdivisions}
+          onChange={setSubdivisions}
+          beatNoteValue={timeSignature.noteValue}
+        />
       </div>
 
       <button

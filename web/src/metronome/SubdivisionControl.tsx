@@ -1,28 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useWheelAdjust } from './hooks';
+import { subdivisionOptions, type SubdivisionOption } from './subdivisions';
 
 interface Props {
   value: number;
   onChange: (value: number) => void;
+  /** The beat's note value (denominator); subdivision glyphs are relative to it. */
+  beatNoteValue: number;
 }
-
-interface Sub {
-  value: number;
-  name: string;
-  glyph?: string; // single-note Unicode glyph (non-triplets)
-  beams?: number; // beamed triplet group with this many beams (triplets)
-}
-
-const SUBDIVISIONS: Sub[] = [
-  { value: 1, name: 'No subdivision', glyph: '\u{1D15F}' },
-  { value: 2, name: 'Eighths', glyph: '\u{1D160}' },
-  { value: 3, name: 'Eighth triplets', beams: 1 },
-  { value: 4, name: 'Sixteenths', glyph: '\u{1D161}' },
-  { value: 6, name: 'Sixteenth triplets', beams: 2 },
-  { value: 8, name: 'Thirty-seconds', glyph: '\u{1D162}' },
-  { value: 12, name: 'Thirty-second triplets', beams: 3 },
-  { value: 16, name: 'Sixty-fourths', glyph: '\u{1D163}' },
-];
 
 function TripletGlyph({ beams }: { beams: number }) {
   const noteX = [5, 14, 23];
@@ -77,15 +62,18 @@ function TripletGlyph({ beams }: { beams: number }) {
   );
 }
 
-function Glyph({ sub }: { sub: Sub }) {
-  if (sub.glyph) return <span className="sub-note">{sub.glyph}</span>;
-  return <TripletGlyph beams={sub.beams ?? 1} />;
+function Glyph({ option }: { option: SubdivisionOption }) {
+  if (option.glyph) return <span className="sub-note">{option.glyph}</span>;
+  return <TripletGlyph beams={option.beams ?? 0} />;
 }
 
-export function SubdivisionControl({ value, onChange }: Props) {
+export function SubdivisionControl({ value, onChange, beatNoteValue }: Props) {
   const [open, setOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
-  const current = SUBDIVISIONS.find((s) => s.value === value) ?? SUBDIVISIONS[0];
+
+  // Which subdivisions are offered depends on the beat note value.
+  const options = subdivisionOptions(beatNoteValue);
+  const current = options.find((o) => o.count === value) ?? options[0];
 
   useEffect(() => {
     if (!open) return;
@@ -106,11 +94,11 @@ export function SubdivisionControl({ value, onChange }: Props) {
   }, [open]);
 
   const subdWheelRef = useWheelAdjust<HTMLButtonElement>((dir) => {
-	const currentIndex = SUBDIVISIONS.findIndex((s) => s.value === value);
-	const nextIndex = currentIndex - dir;
-	if (nextIndex >= 0 && nextIndex < SUBDIVISIONS.length) {
-	  onChange(SUBDIVISIONS[nextIndex].value);
-	}
+    const currentIndex = options.findIndex((o) => o.count === value);
+    const nextIndex = currentIndex - dir;
+    if (nextIndex >= 0 && nextIndex < options.length) {
+      onChange(options[nextIndex].count);
+    }
   });
 
   return (
@@ -124,25 +112,25 @@ export function SubdivisionControl({ value, onChange }: Props) {
           aria-expanded={open}
           aria-label={`Subdivision: ${current.name}`}
         >
-          <Glyph sub={current} />
+          <Glyph option={current} />
           <span className="subdivision-chevron" aria-hidden="true">
             ▾
           </span>
         </button>
         {open && (
           <ul className="subdivision-menu" role="listbox">
-            {SUBDIVISIONS.map((s) => (
-              <li key={s.value} role="option" aria-selected={s.value === value}>
+            {options.map((o) => (
+              <li key={o.count} role="option" aria-selected={o.count === value}>
                 <button
                   type="button"
-                  className={s.value === value ? 'active' : ''}
+                  className={o.count === value ? 'active' : ''}
                   onClick={() => {
-                    onChange(s.value);
+                    onChange(o.count);
                     setOpen(false);
                   }}
-                  title={s.name}
+                  title={o.name}
                 >
-                  <Glyph sub={s} />
+                  <Glyph option={o} />
                 </button>
               </li>
             ))}

@@ -5,6 +5,7 @@ import {
   type BeatEmphasis,
   type TimeSignature,
 } from '@mytronome/engine';
+import { clampSubdivision } from './subdivisions';
 
 const DEFAULT_BPM = 120;
 const DEFAULT_TIME_SIGNATURE: TimeSignature = { beats: 4, noteValue: 4 };
@@ -132,6 +133,11 @@ export function useMetronome() {
     engine?.setPattern(nextPattern);
     setTimeSignatureState(value);
     setPatternState(nextPattern);
+
+    // Subdivisions are shown relative to the beat. Keep the same division when
+    // the new beat note can still represent it; otherwise step to the nearest.
+    const nextSub = clampSubdivision(subdivisions, value.noteValue);
+    if (nextSub !== subdivisions) setSubdivisions(nextSub);
   };
 
   const cycleBeat = (index: number) => {
@@ -156,6 +162,10 @@ export function useMetronome() {
     setBpmState(engine?.tempo ?? settings.bpm);
     setTimeSignatureState(settings.timeSignature);
     setPatternState(settings.pattern);
+
+    // Keep the subdivision valid for the preset's beat note value.
+    const nextSub = clampSubdivision(subdivisions, settings.timeSignature.noteValue);
+    if (nextSub !== subdivisions) setSubdivisions(nextSub);
   };
 
   return {

@@ -14,9 +14,6 @@ interface Props {
 
 const MIN_BEATS = 1;
 const MAX_BEATS = 16;
-const CUSTOM = 'custom';
-// The preset dropdown is kept in code but hidden from the layout for now.
-const SHOW_PRESETS = false;
 
 // Allowed beat counts, as an array so the spinner steps through them.
 const BEAT_OPTIONS = Array.from(
@@ -77,27 +74,6 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
 
   return (
     <div className="time-signature">
-      {/* Presets dropdown — kept in code, hidden from the layout for now. */}
-      {SHOW_PRESETS && (
-        <select
-          className="ts-presets"
-          value={matchedPreset ? matchedPreset.label : CUSTOM}
-          onChange={(e) => selectPreset(e.target.value)}
-          aria-label="Common time signatures"
-        >
-          {!matchedPreset && (
-            <option value={CUSTOM} disabled>
-              Custom ({value.beats}/{value.noteValue})
-            </option>
-          )}
-          {COMMON_TIME_SIGNATURES.map((ts) => (
-            <option key={ts.label} value={ts.label}>
-              {ts.label}
-            </option>
-          ))}
-        </select>
-      )}
-
       {/* Display form — stays in place so opening the editor doesn't reflow. */}
       <button
         type="button"

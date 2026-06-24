@@ -18,7 +18,7 @@ export const COMMON_TIME_SIGNATURES: NamedTimeSignature[] = [
 ];
 
 /** Selectable beat-unit denominators for the manual picker. */
-export const NOTE_VALUES = [1, 2, 4, 8, 16] as const;
+export const NOTE_VALUES = [1, 2, 4, 8] as const;
 
 export function isSameSignature(a: TimeSignature, b: TimeSignature): boolean {
   return a.beats === b.beats && a.noteValue === b.noteValue;
