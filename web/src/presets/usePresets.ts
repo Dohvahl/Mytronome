@@ -24,6 +24,36 @@ function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : 'Something went wrong.';
 }
 
+// Display order is a front-end concern, stored per location as a list of ids.
+const ORDER_KEY_PREFIX = 'mytronome.presetOrder.';
+
+function readOrder(location: StorageLocation): string[] {
+  try {
+    const raw = localStorage.getItem(ORDER_KEY_PREFIX + location);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeOrder(location: StorageLocation, ids: string[]): void {
+  localStorage.setItem(ORDER_KEY_PREFIX + location, JSON.stringify(ids));
+}
+
+/** Sort by the saved id order; presets not in it (new) sort to the top. */
+function orderPresets(list: Preset[], order: string[]): Preset[] {
+  const rank = new Map(order.map((id, i) => [id, i] as const));
+  return [...list].sort((a, b) => {
+    const ra = rank.get(a.id);
+    const rb = rank.get(b.id);
+    if (ra === undefined && rb === undefined) return b.updatedAt - a.updatedAt;
+    if (ra === undefined) return -1;
+    if (rb === undefined) return 1;
+    return ra - rb;
+  });
+}
+
 /**
  * Loads and manages presets from the chosen storage location. Both stores
  * implement the same PresetStore interface, so switching between localStorage
@@ -67,8 +97,9 @@ export function usePresets() {
     setError(null);
     try {
       const all = await store.list();
-      all.sort((a, b) => b.updatedAt - a.updatedAt);
-      setPresets(all);
+      const ordered = orderPresets(all, readOrder(effectiveLocation));
+      setPresets(ordered);
+      writeOrder(effectiveLocation, ordered.map((p) => p.id));
     } catch (e) {
       setPresets([]);
       if (e instanceof UnauthorizedError) {
@@ -80,7 +111,7 @@ export function usePresets() {
     } finally {
       setLoading(false);
     }
-  }, [store, signOut]);
+  }, [store, signOut, effectiveLocation]);
 
   useEffect(() => {
     void refresh();
@@ -127,6 +158,16 @@ export function usePresets() {
 
   const deletePreset = (id: string) => mutate(() => store.remove(id));
 
+  // Front-end only: reorder the visible presets and remember it per location.
+  const reorderPresets = (orderedIds: string[]) => {
+    const byId = new Map(presets.map((p) => [p.id, p] as const));
+    const next = orderedIds
+      .map((id) => byId.get(id))
+      .filter((p): p is Preset => p !== undefined);
+    setPresets(next);
+    writeOrder(effectiveLocation, next.map((p) => p.id));
+  };
+
   return {
     presets,
     location: effectiveLocation,
@@ -140,5 +181,6 @@ export function usePresets() {
     editPreset,
     copyPreset,
     deletePreset,
+    reorderPresets,
   };
 }

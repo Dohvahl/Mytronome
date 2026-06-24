@@ -8,6 +8,13 @@ interface Props {
   onRename: (preset: Preset, label: string) => void;
   onCopy: (preset: Preset) => void;
   onDelete: (preset: Preset) => void;
+  // Drag-and-drop reordering (front-end only).
+  isDragging: boolean;
+  isDropTarget: boolean;
+  onDragStart: (id: string) => void;
+  onDragOver: (id: string) => void;
+  onDrop: (id: string) => void;
+  onDragEnd: () => void;
 }
 
 export function PresetItem({
@@ -17,6 +24,12 @@ export function PresetItem({
   onRename,
   onCopy,
   onDelete,
+  isDragging,
+  isDropTarget,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
 }: Props) {
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(preset.label);
@@ -42,48 +55,77 @@ export function PresetItem({
   const hasLabel = preset.label.trim() !== '';
   const summary = `${preset.bpm} BPM · ${preset.timeSignature.beats}/${preset.timeSignature.noteValue}`;
 
-  return (
-    <li className="preset-item">
-      <div className="preset-main">
-        {renaming ? (
-          <input
-            ref={inputRef}
-            className="preset-rename"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commitRename();
-              else if (e.key === 'Escape') setRenaming(false);
-            }}
-            onBlur={commitRename}
-            maxLength={200}
-            placeholder="Label"
-          />
-        ) : (
-          <button
-            className="preset-load"
-            onClick={() => onLoad(preset)}
-            title="Load this preset"
-          >
-            <span className="preset-label">{hasLabel ? preset.label : summary}</span>
-            {hasLabel && <span className="preset-summary">{summary}</span>}
-          </button>
-        )}
-      </div>
+  const className = ['preset-item', isDragging ? 'dragging' : '', isDropTarget ? 'drop-target' : '']
+    .filter(Boolean)
+    .join(' ');
 
-      <div className="preset-actions">
-        <button onClick={() => onUpdateToCurrent(preset)} title="Overwrite with current settings">
-          Update
-        </button>
-        <button onClick={startRename} title="Rename">
-          Rename
-        </button>
-        <button onClick={() => onCopy(preset)} title="Duplicate">
-          Copy
-        </button>
-        <button onClick={() => onDelete(preset)} title="Delete">
-          Delete
-        </button>
+  return (
+    <li
+      className={className}
+      // Disable dragging while renaming so text selection works.
+      draggable={!renaming}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', preset.id);
+        onDragStart(preset.id);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        onDragOver(preset.id);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDrop(preset.id);
+      }}
+      onDragEnd={onDragEnd}
+    >
+      <span className="preset-grip" aria-hidden="true" title="Drag to reorder">
+        ⠿
+      </span>
+
+      <div className="preset-body">
+        <div className="preset-main">
+          {renaming ? (
+            <input
+              ref={inputRef}
+              className="preset-rename"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitRename();
+                else if (e.key === 'Escape') setRenaming(false);
+              }}
+              onBlur={commitRename}
+              maxLength={200}
+              placeholder="Label"
+            />
+          ) : (
+            <button
+              className="preset-load"
+              onClick={() => onLoad(preset)}
+              title="Load this preset"
+            >
+              <span className="preset-label">{hasLabel ? preset.label : summary}</span>
+              {hasLabel && <span className="preset-summary">{summary}</span>}
+            </button>
+          )}
+        </div>
+
+        <div className="preset-actions">
+          <button onClick={() => onUpdateToCurrent(preset)} title="Overwrite with current settings">
+            Update
+          </button>
+          <button onClick={startRename} title="Rename">
+            Rename
+          </button>
+          <button onClick={() => onCopy(preset)} title="Duplicate">
+            Copy
+          </button>
+          <button onClick={() => onDelete(preset)} title="Delete">
+            Delete
+          </button>
+        </div>
       </div>
     </li>
   );

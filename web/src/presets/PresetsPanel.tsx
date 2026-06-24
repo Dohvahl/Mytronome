@@ -27,6 +27,7 @@ interface Props {
   onRename: (preset: Preset, label: string) => void;
   onCopy: (preset: Preset) => void;
   onDelete: (id: string) => void;
+  onReorder: (orderedIds: string[]) => void;
 }
 
 export function PresetsPanel({
@@ -44,12 +45,35 @@ export function PresetsPanel({
   onRename,
   onCopy,
   onDelete,
+  onReorder,
 }: Props) {
   const [label, setLabel] = useState('');
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const handleSave = () => {
     onSave(current, label);
     setLabel('');
+  };
+
+  const handleDrop = (targetId: string) => {
+    if (dragId && dragId !== targetId) {
+      const ids = presets.map((p) => p.id);
+      const from = ids.indexOf(dragId);
+      const to = ids.indexOf(targetId);
+      if (from !== -1 && to !== -1) {
+        ids.splice(from, 1);
+        ids.splice(to, 0, dragId);
+        onReorder(ids);
+      }
+    }
+    setDragId(null);
+    setOverId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragId(null);
+    setOverId(null);
   };
 
   return (
@@ -115,6 +139,14 @@ export function PresetsPanel({
               onRename={onRename}
               onCopy={onCopy}
               onDelete={(p) => onDelete(p.id)}
+              isDragging={dragId === preset.id}
+              isDropTarget={
+                overId === preset.id && dragId !== null && dragId !== preset.id
+              }
+              onDragStart={setDragId}
+              onDragOver={setOverId}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
             />
           ))}
         </ul>

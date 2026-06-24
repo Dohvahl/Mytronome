@@ -4,7 +4,7 @@ import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
 import { EditableNumber } from './EditableNumber';
 import { VolumeControl } from './VolumeControl';
-import { useKeyHeld, useWheelAdjust } from './hooks';
+import { useKeyHeld, useResizableWidth, useWheelAdjust } from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
 import { usePresets } from '../presets/usePresets';
 import { samePresetSettings } from '@mytronome/presets';
@@ -42,12 +42,21 @@ export function Metronome() {
     editPreset,
     copyPreset,
     deletePreset,
+    reorderPresets,
   } = usePresets();
 
   // Left presets drawer open/closed.
   const [presetsOpen, setPresetsOpen] = useState(false);
   // Id of the most recently loaded preset, so we can show its (live) label.
   const [loadedPresetId, setLoadedPresetId] = useState<string | null>(null);
+
+  // The drawer is horizontally resizable; its width is remembered.
+  const { width: drawerWidth, onResizeStart } = useResizableWidth({
+    storageKey: 'mytronome.drawerWidth',
+    defaultWidth: 340,
+    min: 280,
+    max: 600,
+  });
 
   // The "session expired" notice persists until the drawer is closed.
   useEffect(() => {
@@ -102,9 +111,11 @@ export function Metronome() {
 
       <aside
         className={`sidebar ${presetsOpen ? 'open' : ''}`}
+        style={{ width: drawerWidth }}
         aria-hidden={!presetsOpen}
       >
-        <VolumeControl volume={volume} onChange={setVolume} />
+        <div className="sidebar-content">
+          <VolumeControl volume={volume} onChange={setVolume} />
         <PresetsPanel
           presets={presets}
           current={current}
@@ -124,6 +135,15 @@ export function Metronome() {
           onRename={(preset, label) => editPreset(preset, { label })}
           onCopy={copyPreset}
           onDelete={deletePreset}
+          onReorder={reorderPresets}
+        />
+        </div>
+        <div
+          className="sidebar-resize"
+          onPointerDown={onResizeStart}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize panel"
         />
       </aside>
 
