@@ -92,7 +92,7 @@
 .editable-number {
   display: inline-block;
   box-sizing: border-box;
-  width: 2.6em;
+  width: 1.8em;
   padding: 0 6px;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -168,7 +168,7 @@ input.editable-number::-webkit-inner-spin-button {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-width: 70px;
+  min-width: 64px;
   padding: 5px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -330,7 +330,7 @@ input.editable-number::-webkit-inner-spin-button {
 .ts-unit {
   display: inline-block;
   box-sizing: border-box;
-  width: 2.8em;
+  width: 2.0em;
   height: 1.3em;
   line-height: calc(1.3em - 2px);
   padding: 0 22px;
