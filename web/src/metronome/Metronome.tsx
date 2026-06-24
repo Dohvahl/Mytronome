@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMetronome } from './useMetronome';
 import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
-import { EditableNumber } from './EditableNumber';
+import { TempoControl } from './TempoControl';
 import { VolumeControl } from './VolumeControl';
 import { SubdivisionControl } from './SubdivisionControl';
 import { HelpHint } from './HelpHint';
@@ -96,18 +96,7 @@ export function Metronome() {
         aria-label="Toggle presets panel"
         aria-expanded={presetsOpen}
       >
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        >
-          <path d="M3 6h18M3 12h18M3 18h18" />
-        </svg>
+		&#9776;
       </button>
 
       <HelpHint />
@@ -184,14 +173,15 @@ export function Metronome() {
         </button>
 
         <div className="tempo-display" ref={tempoWheelRef}>
-          <EditableNumber
-            className="bpm-number"
-            value={bpm}
-            min={MIN_BPM}
-            max={MAX_BPM}
-            onCommit={setBpm}
-            ariaLabel="Tempo in BPM"
-          />
+          <div className="tempo-value-area">
+            <TempoControl
+              value={bpm}
+              min={MIN_BPM}
+              max={MAX_BPM}
+              step={step}
+              onChange={setBpm}
+            />
+          </div>
           <span className="unit">BPM</span>
         </div>
 

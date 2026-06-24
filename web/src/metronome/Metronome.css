@@ -209,10 +209,80 @@ input.editable-number::-webkit-inner-spin-button {
 }
 
 /* Big tempo number */
-.bpm-number {
-  font-weight: 600;
-  font-size: 64px;
-  font-family: var(--heading);
+/* Fixed-size area so switching display ↔ edit doesn't reflow the layout. */
+.tempo-value-area {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Display mode — a bordered chip that reads as clickable. */
+.bpm-chip {
+  box-sizing: border-box;
+  width: 2.6em;
+  font: 600 64px/1.1 var(--heading);
+  color: var(--text-h);
+  padding: 4px 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.bpm-chip:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Edit mode — a WheelPicker-style box: typeable centre, faint neighbours. */
+.bpm-wheel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 2.6em;
+  font-size: 64px; /* so the em-based width matches the chip */
+  border: 1px solid var(--accent-border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.bpm-ghost {
+  height: 24px;
+  line-height: 24px;
+  font-size: 16px;
+  color: var(--text);
+  opacity: 0.4;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.bpm-ghost:hover {
+  opacity: 0.75;
+}
+.bpm-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 70px;
+  padding: 0;
+  font: 600 64px/70px var(--heading);
+  text-align: center;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: none;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.bpm-input:focus {
+  outline: none;
+}
+.bpm-input::-webkit-outer-spin-button,
+.bpm-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .tempo-slider {
