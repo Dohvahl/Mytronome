@@ -341,10 +341,6 @@ input.editable-number::-webkit-inner-spin-button {
 .beat-dot:hover {
   border-color: var(--accent-border);
 }
-/* Extra space before each group in a compound meter (6/8, 9/8, 12/8). */
-.beat-dot.group-start {
-  margin-left: 16px;
-}
 
 /* Resting look per emphasis */
 .beat-dot.accent {
