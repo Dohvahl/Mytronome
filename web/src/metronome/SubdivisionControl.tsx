@@ -114,7 +114,7 @@ export function SubdivisionControl({ value, onChange, beatNoteValue }: Props) {
         >
           <Glyph option={current} />
           <span className="subdivision-chevron" aria-hidden="true">
-            ▾
+            &#9662;
           </span>
         </button>
         {open && (

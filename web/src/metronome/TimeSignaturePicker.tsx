@@ -88,7 +88,7 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
           {value.beats}/{value.noteValue}
         </span>
         <span className="ts-trigger-chevron" aria-hidden="true">
-          ▾
+          &#9662;
         </span>
       </button>
 
@@ -118,7 +118,7 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
               onClick={accept}
               aria-label="Apply time signature"
             >
-              ✓
+              &#10003;
             </button>
           </div>
         </>

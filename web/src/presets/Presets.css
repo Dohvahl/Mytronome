@@ -13,6 +13,7 @@
   border-radius: 10px;
   background: var(--bg);
   color: var(--text-h);
+  font-size: 22px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }

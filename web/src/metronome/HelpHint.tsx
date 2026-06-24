@@ -87,7 +87,7 @@ export function HelpHint() {
           <h3 className="help-group">Presets</h3>
           <ul className="help-list">
             <li>
-              Open the <kbd>☰</kbd> menu to save, load, and reorder presets
+              Open the <kbd>&#9776;</kbd> menu to save, load, and reorder presets
             </li>
           </ul>
         </div>
