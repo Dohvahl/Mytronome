@@ -5,6 +5,7 @@ import { TimeSignaturePicker } from './TimeSignaturePicker';
 import { EditableNumber } from './EditableNumber';
 import { VolumeControl } from './VolumeControl';
 import { SubdivisionControl } from './SubdivisionControl';
+import { HelpHint } from './HelpHint';
 import { useKeyHeld, useResizableWidth, useWheelAdjust } from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
 import { usePresets } from '../presets/usePresets';
@@ -108,6 +109,8 @@ export function Metronome() {
           <path d="M3 6h18M3 12h18M3 18h18" />
         </svg>
       </button>
+
+      <HelpHint />
 
       {presetsOpen && (
         <div className="sidebar-backdrop" onClick={() => setPresetsOpen(false)} />

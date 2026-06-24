@@ -8,6 +8,93 @@
   gap: 28px;
 }
 
+/* --- "How to use" hint (top-right, mirrors the ☰ menu top-left) --- */
+:root
+{
+	--help-icon-color: var(--border);
+	--help-icon-border-radius: 44px;
+}
+.help-hint {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 30;
+}
+.help-toggle {
+  width: var(--help-icon-border-radius);
+  height: var(--help-icon-border-radius);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5em;
+  font-weight: 600;
+  border: none;
+  background: var(--bg);
+  color: var(--help-icon-color);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.help-toggle:hover,
+.help-toggle:focus-visible {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  outline: none;
+}
+
+/* Drops down from the button, aligned to the right edge. */
+.help-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  max-width: 86vw;
+  padding: 16px 18px;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.help-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+.help-group {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+}
+.help-group:first-of-type {
+  margin-top: 0;
+}
+.help-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.help-list li {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.help-list kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font: 600 12px/1.4 var(--sans);
+  color: var(--text-h);
+  background: var(--accent-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+
 /* Name of the currently loaded preset — faint, and reserves its line so the
    layout doesn't shift when it appears/disappears. */
 .loaded-preset {
@@ -153,6 +240,7 @@ input.editable-number::-webkit-inner-spin-button {
 
 /* Time signature + subdivision side by side */
 .meter-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -308,47 +396,117 @@ input.editable-number::-webkit-inner-spin-button {
   border-color: var(--accent-border);
 }
 
-/* #6 — big manual display, styled like the tempo display */
-.ts-manual {
-  display: flex;
+/* #6 — display form: a dropdown-style button showing the current signature,
+   sized to match the subdivision selector. */
+.ts-trigger {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  cursor: default;
-}
-.ts-number {
-  font-weight: 600;
-  font-size: 44px;
-  font-family: var(--heading);
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 64px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
   color: var(--text-h);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
 }
-.ts-slash {
-  font: 300 36px/1 var(--heading);
+.ts-trigger:hover {
+  border-color: var(--accent-border);
+}
+.ts-trigger-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+.ts-trigger-chevron {
+  font-size: 11px;
   color: var(--text);
 }
-/* The unit's edit-mode dropdown, sized to match the big number */
-/* Shared box for the unit's display (span) and edit (select) states. */
-.ts-unit {
-  display: inline-block;
-  box-sizing: border-box;
-  width: 2.0em;
-  height: 1.3em;
-  line-height: calc(1.3em - 2px);
-  padding: 0 22px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  text-align: center;
-  background-color: transparent;
-  appearance: none;
+
+/* Edit form: a centered overlay on the same vertical plane as the trigger,
+   floating over a semi-transparent backdrop (so the row doesn't reflow). */
+.ts-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.25);
 }
-select.ts-unit {
+.ts-editor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 41;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.ts-slash {
+  font: 300 22px/1 var(--heading);
+  color: var(--text);
+}
+
+/* A vertical select-wheel: current value centered and highlighted, with its
+   neighbours faint above and below. Scroll (or arrow keys) to change. */
+.ts-wheel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 2.6em;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  cursor: ns-resize;
+  user-select: none;
+}
+.ts-wheel:focus-visible {
+  outline: none;
   border-color: var(--accent-border);
-  background-color: var(--accent-bg);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23aa3bff' stroke-width='2'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 12px 8px;
+}
+.ts-wheel-option {
+  height: 26px;
+  line-height: 26px;
+}
+.ts-wheel-option.ghost {
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.4;
   cursor: pointer;
 }
-select.ts-unit:focus {
-  outline: none;
+.ts-wheel-option.ghost:hover {
+  opacity: 0.75;
+}
+.ts-wheel-option.current {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.ts-accept {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.ts-accept:hover {
+  background: var(--accent);
+  color: #fff;
 }

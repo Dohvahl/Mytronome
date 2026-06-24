@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { TimeSignature } from '@mytronome/engine';
 import {
   COMMON_TIME_SIGNATURES,
   NOTE_VALUES,
   isSameSignature,
 } from './timeSignatures';
-import { EditableNumber } from './EditableNumber';
+import { useWheelAdjust } from './hooks';
 
 interface Props {
   value: TimeSignature;
@@ -18,6 +18,12 @@ const CUSTOM = 'custom';
 // The preset dropdown is kept in code but hidden from the layout for now.
 const SHOW_PRESETS = false;
 
+// Allowed beat counts, as an array so the spinner steps through them.
+const BEAT_OPTIONS = Array.from(
+  { length: MAX_BEATS - MIN_BEATS + 1 },
+  (_, i) => MIN_BEATS + i,
+);
+
 export function TimeSignaturePicker({ value, onChange }: Props) {
   // Which preset (if any) matches the current value; otherwise it's "Custom".
   const matchedPreset = COMMON_TIME_SIGNATURES.find((ts) =>
@@ -28,6 +34,36 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
     const preset = COMMON_TIME_SIGNATURES.find((ts) => ts.label === label);
     if (preset) onChange(preset.value);
   };
+
+  // Closed = show the current signature as a dropdown-style button. Open =
+  // show two spinners + an accept button. Edits are drafted locally and only
+  // applied (via onChange) when accepted.
+  const [editing, setEditing] = useState(false);
+  const [draftBeats, setDraftBeats] = useState(value.beats);
+  const [draftNote, setDraftNote] = useState(value.noteValue);
+
+  const open = () => {
+    setDraftBeats(value.beats);
+    setDraftNote(value.noteValue);
+    setEditing(true);
+  };
+  const accept = () => {
+    onChange({ beats: draftBeats, noteValue: draftNote });
+    setEditing(false);
+  };
+
+  // While editing: Enter accepts, Escape cancels (a click on the backdrop also
+  // cancels). Re-subscribes when the draft changes so accept sees the latest.
+  useEffect(() => {
+    if (!editing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') accept();
+      else if (e.key === 'Escape') setEditing(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, draftBeats, draftNote]);
 
   return (
     <div className="time-signature">
@@ -52,74 +88,118 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
         </select>
       )}
 
-      {/* #6 — big manual display; double-click a part to edit it */}
-      <div className="ts-manual">
-        <EditableNumber
-          className="ts-number"
-          value={value.beats}
-          min={MIN_BEATS}
-          max={MAX_BEATS}
-          onCommit={(beats) => onChange({ ...value, beats })}
-          ariaLabel="Beats per measure"
-        />
-        <span className="ts-slash">/</span>
-        <EditableUnit
-          value={value.noteValue}
-          options={NOTE_VALUES}
-          onChange={(noteValue) => onChange({ ...value, noteValue })}
-        />
-      </div>
+      {/* Display form — stays in place so opening the editor doesn't reflow. */}
+      <button
+        type="button"
+        className="ts-trigger"
+        onClick={open}
+        aria-haspopup="dialog"
+        aria-expanded={editing}
+        aria-label={`Time signature: ${value.beats}/${value.noteValue}. Click to change.`}
+      >
+        <span className="ts-trigger-value">
+          {value.beats}/{value.noteValue}
+        </span>
+        <span className="ts-trigger-chevron" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+
+      {/* Edit form — a centered overlay on the same vertical plane as the row,
+          over a semi-transparent backdrop (click it to cancel). */}
+      {editing && (
+        <>
+          <div className="ts-backdrop" onClick={() => setEditing(false)} />
+          <div className="ts-editor" role="dialog" aria-label="Edit time signature">
+            <WheelPicker
+              value={draftBeats}
+              options={BEAT_OPTIONS}
+              onChange={setDraftBeats}
+              ariaLabel="Beats per measure"
+            />
+            <span className="ts-slash">/</span>
+            <WheelPicker
+              value={draftNote}
+              options={NOTE_VALUES}
+              onChange={setDraftNote}
+              ariaLabel="Beat unit"
+            />
+            <button
+              type="button"
+              className="ts-accept"
+              onClick={accept}
+              aria-label="Apply time signature"
+            >
+              ✓
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-interface EditableUnitProps {
+interface WheelPickerProps {
   value: number;
   options: readonly number[];
   onChange: (value: number) => void;
+  ariaLabel: string;
 }
 
 /**
- * Shows the beat unit as plain text. Double-clicking reveals a dropdown to pick
- * a value; choosing one (or clicking away) returns to the text display.
+ * A vertical "select wheel": the current value stays centered while its
+ * neighbours sit faintly above and below. Scrolling the wheel (or pressing
+ * Up/Down) moves the selection toward the neighbour you scroll into; clicking a
+ * neighbour jumps straight to it. Works for both the contiguous 1–16 beats and
+ * the discrete note values, since it steps through a fixed options array.
  */
-function EditableUnit({ value, options, onChange }: EditableUnitProps) {
-  const [editing, setEditing] = useState(false);
-  const selectRef = useRef<HTMLSelectElement>(null);
+function WheelPicker({ value, options, onChange, ariaLabel }: WheelPickerProps) {
+  const index = options.indexOf(value);
+  const above = index > 0 ? options[index - 1] : null;
+  const below = index < options.length - 1 ? options[index + 1] : null;
 
-  useEffect(() => {
-    if (editing) selectRef.current?.focus();
-  }, [editing]);
-
-  if (editing) {
-    return (
-      <select
-        ref={selectRef}
-        className="ts-number ts-unit"
-        value={value}
-        onChange={(e) => {
-          onChange(Number(e.target.value));
-          setEditing(false);
-        }}
-        onBlur={() => setEditing(false)}
-        aria-label="Beat unit"
-      >
-        {options.map((n) => (
-          <option key={n} value={n}>
-            {n}
-          </option>
-        ))}
-      </select>
-    );
-  }
+  // Wheel up moves to the value shown above; wheel down to the one below.
+  const step = (dir: 1 | -1) => {
+    const nextIndex = index - dir;
+    if (nextIndex >= 0 && nextIndex < options.length) {
+      onChange(options[nextIndex]);
+    }
+  };
+  const wheelRef = useWheelAdjust<HTMLDivElement>(step);
 
   return (
-    <span
-      className="ts-number ts-unit"
-      onDoubleClick={() => setEditing(true)}
-      title="Double-click to choose"
+    <div
+      className="ts-wheel"
+      ref={wheelRef}
+      role="spinbutton"
+      tabIndex={0}
+      aria-valuenow={value}
+      aria-valuemin={options[0]}
+      aria-valuemax={options[options.length - 1]}
+      aria-label={ariaLabel}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          step(1);
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          step(-1);
+        }
+      }}
     >
-      {value}
-    </span>
+      <span
+        className="ts-wheel-option ghost"
+        onClick={() => above != null && onChange(above)}
+      >
+        {above ?? ''}
+      </span>
+      <span className="ts-wheel-option current">{value}</span>
+      <span
+        className="ts-wheel-option ghost"
+        onClick={() => below != null && onChange(below)}
+      >
+        {below ?? ''}
+      </span>
+    </div>
   );
 }

@@ -1,0 +1,97 @@
+import { useEffect, useRef, useState } from 'react';
+
+/**
+ * A "?" hint in the top-right corner that reveals the app's non-obvious
+ * gestures. It opens on hover/focus (desktop, keyboard) and toggles on click
+ * (so it also works on touch, where there's no hover). Escape or a click
+ * outside closes a click-opened ("pinned") panel.
+ */
+export function HelpHint() {
+  // Open via hover/focus is transient; open via click is "pinned" until
+  // dismissed. The panel shows whenever either is true.
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const open = hovered || pinned;
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // While pinned, Escape or a click outside closes the panel.
+  useEffect(() => {
+    if (!pinned) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPinned(false);
+    };
+    const onClickOutside = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setPinned(false);
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onClickOutside);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', onClickOutside);
+    };
+  }, [pinned]);
+
+  return (
+    <div
+      className="help-hint"
+      ref={containerRef}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <button
+        className="help-toggle"
+        onClick={() => setPinned((p) => !p)}
+        onFocus={() => setHovered(true)}
+        onBlur={() => setHovered(false)}
+        aria-label="How to use"
+        aria-expanded={open}
+      >
+        &#128712;
+      </button>
+
+      {open && (
+        <div className="help-panel" role="tooltip">
+          <h2 className="help-title">How to use</h2>
+
+          <h3 className="help-group">Tempo</h3>
+          <ul className="help-list">
+            <li>
+              <kbd>Scroll</kbd> over the BPM number or slider to nudge by 1
+            </li>
+            <li>
+              Hold <kbd>Shift</kbd> to step by 10 (buttons and scroll)
+            </li>
+            <li>
+              <kbd>Double-click</kbd> the BPM to type an exact value
+            </li>
+          </ul>
+
+          <h3 className="help-group">Beats</h3>
+          <ul className="help-list">
+            <li>
+              <kbd>Click</kbd> a beat dot to cycle normal → accent → muted
+            </li>
+          </ul>
+
+          <h3 className="help-group">Time signature</h3>
+          <ul className="help-list">
+            <li>
+              <kbd>Double-click</kbd> the top number to set the beats
+            </li>
+            <li>
+              <kbd>Double-click</kbd> the bottom number to set the note value
+            </li>
+          </ul>
+
+          <h3 className="help-group">Presets</h3>
+          <ul className="help-list">
+            <li>
+              Open the <kbd>☰</kbd> menu to save, load, and reorder presets
+            </li>
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
