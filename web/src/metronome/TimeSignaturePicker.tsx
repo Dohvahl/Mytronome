@@ -49,8 +49,8 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
     setEditing(false);
   };
 
-  // While editing: Enter accepts, Escape cancels (a click on the backdrop also
-  // cancels). Re-subscribes when the draft changes so accept sees the latest.
+  // While editing: Enter accepts, Escape cancels (a click on the backdrop
+  // accepts). Re-subscribes when the draft changes so accept sees the latest.
   useEffect(() => {
     if (!editing) return;
     const onKey = (e: KeyboardEvent) => {
@@ -93,10 +93,11 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
       </button>
 
       {/* Edit form — a centered overlay on the same vertical plane as the row,
-          over a semi-transparent backdrop (click it to cancel). */}
+          over a semi-transparent backdrop. Clicking the backdrop accepts the
+          current draft; Escape cancels. */}
       {editing && (
         <>
-          <div className="ts-backdrop" onClick={() => setEditing(false)} />
+          <div className="ts-backdrop" onClick={accept} />
           <div className="ts-editor" role="dialog" aria-label="Edit time signature">
             <WheelPicker
               value={draftBeats}
