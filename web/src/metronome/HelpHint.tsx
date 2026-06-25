@@ -63,7 +63,7 @@ export function HelpHint() {
               Hold <kbd>Shift</kbd> to step by 10 (buttons and scroll)
             </li>
             <li>
-              <kbd>Double-click</kbd> the BPM to type an exact value
+              <kbd>Click</kbd> the BPM to type or scroll an exact value
             </li>
           </ul>
 
@@ -77,10 +77,10 @@ export function HelpHint() {
           <h3 className="help-group">Time signature</h3>
           <ul className="help-list">
             <li>
-              <kbd>Double-click</kbd> the top number to set the beats
+              <kbd>Click</kbd> the time signature to open the editor
             </li>
             <li>
-              <kbd>Double-click</kbd> the bottom number to set the note value
+              Scroll the wheels to set the beats and note value
             </li>
           </ul>
 

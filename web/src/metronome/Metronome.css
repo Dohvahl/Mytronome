@@ -18,7 +18,9 @@
   position: fixed;
   top: 0.8889rem;
   right: 0.8889rem;
-  z-index: 30;
+  /* Below the drawer backdrop (z-index 20) so it dims with the rest of the
+     screen when the presets drawer is open. */
+  z-index: 10;
 }
 .help-toggle {
   width: var(--help-icon-border-radius);
