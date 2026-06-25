@@ -1,19 +1,19 @@
 /* Hamburger toggle (fixed, always on top) */
 .menu-toggle {
   position: fixed;
-  top: 16px;
-  left: 16px;
+  top: 0.8889rem;
+  left: 0.8889rem;
   z-index: 30;
-  width: 44px;
-  height: 44px;
+  width: 2.4444rem;
+  height: 2.4444rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.5556rem;
   background: var(--bg);
   color: var(--text-h);
-  font-size: 22px;
+  font-size: 1.2222rem;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
@@ -36,11 +36,11 @@
   top: 0;
   left: 0;
   z-index: 25;
-  width: 340px; /* default; overridden by the inline style */
+  width: 18.8889rem; /* default; overridden by the inline style */
   max-width: 90vw;
   height: 100dvh;
   background: var(--bg);
-  border-right: 1px solid var(--border);
+  border-right: 0.0556rem solid var(--border);
   box-shadow: var(--shadow);
   transform: translateX(-100%);
   transition: transform 0.2s ease;
@@ -52,7 +52,7 @@
 .sidebar-content {
   height: 100%;
   box-sizing: border-box;
-  padding: 64px 16px 16px;
+  padding: 3.5556rem 0.8889rem 0.8889rem;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -62,7 +62,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 8px;
+  width: 0.4444rem;
   height: 100%;
   cursor: ew-resize;
   touch-action: none;
@@ -81,7 +81,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.6667rem;
 }
 .presets h2 {
   text-align: center;
@@ -90,22 +90,22 @@
 /* Save-current row */
 .preset-save {
   display: flex;
-  gap: 8px;
+  gap: 0.4444rem;
 }
 .preset-label-input {
   flex: 1;
   min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 0.4444rem 0.5556rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
   background: var(--bg);
   color: var(--text-h);
-  font-size: 15px;
+  font-size: 0.8333rem;
 }
 .preset-save-btn {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--accent-border);
+  padding: 0.75rem 0.325rem;
+  border-radius: 0.4444rem;
+  border: 0.0556rem solid var(--accent-border);
   background: var(--accent-bg);
   color: var(--accent);
   cursor: pointer;
@@ -117,17 +117,17 @@
 .storage-switch {
   display: flex;
   align-self: center;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
   overflow: hidden;
 }
 .storage-switch button {
-  padding: 6px 18px;
+  padding: 0.3333rem 1rem;
   border: none;
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.7778rem;
   transition: background 0.15s, color 0.15s;
 }
 .storage-switch button:hover {
@@ -143,23 +143,23 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0.4444rem;
 }
 .cloud-status {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: 0.7222rem;
   color: var(--text);
 }
 .cloud-connect {
   flex: 1;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  padding: 0.4444rem 0.6667rem;
+  border-radius: 0.4444rem;
+  border: 0.0556rem solid var(--border);
   background: var(--bg);
   color: var(--text-h);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.7778rem;
   transition: border-color 0.15s, color 0.15s;
 }
 .cloud-connect:hover {
@@ -171,13 +171,13 @@
   cursor: default;
 }
 .cloud-disconnect {
-  padding: 5px 10px;
-  border-radius: 7px;
-  border: 1px solid var(--border);
+  padding: 0.2778rem 0.5556rem;
+  border-radius: 0.3889rem;
+  border: 0.0556rem solid var(--border);
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.7222rem;
 }
 .cloud-disconnect:hover {
   border-color: var(--accent-border);
@@ -191,39 +191,39 @@
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.6667rem;
 }
 .auth-title {
   margin: 0;
-  font-size: 26px;
+  font-size: 1.4444rem;
   font-weight: 600;
   color: var(--text-h);
 }
 .auth-subtitle {
-  margin: -6px 0 2px;
-  font-size: 14px;
+  margin: -0.3333rem 0 0.1111rem;
+  font-size: 0.7778rem;
   color: var(--text);
 }
 .auth-form input {
-  padding: 11px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 0.6111rem 0.6667rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
   background: var(--bg);
   color: var(--text-h);
-  font-size: 15px;
+  font-size: 0.8333rem;
 }
 .auth-form input:focus {
   outline: none;
   border-color: var(--accent-border);
 }
 .auth-primary {
-  margin-top: 4px;
-  padding: 12px;
+  margin-top: 0.2222rem;
+  padding: 0.6667rem;
   border: none;
-  border-radius: 999px;
+  border-radius: 55.5rem;
   background: var(--accent);
   color: #fff;
-  font-size: 16px;
+  font-size: 0.8889rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -237,7 +237,7 @@
   border: none;
   background: none;
   color: var(--accent);
-  font-size: 14px;
+  font-size: 0.7778rem;
   cursor: pointer;
 }
 .auth-switch:hover {
@@ -245,35 +245,35 @@
 }
 .auth-error {
   margin: 0;
-  font-size: 13px;
+  font-size: 0.7222rem;
   color: #e5484d;
 }
 
 .preset-error {
   margin: 0;
   text-align: center;
-  font-size: 14px;
+  font-size: 0.7778rem;
   color: #e5484d;
 }
 
 /* Footer "connections" cluster (Account + Drive), pinned to the drawer bottom */
 .drawer-footer {
   margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
+  padding-top: 0.6667rem;
+  border-top: 0.0556rem solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.5556rem;
 }
 .account-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 0.4444rem;
 }
 .account-email {
   min-width: 0;
-  font-size: 13px;
+  font-size: 0.7222rem;
   color: var(--text);
   text-align: right;
   overflow: hidden;
@@ -284,14 +284,14 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  gap: 0.3333rem;
+  padding: 0.3333rem 0.6667rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
   background: var(--bg);
   color: var(--text-h);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.7778rem;
   transition: border-color 0.15s, color 0.15s;
 }
 .account-button:hover {
@@ -308,57 +308,57 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 0.8889rem;
 }
 .account-modal {
   position: relative;
   z-index: 41;
-  width: 360px;
+  width: 20rem;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 28px 24px 24px;
-  border-radius: 14px;
+  padding: 1.5556rem 1.3333rem 1.3333rem;
+  border-radius: 0.7778rem;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 0.0556rem solid var(--border);
   box-shadow: var(--shadow);
 }
 .account-close {
   position: absolute;
-  top: 8px;
-  right: 10px;
+  top: 0.4444rem;
+  right: 0.5556rem;
   border: none;
   background: none;
   color: var(--text);
-  font-size: 22px;
+  font-size: 1.2222rem;
   line-height: 1;
   cursor: pointer;
 }
 .account-signed-in {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0.8889rem;
   align-items: stretch;
 }
 .account-status {
   margin: 0;
   color: var(--text);
-  font-size: 14px;
+  font-size: 0.7778rem;
 }
 
 .preset-notice {
   margin: 0;
-  padding: 8px 10px;
-  border-radius: 8px;
+  padding: 0.4444rem 0.5556rem;
+  border-radius: 0.4444rem;
   background: rgba(229, 72, 77, 0.12);
   color: #e5484d;
-  font-size: 13px;
+  font-size: 0.7222rem;
   text-align: center;
 }
 
 .preset-empty {
   color: var(--text);
   text-align: center;
-  font-size: 15px;
+  font-size: 0.8333rem;
 }
 
 /* List */
@@ -368,16 +368,16 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.4444rem;
 }
 .preset-item {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  gap: 0.4444rem;
+  padding: 0.5556rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.5556rem;
 }
 .preset-item.dragging {
   opacity: 0.5;
@@ -391,7 +391,7 @@
   cursor: grab;
   color: var(--text);
   user-select: none;
-  font-size: 16px;
+  font-size: 0.8889rem;
   line-height: 1;
 }
 .preset-grip:active {
@@ -402,7 +402,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.4444rem;
 }
 .preset-main {
   width: 100%;
@@ -412,7 +412,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: 0.1111rem;
   width: 100%;
   padding: 0;
   border: none;
@@ -420,39 +420,43 @@
   cursor: pointer;
 }
 .preset-label {
-  font-size: 16px;
+  font-size: 0.8889rem;
   font-weight: 600;
   color: var(--text-h);
 }
 .preset-summary {
-  font-size: 13px;
+  font-size: 0.7222rem;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 .preset-rename {
   width: 100%;
   box-sizing: border-box;
-  padding: 6px 8px;
-  border: 1px solid var(--accent-border);
-  border-radius: 8px;
+  padding: 0.3333rem 0.4444rem;
+  border: 0.0556rem solid var(--accent-border);
+  border-radius: 0.4444rem;
   background: var(--accent-bg);
   color: var(--text-h);
-  font-size: 15px;
+  font-size: 0.8333rem;
 }
 
 /* Row actions */
 .preset-actions {
-  display: flex;
-  gap: 4px;
+  display: inline-flex;
+  gap: 0.2222rem;
   flex-wrap: wrap;
+  vertical-align: -.125em;
 }
 .preset-actions button {
   flex: 1 1 auto;
-  min-width: 56px;
-  padding: 5px 8px;
-  font-size: 13px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
+  min-width: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.375rem;
+  font-size: 1rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.3889rem;
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
