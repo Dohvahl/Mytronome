@@ -1,0 +1,15 @@
+{
+  // Type-checks the test suites (and, transitively, the source they import).
+  // Run with `npm run test:types`; Vitest itself only transforms, not type-checks.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["metronome-engine/test", "presets/test", "web/test"]
+}
