@@ -175,41 +175,6 @@
   color: var(--text);
 }
 
-/* Reusable double-click-to-edit number (the tempo display; later the beats). */
-/* Both states share one box; the border is transparent when displaying so
-   entering edit mode adds no size and nothing reflows. */
-.editable-number {
-  display: inline-block;
-  box-sizing: border-box;
-  width: 1.8em;
-  padding: 0 0.3333rem;
-  border: 0.0556rem solid transparent;
-  border-radius: 0.4444rem;
-  font: inherit;
-  height: 1.3em;
-  line-height: calc(1.3em - 0.1111rem);
-  color: var(--text-h);
-  text-align: center;
-}
-span.editable-number {
-  cursor: inherit;
-}
-input.editable-number {
-  background-color: var(--accent-bg);
-  border-color: var(--accent-border);
-  cursor: text;
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-input.editable-number:focus {
-  outline: none;
-}
-input.editable-number::-webkit-outer-spin-button,
-input.editable-number::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
 /* Big tempo number */
 /* Fixed-size area so switching display ↔ edit doesn't reflow the layout. */
 .tempo-value-area {
@@ -326,7 +291,7 @@ input.editable-number::-webkit-inner-spin-button {
 .subdivision-trigger {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.5556rem;
   min-width: 3.5556rem;
   padding: 0.2778rem 0.5556rem;
