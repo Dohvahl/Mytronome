@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { useAuth } from './AuthContext';
 
 /** Footer control: shows the email when signed in, opens the account modal. */
@@ -47,7 +47,7 @@ function AccountModal({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const submit = async (e: FormEvent) => {
+  const submit = async (e: SubmitEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
