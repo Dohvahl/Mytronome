@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PresetApi.Auth;
@@ -53,6 +54,21 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
+// Behind the nginx reverse proxy the real client IP arrives in X-Forwarded-For;
+// honor it so the auth rate limiter partitions per real client, not per proxy.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+    options.ForwardLimit = 1; // exactly one proxy (nginx) in front of the API
+    // nginx connects from the Docker network (not loopback) with a dynamic IP we
+    // can't pin, so clear the default allow-list and trust the immediate peer's
+    // header. SAFE ONLY IF the API is reachable solely THROUGH the proxy — in
+    // production, drop the public "5046:8080" port mapping so a direct caller can't
+    // spoof X-Forwarded-For to evade the rate limit.
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // Allow the Vite dev client to call this API from the browser — scoped to the
 // dev origin and only the methods/headers we actually use.
 const string WebClientPolicy = "web-client";
@@ -74,6 +90,10 @@ if (!EF.IsDesignTime)
     var db = scope.ServiceProvider.GetRequiredService<PresetDbContext>();
     db.Database.Migrate();
 }
+
+// Resolve the real client IP from the proxy's X-Forwarded-For before anything that
+// reads it (notably the rate limiter below).
+app.UseForwardedHeaders();
 
 // Baseline security headers on every response. (No Content-Security-Policy here —
 // it would break the Scalar docs UI; the web app's CSP is set by nginx instead.)
