@@ -82,9 +82,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Apply any pending EF migrations at startup so the schema is ready. Guarded so
-// it does not run during design-time tooling (e.g. `dotnet ef migrations add`).
-if (!EF.IsDesignTime)
+// Apply pending EF migrations at startup in development only — convenient for
+// local dev and the demo container. In production, run migrations as an explicit,
+// controlled deploy step instead of racing them on every app start (and to avoid
+// an unintended model change auto-altering the live schema). Also guarded against
+// design-time tooling (e.g. `dotnet ef migrations add`).
+if (app.Environment.IsDevelopment() && !EF.IsDesignTime)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PresetDbContext>();
@@ -145,8 +148,13 @@ presets.MapPut("/{id}", async (string id, Preset preset, ClaimsPrincipal user, I
     if (errors.Count > 0)
         return Results.ValidationProblem(errors);
 
-    await store.SaveAsync(UserId(user), preset);
-    return Results.NoContent();
+    var result = await store.SaveAsync(UserId(user), preset);
+    return result == SaveResult.QuotaExceeded
+        ? Results.Problem(
+            statusCode: StatusCodes.Status409Conflict,
+            title: "Preset limit reached",
+            detail: $"You can store at most {EfPresetStore.MaxPresetsPerOwner} presets.")
+        : Results.NoContent();
 });
 
 presets.MapDelete("/{id}", async (string id, ClaimsPrincipal user, IPresetStore store) =>

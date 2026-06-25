@@ -17,7 +17,10 @@ public class EfPresetStore(PresetDbContext db) : IPresetStore
             .Where(p => EF.Property<string>(p, "OwnerId") == ownerId && p.Id == id)
             .FirstOrDefaultAsync();
 
-    public async Task SaveAsync(string ownerId, Preset preset)
+    /// <summary>Max presets a single owner may store (storage-exhaustion guard).</summary>
+    public const int MaxPresetsPerOwner = 200;
+
+    public async Task<SaveResult> SaveAsync(string ownerId, Preset preset)
     {
         // Only treat it as an update if THIS owner already has that id (tracked,
         // so the changes are saved). Otherwise insert and stamp the owner.
@@ -27,20 +30,26 @@ public class EfPresetStore(PresetDbContext db) : IPresetStore
 
         if (existing is null)
         {
+            // The cap applies only to NEW presets; updating an existing one always passes.
+            var ownedCount = await db.Presets
+                .CountAsync(p => EF.Property<string>(p, "OwnerId") == ownerId);
+            if (ownedCount >= MaxPresetsPerOwner)
+                return SaveResult.QuotaExceeded;
+
             var entry = db.Presets.Add(preset);
             entry.Property("OwnerId").CurrentValue = ownerId;
-        }
-        else
-        {
-            existing.Label = preset.Label;
-            existing.Bpm = preset.Bpm;
-            existing.TimeSignature = preset.TimeSignature;
-            existing.Pattern = preset.Pattern;
-            existing.CreatedAt = preset.CreatedAt;
-            existing.UpdatedAt = preset.UpdatedAt;
+            await db.SaveChangesAsync();
+            return SaveResult.Created;
         }
 
+        existing.Label = preset.Label;
+        existing.Bpm = preset.Bpm;
+        existing.TimeSignature = preset.TimeSignature;
+        existing.Pattern = preset.Pattern;
+        existing.CreatedAt = preset.CreatedAt;
+        existing.UpdatedAt = preset.UpdatedAt;
         await db.SaveChangesAsync();
+        return SaveResult.Updated;
     }
 
     public async Task<bool> RemoveAsync(string ownerId, string id)

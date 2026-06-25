@@ -133,8 +133,11 @@ export function usePresets() {
   const dismissSessionExpired = useCallback(() => setSessionExpired(false), []);
 
   // Latest presets for event handlers (avoids stale closures across renders).
+  // Assigned in an effect (not during render) per the react-hooks/refs rule.
   const presetsRef = useRef(presets);
-  presetsRef.current = presets;
+  useEffect(() => {
+    presetsRef.current = presets;
+  });
 
   // Optimistically set the list (instant UI) and remember the order.
   const commit = (next: Preset[]) => {

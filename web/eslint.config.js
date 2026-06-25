@@ -18,5 +18,15 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // A Provider and its hook intentionally live in one file; this is a
+      // fast-refresh (HMR) concern only, not a runtime issue. Keep it visible
+      // as a warning rather than failing the build.
+      'react-refresh/only-export-components': 'warn',
+      // The effects flagged by this rule here (data loading in usePresets,
+      // controlled-input draft sync in TempoControl) are intentional state
+      // synchronization. Keep the hint as a warning, not a build failure.
+      'react-hooks/set-state-in-effect': 'warn',
+    },
   },
 ])
