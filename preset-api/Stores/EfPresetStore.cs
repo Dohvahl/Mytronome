@@ -36,6 +36,10 @@ public class EfPresetStore(PresetDbContext db) : IPresetStore
             if (ownedCount >= MaxPresetsPerOwner)
                 return SaveResult.QuotaExceeded;
 
+            // Stamp timestamps server-side; don't trust the client's values.
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            preset.CreatedAt = now;
+            preset.UpdatedAt = now;
             var entry = db.Presets.Add(preset);
             entry.Property("OwnerId").CurrentValue = ownerId;
             await db.SaveChangesAsync();
@@ -46,8 +50,8 @@ public class EfPresetStore(PresetDbContext db) : IPresetStore
         existing.Bpm = preset.Bpm;
         existing.TimeSignature = preset.TimeSignature;
         existing.Pattern = preset.Pattern;
-        existing.CreatedAt = preset.CreatedAt;
-        existing.UpdatedAt = preset.UpdatedAt;
+        // Preserve the original CreatedAt; bump UpdatedAt to server time.
+        existing.UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         await db.SaveChangesAsync();
         return SaveResult.Updated;
     }

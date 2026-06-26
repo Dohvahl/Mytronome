@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Metronome,
   defaultPattern,
+  MAX_SUBDIVISIONS,
   type BeatEmphasis,
   type TimeSignature,
 } from '@mytronome/engine';
@@ -28,7 +29,9 @@ const SUBDIVISIONS_KEY = 'mytronome.subdivisions';
 
 function readSavedSubdivisions(): number {
   const saved = Number(localStorage.getItem(SUBDIVISIONS_KEY));
-  return Number.isInteger(saved) && saved >= 1 && saved <= 16 ? saved : 1;
+  return Number.isInteger(saved) && saved >= 1 && saved <= MAX_SUBDIVISIONS
+    ? saved
+    : 1;
 }
 
 /**
