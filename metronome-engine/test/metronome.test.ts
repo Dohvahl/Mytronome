@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { Metronome, defaultPattern, isCompound } from '../src/metronome';
+import type { MetronomeOptions } from '../src/metronome';
+import { MockAudioOutput } from './mocks';
+
+// The engine needs a platform audio adapter injected; these tests only exercise
+// pure tempo/meter logic, so a mock output is all they need.
+function makeMetronome(options: Omit<MetronomeOptions, 'audioOutput'> = {}) {
+  return new Metronome({ audioOutput: new MockAudioOutput(), ...options });
+}
 
 describe('isCompound', () => {
   it('is true for 6/8, 9/8, 12/8 and 6/16', () => {
@@ -46,19 +54,19 @@ describe('defaultPattern', () => {
 
 describe('Metronome tempo', () => {
   it('defaults to 120 BPM and 4/4', () => {
-    const m = new Metronome();
+    const m = makeMetronome();
     expect(m.tempo).toBe(120);
     expect(m.meter).toEqual({ beats: 4, noteValue: 4 });
   });
 
   it('clamps and rounds the constructor tempo to 40–320', () => {
-    expect(new Metronome({ bpm: 10 }).tempo).toBe(40);
-    expect(new Metronome({ bpm: 999 }).tempo).toBe(320);
-    expect(new Metronome({ bpm: 120.4 }).tempo).toBe(120);
+    expect(makeMetronome({ bpm: 10 }).tempo).toBe(40);
+    expect(makeMetronome({ bpm: 999 }).tempo).toBe(320);
+    expect(makeMetronome({ bpm: 120.4 }).tempo).toBe(120);
   });
 
   it('clamps setBpm to 40–320', () => {
-    const m = new Metronome();
+    const m = makeMetronome();
     m.setBpm(5);
     expect(m.tempo).toBe(40);
     m.setBpm(500);

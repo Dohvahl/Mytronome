@@ -1,4 +1,9 @@
 import type { BeatEmphasis, BeatInfo, TimeSignature } from './types';
+import {
+  browserTimer,
+  type AudioOutput,
+  type IntervalTimer,
+} from './audioOutput';
 
 export interface MetronomeOptions {
   /** Starting tempo in beats per minute. Default 120. */
@@ -20,23 +25,27 @@ export interface MetronomeOptions {
    * time it will play, so a UI can flash a visual indicator exactly on time.
    */
   onBeat?: (beat: BeatInfo) => void;
+  /**
+   * Where clicks are realized: the platform adapter.
+   * Required: each platform provides its own
+   * (the web app injects a Web Audio adapter, a future native
+   * client its own, tests a mock). The engine itself stays platform-free.
+   */
+  audioOutput: AudioOutput;
+  /**
+   * The lookahead-loop timer. Defaults to the host's `setInterval`. Injected
+   * mainly so tests can step the scheduler deterministically.
+   */
+  timer?: IntervalTimer;
 }
 
-// Shared musical limits — the web app imports these instead of redefining them.
+// Shared musical limits - the web app imports these instead of redefining them.
 // The C# API enforces the same limits in preset-api/Validation/PresetValidator.cs
 // (MinBpm / MaxBpm / MaxBeats / NoteValues); those can't be shared across the
 // TS/C# boundary, so keep the two in sync by hand.
 export const MIN_BPM = 40;
 export const MAX_BPM = 320;
 export const MAX_SUBDIVISIONS = 16;
-
-type ClickLevel = 'accent' | 'normal' | 'sub';
-
-const CLICK_TONES: Record<ClickLevel, { frequency: number; peak: number }> = {
-  accent: { frequency: 1500, peak: 0.6 }, // loud, high downbeat
-  normal: { frequency: 1000, peak: 0.4 }, // the other main beats
-  sub: { frequency: 1200, peak: 0.18 }, // quiet in-between subdivision tick
-};
 
 /** Compound meters (6/8, 9/8, 12/8, …) group their beats in threes. */
 export function isCompound(timeSignature: TimeSignature): boolean {
@@ -70,13 +79,12 @@ export function defaultPattern(timeSignature: TimeSignature): BeatEmphasis[] {
  *   topped up, never accurate to the millisecond.
  */
 export class Metronome {
-  private audioContext: AudioContext | null = null;
+  private readonly output: AudioOutput;
+  private readonly timer: IntervalTimer;
   private bpm: number;
   private timeSignature: TimeSignature;
   private pattern: BeatEmphasis[];
-  private volume: number;
   private subdivisions: number;
-  private masterGain: GainNode | null = null;
   private readonly onBeat?: (beat: BeatInfo) => void;
 
   private isRunning = false;
@@ -90,13 +98,15 @@ export class Metronome {
   /** How often (ms) the scheduler wakes to top up the schedule. */
   private readonly lookaheadMs = 25;
 
-  constructor(options: MetronomeOptions = {}) {
+  constructor(options: MetronomeOptions) {
     this.bpm = clampBpm(options.bpm ?? 120);
     this.timeSignature = options.timeSignature ?? { beats: 4, noteValue: 4 };
     this.pattern = options.pattern ?? defaultPattern(this.timeSignature);
-    this.volume = clamp01(options.volume ?? 1);
     this.subdivisions = clampSubdivisions(options.subdivisions ?? 1);
     this.onBeat = options.onBeat;
+    this.output = options.audioOutput;
+    this.output.setVolume(options.volume ?? 1); // adapter clamps to 0..1
+    this.timer = options.timer ?? browserTimer;
   }
 
   get tempo(): number {
@@ -113,7 +123,7 @@ export class Metronome {
 
   /** Current audio-clock time in seconds (0 before the engine has started). */
   get currentTime(): number {
-    return this.audioContext?.currentTime ?? 0;
+    return this.output.currentTime;
   }
 
   /** Set the tempo. Clamped to a sane musical range. Safe to call while running. */
@@ -136,15 +146,7 @@ export class Metronome {
 
   /** Master output volume, 0 (silent) to 1 (full). Safe to call while running. */
   setVolume(volume: number): void {
-    this.volume = clamp01(volume);
-    if (this.masterGain && this.audioContext) {
-      // Short ramp avoids a click when the level jumps.
-      this.masterGain.gain.setTargetAtTime(
-        this.volume,
-        this.audioContext.currentTime,
-        0.01,
-      );
-    }
+    this.output.setVolume(volume);
   }
 
   /** Clicks per beat (1 = beat only, 2 = eighths, …). Safe to call while running. */
@@ -159,50 +161,44 @@ export class Metronome {
   start(): void {
     if (this.isRunning) return;
 
-    // Create the AudioContext lazily on first start: browsers only allow audio
-    // to begin in response to a user gesture (a click), so we can't do this in
-    // the constructor.
-    if (!this.audioContext) {
-      this.audioContext = new AudioContext();
-      // All clicks route through a master gain so one volume scales them all.
-      this.masterGain = this.audioContext.createGain();
-      this.masterGain.gain.value = this.volume;
-      this.masterGain.connect(this.audioContext.destination);
-    }
-    void this.audioContext.resume();
+    // Starting the output creates/resumes its clock (in browsers this must
+    // happen inside a user gesture). currentTime is live immediately after.
+    void this.output.resume();
 
     this.isRunning = true;
     this.nextBeatIndex = 0;
     this.subIndex = 0;
-    this.nextBeatTime = this.audioContext.currentTime + 0.05; // brief lead-in
-    this.timerId = window.setInterval(() => this.scheduler(), this.lookaheadMs);
+    this.nextBeatTime = this.output.currentTime + 0.05; // brief lead-in
+    this.timerId = this.timer.setInterval(
+      () => this.scheduler(),
+      this.lookaheadMs,
+    );
   }
 
-  /** Stop ticking. Keeps the AudioContext alive for an instant restart. */
+  /** Stop ticking. Keeps the output's clock alive for an instant restart. */
   stop(): void {
     if (!this.isRunning) return;
     this.isRunning = false;
     if (this.timerId !== null) {
-      window.clearInterval(this.timerId);
+      this.timer.clearInterval(this.timerId);
       this.timerId = null;
     }
+    // Clearing the lookahead timer stops *new* clicks being queued, but clicks
+    // already scheduled ahead of "now" would still sound. Cancel those too.
+    this.output.cancelScheduled();
   }
 
   /** Release audio resources. Call when the metronome is gone for good. */
   dispose(): void {
     this.stop();
-    void this.audioContext?.close();
-    this.audioContext = null;
-    this.masterGain = null;
+    this.output.dispose();
   }
 
   /** Runs every `lookaheadMs`; schedules every tick due within the lookahead window. */
   private scheduler(): void {
-    if (!this.audioContext) return;
-
     while (
       this.nextBeatTime <
-      this.audioContext.currentTime + this.scheduleAheadTime
+      this.output.currentTime + this.scheduleAheadTime
     ) {
       const secondsPerBeat = 60 / this.bpm;
 
@@ -213,7 +209,7 @@ export class Metronome {
           (this.nextBeatIndex === 0 ? 'accent' : 'normal');
 
         if (emphasis !== 'muted') {
-          this.scheduleClick(
+          this.output.scheduleClick(
             this.nextBeatTime,
             emphasis === 'accent' ? 'accent' : 'normal',
           );
@@ -226,7 +222,7 @@ export class Metronome {
         });
       } else {
         // An in-between subdivision: a softer tick (audio only, no visual).
-        this.scheduleClick(this.nextBeatTime, 'sub');
+        this.output.scheduleClick(this.nextBeatTime, 'sub');
       }
 
       this.nextBeatTime += secondsPerBeat / this.subdivisions;
@@ -238,37 +234,10 @@ export class Metronome {
       }
     }
   }
-
-  /** Schedule one short click tone at the given audio-clock time. */
-  private scheduleClick(time: number, level: ClickLevel): void {
-    const ctx = this.audioContext!;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    const { frequency, peak } = CLICK_TONES[level];
-    osc.frequency.value = frequency;
-    const duration = 0.05;
-
-    // A fast attack then exponential decay makes a crisp "tick" rather than a
-    // sustained beep, and ramping (instead of an abrupt stop) avoids audible
-    // clicks/pops in the waveform. (Exponential ramps can't reach exactly 0,
-    // hence the tiny 0.0001 floor.)
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.exponentialRampToValueAtTime(peak, time + 0.001);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-
-    osc.connect(gain).connect(this.masterGain ?? ctx.destination);
-    osc.start(time);
-    osc.stop(time + duration);
-  }
 }
 
 function clampBpm(bpm: number): number {
   return Math.max(MIN_BPM, Math.min(MAX_BPM, Math.round(bpm)));
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
 }
 
 function clampSubdivisions(value: number): number {
