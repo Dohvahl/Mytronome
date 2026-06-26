@@ -1,7 +1,16 @@
 root = true
 
+[*]
 charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
 
 [*.{cs,csx}]
+indent_size = 4
 # IDE0130: Namespace does not match folder structure
 dotnet_diagnostic.IDE0130.severity = silent
+
+[*.md]
+trim_trailing_whitespace = false

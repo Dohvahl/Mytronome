@@ -11,9 +11,11 @@
   "scripts": {
     "test": "tsc --noEmit -p tsconfig.test.json && vitest run",
     "test:watch": "vitest",
-    "test:types": "tsc --noEmit -p tsconfig.test.json"
+    "test:types": "tsc --noEmit -p tsconfig.test.json",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "typescript": "~6.0.2",
     "vitest": "^3.2.4"
   }

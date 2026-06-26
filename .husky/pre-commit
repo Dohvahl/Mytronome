@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+# Mirror CI's lint gate, and scan staged changes for secrets before they land.
+npm run lint -w web
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --no-banner
+else
+  echo "gitleaks not installed — skipping local secret scan (https://github.com/gitleaks/gitleaks); CI still scans."
+fi
