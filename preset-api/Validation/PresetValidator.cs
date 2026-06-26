@@ -17,8 +17,14 @@ public static class PresetValidator
     private static readonly HashSet<int> NoteValues = [1, 2, 4, 8, 16];
     private static readonly HashSet<string> Emphases = ["normal", "accent", "muted"];
 
-    /// <summary>Returns a field->messages map of problems (empty when valid).</summary>
-    public static Dictionary<string, string[]> Validate(Preset preset)
+    /// <summary>
+    /// Validates the raw client input and returns a field->messages map of
+    /// problems (empty when valid). Takes the nullable <see cref="PresetInput"/>,
+    /// not the domain <see cref="Preset"/>, so that an omitted or explicitly-null
+    /// field is reported as a validation error instead of throwing on a null
+    /// dereference. Map to the domain model only after this returns no errors.
+    /// </summary>
+    public static Dictionary<string, string[]> Validate(PresetInput input)
     {
         var errors = new Dictionary<string, List<string>>();
 
@@ -29,26 +35,47 @@ public static class PresetValidator
             list.Add(message);
         }
 
-        if (string.IsNullOrWhiteSpace(preset.Id) || preset.Id.Length > MaxIdLength)
+        // IsNullOrWhiteSpace already null-safe, so id needs no separate null check.
+        if (string.IsNullOrWhiteSpace(input.Id) || input.Id.Length > MaxIdLength)
             Add("id", $"Id is required and must be at most {MaxIdLength} characters.");
 
-        if (preset.Label.Length > MaxLabelLength)
+        if (input.Label is null)
+            Add("label", "Label is required.");
+        else if (input.Label.Length > MaxLabelLength)
             Add("label", $"Label must be at most {MaxLabelLength} characters.");
 
-        if (preset.Bpm < MinBpm || preset.Bpm > MaxBpm)
+        if (input.Bpm < MinBpm || input.Bpm > MaxBpm)
             Add("bpm", $"BPM must be between {MinBpm} and {MaxBpm}.");
 
-        if (preset.TimeSignature.Beats < 1 || preset.TimeSignature.Beats > MaxBeats)
-            Add("timeSignature", $"Beats must be between 1 and {MaxBeats}.");
+        if (input.TimeSignature is null)
+        {
+            Add("timeSignature", "Time signature is required.");
+        }
+        else
+        {
+            if (input.TimeSignature.Beats < 1 || input.TimeSignature.Beats > MaxBeats)
+                Add("timeSignature", $"Beats must be between 1 and {MaxBeats}.");
 
-        if (!NoteValues.Contains(preset.TimeSignature.NoteValue))
-            Add("timeSignature", "Note value must be one of 1, 2, 4, 8, 16.");
+            if (!NoteValues.Contains(input.TimeSignature.NoteValue))
+                Add("timeSignature", "Note value must be one of 1, 2, 4, 8, 16.");
+        }
 
-        if (preset.Pattern.Count != preset.TimeSignature.Beats)
-            Add("pattern", "Pattern length must match the number of beats.");
+        if (input.Pattern is null)
+        {
+            Add("pattern", "Pattern is required.");
+        }
+        else
+        {
+            // The length must match the beat count, but that's only meaningful
+            // when a time signature was actually supplied.
+            if (input.TimeSignature is not null
+                && input.Pattern.Count != input.TimeSignature.Beats)
+                Add("pattern", "Pattern length must match the number of beats.");
 
-        if (preset.Pattern.Any(p => !Emphases.Contains(p)))
-            Add("pattern", "Pattern values must be 'normal', 'accent', or 'muted'.");
+            // A null or unrecognized entry (e.g. ["accent", null] or ["loud"]).
+            if (input.Pattern.Any(p => p is null || !Emphases.Contains(p)))
+                Add("pattern", "Pattern values must be 'normal', 'accent', or 'muted'.");
+        }
 
         return errors.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
     }

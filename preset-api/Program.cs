@@ -139,16 +139,17 @@ presets.MapGet("/{id}", async (string id, ClaimsPrincipal user, IPresetStore sto
         ? Results.Ok(preset)
         : Results.NotFound());
 
-presets.MapPut("/{id}", async (string id, Preset preset, ClaimsPrincipal user, IPresetStore store) =>
+presets.MapPut("/{id}", async (string id, PresetInput input, ClaimsPrincipal user, IPresetStore store) =>
 {
-    if (preset.Id != id)
+    if (input.Id != id)
         return Results.BadRequest("The preset id in the body must match the URL.");
 
-    var errors = PresetValidator.Validate(preset);
+    var errors = PresetValidator.Validate(input);
     if (errors.Count > 0)
         return Results.ValidationProblem(errors);
 
-    var result = await store.SaveAsync(UserId(user), preset);
+    // Only a validated input is mapped to the domain model.
+    var result = await store.SaveAsync(UserId(user), input.ToPreset());
     return result switch
     {
         SaveResult.QuotaExceeded => Results.Problem(
