@@ -1,6 +1,7 @@
 // Client-side Google OAuth via Google Identity Services (GIS) token model.
 // Talks to the user's own Google account — our backend is not involved.
 
+// not a leaked secret, just a public identifier for our app
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
 const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 const CONNECTED_KEY = 'mytronome.driveConnected';
