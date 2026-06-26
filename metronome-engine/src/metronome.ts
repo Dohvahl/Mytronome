@@ -67,7 +67,9 @@ export function defaultPattern(timeSignature: TimeSignature): BeatEmphasis[] {
 }
 
 /**
- * A sample-accurate metronome built on the Web Audio API.
+ * A sample-accurate metronome. It plans clicks against an injected
+ * {@link AudioOutput}'s clock and stays platform-free itself — the Web Audio
+ * implementation lives in the web app, a native one would live in its client.
  *
  * Timing strategy — the "Tale of Two Clocks" pattern:
  *   A coarse `setInterval` timer wakes up frequently (every `lookaheadMs`) and,
