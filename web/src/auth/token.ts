@@ -1,3 +1,14 @@
+// SECURITY — token storage is a deliberate tradeoff (decided 2026-06-25).
+// Both the access (~1h) and refresh (~14d) tokens live in localStorage, which is
+// readable by any script on the origin and therefore exfiltratable via XSS. We
+// accept this because:
+//   - it's mitigated by the strict CSP (set by nginx) that limits what scripts run;
+//   - the alternative (refresh token in an httpOnly cookie) is web-only — it adds a
+//     CSRF surface, means wrapping ASP.NET Identity's token endpoints, and does NOT
+//     carry over to the planned Tauri / React Native clients, which will instead use
+//     OS secure storage (Keychain/Keystore). That native hardening is the right place
+//     to spend the effort and is tracked with the cross-platform auth work.
+// Do not "fix" this by switching to cookies without revisiting that whole picture.
 const TOKEN_KEY = 'mytronome.authToken';
 const REFRESH_KEY = 'mytronome.refreshToken';
 

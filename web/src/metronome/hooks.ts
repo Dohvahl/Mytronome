@@ -19,8 +19,11 @@ export function useWheelAdjust<T extends HTMLElement>(
 ) {
   const ref = useRef<T>(null);
   // Keep the latest callback in a ref so we attach the listener only once.
+  // Assigned in an effect (not during render) per the react-hooks/refs rule.
   const callbackRef = useRef(onStep);
-  callbackRef.current = onStep;
+  useEffect(() => {
+    callbackRef.current = onStep;
+  });
 
   useEffect(() => {
     const el = ref.current;
@@ -86,9 +89,12 @@ export function useResizableWidth(options: {
       : defaultWidth;
   });
 
-  // Latest width, so the pointer-up handler persists the final value.
+  // Latest width, so the pointer-up handler persists the final value. Assigned
+  // in an effect (not during render) per the react-hooks/refs rule.
   const widthRef = useRef(width);
-  widthRef.current = width;
+  useEffect(() => {
+    widthRef.current = width;
+  });
 
   const onResizeStart = (e: ReactPointerEvent) => {
     e.preventDefault();

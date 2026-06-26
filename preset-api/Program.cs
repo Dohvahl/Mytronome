@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PresetApi.Auth;
@@ -53,6 +54,21 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
+// Behind the nginx reverse proxy the real client IP arrives in X-Forwarded-For;
+// honor it so the auth rate limiter partitions per real client, not per proxy.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+    options.ForwardLimit = 1; // exactly one proxy (nginx) in front of the API
+    // nginx connects from the Docker network (not loopback) with a dynamic IP we
+    // can't pin, so clear the default allow-list and trust the immediate peer's
+    // header. SAFE ONLY IF the API is reachable solely THROUGH the proxy — in
+    // production, drop the public "5046:8080" port mapping so a direct caller can't
+    // spoof X-Forwarded-For to evade the rate limit.
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // Allow the Vite dev client to call this API from the browser — scoped to the
 // dev origin and only the methods/headers we actually use.
 const string WebClientPolicy = "web-client";
@@ -66,14 +82,21 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Apply any pending EF migrations at startup so the schema is ready. Guarded so
-// it does not run during design-time tooling (e.g. `dotnet ef migrations add`).
-if (!EF.IsDesignTime)
+// Apply pending EF migrations at startup in development only — convenient for
+// local dev and the demo container. In production, run migrations as an explicit,
+// controlled deploy step instead of racing them on every app start (and to avoid
+// an unintended model change auto-altering the live schema). Also guarded against
+// design-time tooling (e.g. `dotnet ef migrations add`).
+if (app.Environment.IsDevelopment() && !EF.IsDesignTime)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PresetDbContext>();
     db.Database.Migrate();
 }
+
+// Resolve the real client IP from the proxy's X-Forwarded-For before anything that
+// reads it (notably the rate limiter below).
+app.UseForwardedHeaders();
 
 // Baseline security headers on every response. (No Content-Security-Policy here —
 // it would break the Scalar docs UI; the web app's CSP is set by nginx instead.)
@@ -125,8 +148,13 @@ presets.MapPut("/{id}", async (string id, Preset preset, ClaimsPrincipal user, I
     if (errors.Count > 0)
         return Results.ValidationProblem(errors);
 
-    await store.SaveAsync(UserId(user), preset);
-    return Results.NoContent();
+    var result = await store.SaveAsync(UserId(user), preset);
+    return result == SaveResult.QuotaExceeded
+        ? Results.Problem(
+            statusCode: StatusCodes.Status409Conflict,
+            title: "Preset limit reached",
+            detail: $"You can store at most {EfPresetStore.MaxPresetsPerOwner} presets.")
+        : Results.NoContent();
 });
 
 presets.MapDelete("/{id}", async (string id, ClaimsPrincipal user, IPresetStore store) =>

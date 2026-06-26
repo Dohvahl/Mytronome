@@ -11,6 +11,14 @@ public interface IPresetStore
 {
     Task<IReadOnlyList<Preset>> ListAsync(string ownerId);
     Task<Preset?> GetAsync(string ownerId, string id);
-    Task SaveAsync(string ownerId, Preset preset); // create or overwrite by id
+    Task<SaveResult> SaveAsync(string ownerId, Preset preset); // create or overwrite by id
     Task<bool> RemoveAsync(string ownerId, string id);
+}
+
+/// <summary>Outcome of a <see cref="IPresetStore.SaveAsync"/> call.</summary>
+public enum SaveResult
+{
+    Created,
+    Updated,
+    QuotaExceeded,
 }

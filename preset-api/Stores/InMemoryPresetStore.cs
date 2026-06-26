@@ -24,10 +24,13 @@ public class InMemoryPresetStore : IPresetStore
     public Task<Preset?> GetAsync(string ownerId, string id) =>
         Task.FromResult(Owned(ownerId).GetValueOrDefault(id));
 
-    public Task SaveAsync(string ownerId, Preset preset)
+    public Task<SaveResult> SaveAsync(string ownerId, Preset preset)
     {
-        Owned(ownerId)[preset.Id] = preset;
-        return Task.CompletedTask;
+        var owned = Owned(ownerId);
+        var isNew = !owned.ContainsKey(preset.Id);
+        owned[preset.Id] = preset;
+        // The in-memory double doesn't enforce a quota (it's not the production store).
+        return Task.FromResult(isNew ? SaveResult.Created : SaveResult.Updated);
     }
 
     public Task<bool> RemoveAsync(string ownerId, string id) =>
