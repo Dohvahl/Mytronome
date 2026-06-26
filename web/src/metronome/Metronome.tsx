@@ -6,7 +6,12 @@ import { TempoControl } from './TempoControl';
 import { VolumeControl } from './VolumeControl';
 import { SubdivisionControl } from './SubdivisionControl';
 import { HelpHint } from './HelpHint';
-import { useKeyHeld, useResizableWidth, useWheelAdjust } from './hooks';
+import {
+  useKeyHeld,
+  useKeyPressed,
+  useResizableWidth,
+  useWheelAdjust,
+} from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
 import { usePresets } from '../presets/usePresets';
 import { samePresetSettings } from '@mytronome/presets';
@@ -76,6 +81,8 @@ export function Metronome() {
   const shiftHeld = useKeyHeld('Shift');
   const stepBoost = shiftHeld && !presetsOpen;
   const step = stepBoost ? 10 : 1;
+
+  useKeyPressed(' ', toggle); // space toggles play/pause
 
   // Scroll wheel over the tempo display or the slider nudges BPM (±10 with Shift).
   const tempoWheelRef = useWheelAdjust<HTMLDivElement>((dir) =>

@@ -9,3 +9,7 @@ test/PresetApi.Tests
 
 # Husky internals
 .husky/_
+
+# Tauri / Rust build + generated output
+desktop/src-tauri/target
+desktop/src-tauri/gen

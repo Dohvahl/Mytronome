@@ -6,7 +6,8 @@
   "workspaces": [
     "metronome-engine",
     "presets",
-    "web"
+    "web",
+    "desktop"
   ],
   "scripts": {
     "test": "tsc --noEmit -p tsconfig.test.json && vitest run",

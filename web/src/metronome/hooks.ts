@@ -70,6 +70,41 @@ export function useKeyHeld(targetKey: string): boolean {
 }
 
 /**
+ * Calls `onPress` when `targetKey` is pressed while the app window has focus —
+ * but not while typing in a field or when a button/link is focused, so e.g.
+ * Space can toggle the metronome from anywhere without hijacking text input or
+ * double-firing a focused button. Ignores auto-repeat from a held key.
+ */
+export function useKeyPressed(targetKey: string, onPress: () => void): void {
+  // Latest callback in a ref so we attach the listener only once (same pattern
+  // as useWheelAdjust). Assigned in an effect per the react-hooks/refs rule.
+  const callbackRef = useRef(onPress);
+  useEffect(() => {
+    callbackRef.current = onPress;
+  });
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key !== targetKey) return;
+      if (e.repeat) return; // holding the key shouldn't toggle repeatedly
+      const target = e.target as HTMLElement | null;
+      // Let the key type / activate natively when a field or button is focused.
+      if (
+        target?.closest(
+          'input, textarea, select, button, [role="button"], a[href], [contenteditable]',
+        )
+      ) {
+        return;
+      }
+      e.preventDefault(); // space otherwise scrolls the page
+      callbackRef.current();
+    };
+    window.addEventListener('keydown', down);
+    return () => window.removeEventListener('keydown', down);
+  }, [targetKey]);
+}
+
+/**
  * A resizable width (e.g. for a left drawer), persisted to localStorage and
  * clamped to [min, max]. Returns the current width and a pointer-down handler
  * to attach to a drag handle on the element's right edge.
