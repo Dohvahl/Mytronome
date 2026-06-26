@@ -53,8 +53,10 @@ export function PresetItem({
     setRenaming(false);
   };
 
+
+
   const hasLabel = preset.label.trim() !== '';
-  const summary = `${preset.bpm} BPM · ${preset.timeSignature.beats}/${preset.timeSignature.noteValue}`;
+  const summary = `${preset.bpm} BPM \u{00B7} ${preset.timeSignature.beats}/${preset.timeSignature.noteValue}`;
 
   const className = ['preset-item', isDragging ? 'dragging' : '', isDropTarget ? 'drop-target' : '']
     .filter(Boolean)
