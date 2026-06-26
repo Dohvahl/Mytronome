@@ -30,12 +30,23 @@ public class EfPresetStore(PresetDbContext db) : IPresetStore
 
         if (existing is null)
         {
+            // Id is the global primary key, so a client-chosen id that already
+            // belongs to ANOTHER user can't be inserted. Reject it cleanly instead
+            // of hitting a primary-key violation — and so one user can't clobber or
+            // probe another's preset by supplying its id.
+            if (await db.Presets.AnyAsync(p => p.Id == preset.Id))
+                return SaveResult.IdConflict;
+
             // The cap applies only to NEW presets; updating an existing one always passes.
             var ownedCount = await db.Presets
                 .CountAsync(p => EF.Property<string>(p, "OwnerId") == ownerId);
             if (ownedCount >= MaxPresetsPerOwner)
                 return SaveResult.QuotaExceeded;
 
+            // Stamp timestamps server-side; don't trust the client's values.
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            preset.CreatedAt = now;
+            preset.UpdatedAt = now;
             var entry = db.Presets.Add(preset);
             entry.Property("OwnerId").CurrentValue = ownerId;
             await db.SaveChangesAsync();
@@ -46,8 +57,8 @@ public class EfPresetStore(PresetDbContext db) : IPresetStore
         existing.Bpm = preset.Bpm;
         existing.TimeSignature = preset.TimeSignature;
         existing.Pattern = preset.Pattern;
-        existing.CreatedAt = preset.CreatedAt;
-        existing.UpdatedAt = preset.UpdatedAt;
+        // Preserve the original CreatedAt; bump UpdatedAt to server time.
+        existing.UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         await db.SaveChangesAsync();
         return SaveResult.Updated;
     }

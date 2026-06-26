@@ -10,11 +10,8 @@ import { useKeyHeld, useResizableWidth, useWheelAdjust } from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
 import { usePresets } from '../presets/usePresets';
 import { samePresetSettings } from '@mytronome/presets';
-import { isCompound } from '@mytronome/engine';
+import { isCompound, MIN_BPM, MAX_BPM } from '@mytronome/engine';
 import './Metronome.css';
-
-const MIN_BPM = 40;
-const MAX_BPM = 320;
 
 export function Metronome() {
   const {

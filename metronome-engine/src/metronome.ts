@@ -22,9 +22,13 @@ export interface MetronomeOptions {
   onBeat?: (beat: BeatInfo) => void;
 }
 
-const MIN_BPM = 40;
-const MAX_BPM = 320;
-const MAX_SUBDIVISIONS = 16;
+// Shared musical limits — the web app imports these instead of redefining them.
+// The C# API enforces the same limits in preset-api/Validation/PresetValidator.cs
+// (MinBpm / MaxBpm / MaxBeats / NoteValues); those can't be shared across the
+// TS/C# boundary, so keep the two in sync by hand.
+export const MIN_BPM = 40;
+export const MAX_BPM = 320;
+export const MAX_SUBDIVISIONS = 16;
 
 type ClickLevel = 'accent' | 'normal' | 'sub';
 

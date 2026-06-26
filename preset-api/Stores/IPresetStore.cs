@@ -21,4 +21,7 @@ public enum SaveResult
     Created,
     Updated,
     QuotaExceeded,
+
+    /// <summary>The id is already used by another owner (it's the global key).</summary>
+    IdConflict,
 }

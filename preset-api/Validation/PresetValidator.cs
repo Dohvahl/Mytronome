@@ -5,6 +5,10 @@ namespace PresetApi.Validation;
 /// <summary>Server-side validation for incoming presets (never trust the client).</summary>
 public static class PresetValidator
 {
+    // These limits mirror the TS engine (metronome-engine/src/metronome.ts:
+    // MIN_BPM / MAX_BPM / MAX_SUBDIVISIONS) and the web's note-value set
+    // (web/src/metronome/timeSignatures.ts: NOTE_VALUES). They can't be shared
+    // across the TS/C# boundary — keep the two sides in sync by hand.
     private const int MinBpm = 40;
     private const int MaxBpm = 320;
     private const int MaxBeats = 16;
