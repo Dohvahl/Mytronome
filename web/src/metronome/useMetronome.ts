@@ -21,7 +21,7 @@ const NEXT_EMPHASIS: Record<BeatEmphasis, BeatEmphasis> = {
 const VOLUME_KEY = 'mytronome.volume';
 
 function readSavedVolume(): number {
-  const saved = Number(localStorage.getItem(VOLUME_KEY));
+  const saved = Number(localStorage.getItem(VOLUME_KEY) ?? 1);
   return Number.isFinite(saved) && saved >= 0 && saved <= 1 ? saved : 1;
 }
 
