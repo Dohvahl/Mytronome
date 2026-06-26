@@ -82,6 +82,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Deliberate, opt-in migration step for production deploys: running
+// `dotnet preset-api.dll --migrate` applies any pending EF migrations and exits,
+// without starting the web host. This makes schema changes a controlled deploy
+// action (e.g. a one-shot "migrate" container) instead of a race on every start.
+if (args.Contains("--migrate"))
+{
+    using var scope = app.Services.CreateScope();
+    scope.ServiceProvider.GetRequiredService<PresetDbContext>().Database.Migrate();
+    return;
+}
+
 // Apply pending EF migrations at startup in development only — convenient for
 // local dev and the demo container. In production, run migrations as an explicit,
 // controlled deploy step instead of racing them on every app start (and to avoid

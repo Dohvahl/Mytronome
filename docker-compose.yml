@@ -1,5 +1,7 @@
-# Local dev infrastructure. Slice 3.2a runs just MySQL here (the API runs via
-# `dotnet run`); slice 3.2b adds the API as a second service.
+# Local dev / demo stack — NOT for deployment. It publishes the API (5046) and
+# MySQL (3306) ports and runs the API in Development (Scalar docs, auto-migrate)
+# for convenience. To deploy, use docker-compose.prod.yml, which closes those off
+# and terminates HTTPS.
 services:
   mysql:
     image: mysql:8.0

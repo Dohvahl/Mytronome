@@ -12,7 +12,8 @@ An npm-workspaces monorepo (TypeScript) alongside a separate .NET API. Top-level
 | `presets/`           | Framework-agnostic preset domain: types, the `PresetStore` contract, and pure helpers.                                  |
 | `web/`               | The React + TypeScript (Vite) web client.                                                                               |
 | `preset-api/`        | C#/.NET 10 minimal API: EF Core 9 (Pomelo MySQL) + ASP.NET Core Identity, with Scalar API docs.                         |
-| `docker-compose.yml` | Full local/prod stack: MySQL + the API + the web app served by nginx.                                                   |
+| `docker-compose.yml` | Local dev / demo stack: MySQL + the API + the web app served by nginx.                                                  |
+| `docker-compose.prod.yml` | Production stack: API & DB unpublished (nginx-only), `Production` mode, HTTPS, migrations as a deliberate step.     |
 
 **Key pattern:** one `PresetStore` interface with three implementations — browser `localStorage`, the REST API, and Google Drive (`appDataFolder`). Switching storage only changes which implementation is used; the rest of the app is unaware. Adding a backend = a new implementation, nothing else.
 
@@ -42,6 +43,25 @@ docker compose up -d --build
 - MySQL: `localhost:3306` (named volume `mysql-data`)
 
 Rebuild just the web image: `docker compose up -d --build --no-deps web`. Stop: `docker compose down` (keep data) or `-v` (wipe).
+
+> **Note:** the dev compose is a convenience, not a deployment target — it publishes the API and database ports and runs in Development. For deployment use the production stack below.
+
+### Production deployment
+
+`docker-compose.prod.yml` is the deployable stack. It closes off exactly what makes the dev compose unsafe to ship: the API and MySQL have **no** published host ports (the API is reachable only through nginx, so its IP-based rate limiter can't be bypassed by a direct caller spoofing `X-Forwarded-For`), the API runs in `Production` (no Scalar docs, no auto-migrate on startup), nginx terminates HTTPS (redirecting HTTP), and database migrations are an explicit, deliberate step.
+
+```sh
+# 1. Same root .env as above (MYSQL_* vars).
+# 2. Provide TLS certs at ./certs (gitignored): fullchain.pem + privkey.pem.
+# 3. Build the images:
+docker compose -f docker-compose.prod.yml build
+# 4. Apply migrations once — a one-shot container that runs `--migrate` and exits:
+docker compose -f docker-compose.prod.yml --profile migrate run --rm migrate
+# 5. Start the stack:
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Only the web service is published (ports 80/443; HTTP redirects to HTTPS). Re-run the `migrate` step before `up` whenever you ship a schema change.
 
 ## Configuration
 

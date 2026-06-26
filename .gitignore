@@ -25,4 +25,7 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# TLS certs for the production stack (operator-provided, never committed)
+certs/
+
 .local
