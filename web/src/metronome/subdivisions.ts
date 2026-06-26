@@ -112,5 +112,5 @@ export function clampSubdivision(count: number, beatNoteValue: number): number {
   const counts = subdivisionOptions(beatNoteValue).map((o) => o.count);
   if (counts.includes(count)) return count;
   const coarser = counts.filter((c) => c < count);
-  return coarser.length > 0 ? Math.max(...coarser) : counts[0] ?? 1;
+  return coarser.length > 0 ? Math.max(...coarser) : (counts[0] ?? 1);
 }

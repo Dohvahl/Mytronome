@@ -48,8 +48,9 @@ export function useMetronome() {
   const beatTimersRef = useRef<number[]>([]);
 
   const [bpm, setBpmState] = useState(DEFAULT_BPM);
-  const [timeSignature, setTimeSignatureState] =
-    useState<TimeSignature>(DEFAULT_TIME_SIGNATURE);
+  const [timeSignature, setTimeSignatureState] = useState<TimeSignature>(
+    DEFAULT_TIME_SIGNATURE,
+  );
   const [pattern, setPatternState] = useState<BeatEmphasis[]>(() =>
     defaultPattern(DEFAULT_TIME_SIGNATURE),
   );
@@ -129,9 +130,7 @@ export function useMetronome() {
     // Changing the beat COUNT resets the accent pattern to default; changing
     // only the note value keeps the pattern you've set.
     const nextPattern =
-      value.beats === timeSignature.beats
-        ? pattern
-        : defaultPattern(value);
+      value.beats === timeSignature.beats ? pattern : defaultPattern(value);
     engine?.setTimeSignature(value);
     engine?.setPattern(nextPattern);
     setTimeSignatureState(value);
@@ -167,7 +166,10 @@ export function useMetronome() {
     setPatternState(settings.pattern);
 
     // Keep the subdivision valid for the preset's beat note value.
-    const nextSub = clampSubdivision(subdivisions, settings.timeSignature.noteValue);
+    const nextSub = clampSubdivision(
+      subdivisions,
+      settings.timeSignature.noteValue,
+    );
     if (nextSub !== subdivisions) setSubdivisions(nextSub);
   };
 

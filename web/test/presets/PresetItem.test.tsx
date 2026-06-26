@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Preset } from '@mytronome/presets';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PresetItem } from '../../src/presets/PresetItem';
 
 // Without Vitest's `globals: true`, Testing Library can't auto-unmount between
@@ -76,25 +76,27 @@ describe('PresetItem', () => {
   });
 
   it('calls onCopy when the duplicate button is clicked', () => {
-	const { onCopy, preset } = setup();
-	fireEvent.click(screen.getByRole('button', { name: /duplicate/i }));
-	expect(onCopy).toHaveBeenCalledWith(preset);
+    const { onCopy, preset } = setup();
+    fireEvent.click(screen.getByRole('button', { name: /duplicate/i }));
+    expect(onCopy).toHaveBeenCalledWith(preset);
   });
 
   it('calls onDelete when the delete button is clicked', () => {
-	const { onDelete, preset } = setup();
-	fireEvent.click(screen.getByRole('button', { name: /delete/i }));
-	expect(onDelete).toHaveBeenCalledWith(preset);
+    const { onDelete, preset } = setup();
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }));
+    expect(onDelete).toHaveBeenCalledWith(preset);
   });
 
   it('calls onUpdateToCurrent when the update button is clicked', () => {
-	const { onUpdateToCurrent, preset } = setup();
-	fireEvent.click(screen.getByRole('button', { name: /update/i }));
-	expect(onUpdateToCurrent).toHaveBeenCalledWith(preset);
+    const { onUpdateToCurrent, preset } = setup();
+    fireEvent.click(screen.getByRole('button', { name: /update/i }));
+    expect(onUpdateToCurrent).toHaveBeenCalledWith(preset);
   });
 
   it('shows the preset summary when a label is not present', () => {
-	setup({ label: '' });
-	expect(screen.getByText('120 BPM \u{00B7} 4/4').className).toBe('preset-label');
+    setup({ label: '' });
+    expect(screen.getByText('120 BPM \u{00B7} 4/4').className).toBe(
+      'preset-label',
+    );
   });
 });

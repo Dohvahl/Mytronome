@@ -53,12 +53,14 @@ export function PresetItem({
     setRenaming(false);
   };
 
-
-
   const hasLabel = preset.label.trim() !== '';
   const summary = `${preset.bpm} BPM \u{00B7} ${preset.timeSignature.beats}/${preset.timeSignature.noteValue}`;
 
-  const className = ['preset-item', isDragging ? 'dragging' : '', isDropTarget ? 'drop-target' : '']
+  const className = [
+    'preset-item',
+    isDragging ? 'dragging' : '',
+    isDropTarget ? 'drop-target' : '',
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -109,23 +111,41 @@ export function PresetItem({
               onClick={() => onLoad(preset)}
               title="Load this preset"
             >
-              <span className="preset-label">{hasLabel ? preset.label : summary}</span>
+              <span className="preset-label">
+                {hasLabel ? preset.label : summary}
+              </span>
               {hasLabel && <span className="preset-summary">{summary}</span>}
             </button>
           )}
         </div>
 
         <div className="preset-actions">
-          <button onClick={startRename} title="Rename" aria-label="Rename this preset">
+          <button
+            onClick={startRename}
+            title="Rename"
+            aria-label="Rename this preset"
+          >
             <PencilIcon />
           </button>
-          <button onClick={() => onUpdateToCurrent(preset)} title="Update" aria-label="Update this preset to match the current settings">
+          <button
+            onClick={() => onUpdateToCurrent(preset)}
+            title="Update"
+            aria-label="Update this preset to match the current settings"
+          >
             <UpdateIcon />
           </button>
-          <button onClick={() => onCopy(preset)} title="Duplicate" aria-label="Duplicate this preset">
+          <button
+            onClick={() => onCopy(preset)}
+            title="Duplicate"
+            aria-label="Duplicate this preset"
+          >
             <CopyIcon />
           </button>
-          <button onClick={() => onDelete(preset)} title="Delete" aria-label="Delete this preset">
+          <button
+            onClick={() => onDelete(preset)}
+            title="Delete"
+            aria-label="Delete this preset"
+          >
             <TrashIcon />
           </button>
         </div>

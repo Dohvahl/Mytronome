@@ -63,13 +63,13 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
   }, [editing, draftBeats, draftNote]);
 
   const tsPresetsWheelRef = useWheelAdjust<HTMLButtonElement>((dir) => {
-	const currentIndex = COMMON_TIME_SIGNATURES.findIndex(
-	  (ts) => ts.label === matchedPreset?.label,
-	);
-	const nextIndex = currentIndex - dir;
-	if (nextIndex >= 0 && nextIndex < COMMON_TIME_SIGNATURES.length) {
-	  selectPreset(COMMON_TIME_SIGNATURES[nextIndex].label);
-	}
+    const currentIndex = COMMON_TIME_SIGNATURES.findIndex(
+      (ts) => ts.label === matchedPreset?.label,
+    );
+    const nextIndex = currentIndex - dir;
+    if (nextIndex >= 0 && nextIndex < COMMON_TIME_SIGNATURES.length) {
+      selectPreset(COMMON_TIME_SIGNATURES[nextIndex].label);
+    }
   });
 
   return (
@@ -78,7 +78,7 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
       <button
         type="button"
         className="ts-trigger"
-		ref={tsPresetsWheelRef}
+        ref={tsPresetsWheelRef}
         onClick={open}
         aria-haspopup="dialog"
         aria-expanded={editing}
@@ -98,7 +98,11 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
       {editing && (
         <>
           <div className="ts-backdrop" onClick={accept} />
-          <div className="ts-editor" role="dialog" aria-label="Edit time signature">
+          <div
+            className="ts-editor"
+            role="dialog"
+            aria-label="Edit time signature"
+          >
             <WheelPicker
               value={draftBeats}
               options={BEAT_OPTIONS}
@@ -141,7 +145,12 @@ interface WheelPickerProps {
  * neighbour jumps straight to it. Works for both the contiguous 1–16 beats and
  * the discrete note values, since it steps through a fixed options array.
  */
-function WheelPicker({ value, options, onChange, ariaLabel }: WheelPickerProps) {
+function WheelPicker({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: WheelPickerProps) {
   const index = options.indexOf(value);
   const above = index > 0 ? options[index - 1] : null;
   const below = index < options.length - 1 ? options[index + 1] : null;

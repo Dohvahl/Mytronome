@@ -79,10 +79,10 @@ export function Metronome() {
 
   // Scroll wheel over the tempo display or the slider nudges BPM (±10 with Shift).
   const tempoWheelRef = useWheelAdjust<HTMLDivElement>((dir) =>
-    setBpm(bpm + (dir * step)),
+    setBpm(bpm + dir * step),
   );
   const sliderWheelRef = useWheelAdjust<HTMLInputElement>((dir) =>
-    setBpm(bpm + (dir * step)),
+    setBpm(bpm + dir * step),
   );
 
   return (
@@ -93,13 +93,16 @@ export function Metronome() {
         aria-label="Toggle presets panel"
         aria-expanded={presetsOpen}
       >
-		&#9776;
+        &#9776;
       </button>
 
       <HelpHint />
 
       {presetsOpen && (
-        <div className="sidebar-backdrop" onClick={() => setPresetsOpen(false)} />
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setPresetsOpen(false)}
+        />
       )}
 
       <aside
@@ -109,27 +112,27 @@ export function Metronome() {
       >
         <div className="sidebar-content">
           <VolumeControl volume={volume} onChange={setVolume} />
-        <PresetsPanel
-          presets={presets}
-          current={current}
-          location={location}
-          availableLocations={availableLocations}
-          loading={loading}
-          error={error}
-          sessionExpired={sessionExpired}
-          onLocationChange={setLocation}
-          onLoad={(preset) => {
-            applySettings(preset);
-            setLoadedPresetId(preset.id);
-            setPresetsOpen(false);
-          }}
-          onSave={savePreset}
-          onUpdate={(preset, settings) => editPreset(preset, settings)}
-          onRename={(preset, label) => editPreset(preset, { label })}
-          onCopy={copyPreset}
-          onDelete={deletePreset}
-          onReorder={reorderPresets}
-        />
+          <PresetsPanel
+            presets={presets}
+            current={current}
+            location={location}
+            availableLocations={availableLocations}
+            loading={loading}
+            error={error}
+            sessionExpired={sessionExpired}
+            onLocationChange={setLocation}
+            onLoad={(preset) => {
+              applySettings(preset);
+              setLoadedPresetId(preset.id);
+              setPresetsOpen(false);
+            }}
+            onSave={savePreset}
+            onUpdate={(preset, settings) => editPreset(preset, settings)}
+            onRename={(preset, label) => editPreset(preset, { label })}
+            onCopy={copyPreset}
+            onDelete={deletePreset}
+            onReorder={reorderPresets}
+          />
         </div>
         <div
           className="sidebar-resize"
@@ -153,69 +156,72 @@ export function Metronome() {
           ) : null}
         </div>
 
-      <BeatIndicator
-        pattern={pattern}
-        currentBeat={currentBeat}
-        onCycle={cycleBeat}
-        beatsPerGroup={isCompound(timeSignature) ? 3 : 0}
-      />
+        <BeatIndicator
+          pattern={pattern}
+          currentBeat={currentBeat}
+          onCycle={cycleBeat}
+          beatsPerGroup={isCompound(timeSignature) ? 3 : 0}
+        />
 
-      <div className="tempo-row">
-        <button
-          className={`step ${stepBoost ? 'step-10' : ''}`}
-          onClick={() => setBpm(bpm - step)}
-          aria-label={`Decrease tempo by ${step}`}
-        >
-          {stepBoost ? '−10' : '−'}
-        </button>
+        <div className="tempo-row">
+          <button
+            className={`step ${stepBoost ? 'step-10' : ''}`}
+            onClick={() => setBpm(bpm - step)}
+            aria-label={`Decrease tempo by ${step}`}
+          >
+            {stepBoost ? '−10' : '−'}
+          </button>
 
-        <div className="tempo-display" ref={tempoWheelRef}>
-          <div className="tempo-value-area">
-            <TempoControl
-              value={bpm}
-              min={MIN_BPM}
-              max={MAX_BPM}
-              step={step}
-              onChange={setBpm}
-            />
+          <div className="tempo-display" ref={tempoWheelRef}>
+            <div className="tempo-value-area">
+              <TempoControl
+                value={bpm}
+                min={MIN_BPM}
+                max={MAX_BPM}
+                step={step}
+                onChange={setBpm}
+              />
+            </div>
+            <span className="unit">BPM</span>
           </div>
-          <span className="unit">BPM</span>
+
+          <button
+            className={`step ${stepBoost ? 'step-10' : ''}`}
+            onClick={() => setBpm(bpm + step)}
+            aria-label={`Increase tempo by ${step}`}
+          >
+            {stepBoost ? '+10' : '+'}
+          </button>
+        </div>
+
+        <input
+          className="tempo-slider"
+          type="range"
+          min={MIN_BPM}
+          max={MAX_BPM}
+          value={bpm}
+          onChange={(e) => setBpm(Number(e.target.value))}
+          ref={sliderWheelRef}
+        />
+
+        <div className="meter-row">
+          <TimeSignaturePicker
+            value={timeSignature}
+            onChange={setTimeSignature}
+          />
+          <SubdivisionControl
+            value={subdivisions}
+            onChange={setSubdivisions}
+            beatNoteValue={timeSignature.noteValue}
+          />
         </div>
 
         <button
-          className={`step ${stepBoost ? 'step-10' : ''}`}
-          onClick={() => setBpm(bpm + step)}
-          aria-label={`Increase tempo by ${step}`}
+          className={`play ${isRunning ? 'running' : ''}`}
+          onClick={toggle}
         >
-          {stepBoost ? '+10' : '+'}
+          {isRunning ? 'Stop' : 'Start'}
         </button>
-      </div>
-
-      <input
-        className="tempo-slider"
-        type="range"
-        min={MIN_BPM}
-        max={MAX_BPM}
-        value={bpm}
-        onChange={(e) => setBpm(Number(e.target.value))}
-        ref={sliderWheelRef}
-      />
-
-      <div className="meter-row">
-        <TimeSignaturePicker value={timeSignature} onChange={setTimeSignature} />
-        <SubdivisionControl
-          value={subdivisions}
-          onChange={setSubdivisions}
-          beatNoteValue={timeSignature.noteValue}
-        />
-      </div>
-
-      <button
-        className={`play ${isRunning ? 'running' : ''}`}
-        onClick={toggle}
-      >
-        {isRunning ? 'Stop' : 'Start'}
-      </button>
       </div>
     </>
   );

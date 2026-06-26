@@ -103,39 +103,39 @@ export function SubdivisionControl({ value, onChange, beatNoteValue }: Props) {
 
   return (
     <div className="subdivision-picker" ref={pickerRef}>
-        <button
-          type="button"
-          className="subdivision-trigger"
-          ref={subdWheelRef}
-          onClick={() => setOpen((o) => !o)}
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-label={`Subdivision: ${current.name}`}
-        >
-          <Glyph option={current} />
-          <span className="subdivision-chevron" aria-hidden="true">
-            &#9662;
-          </span>
-        </button>
-        {open && (
-          <ul className="subdivision-menu" role="listbox">
-            {options.map((o) => (
-              <li key={o.count} role="option" aria-selected={o.count === value}>
-                <button
-                  type="button"
-                  className={o.count === value ? 'active' : ''}
-                  onClick={() => {
-                    onChange(o.count);
-                    setOpen(false);
-                  }}
-                  title={o.name}
-                >
-                  <Glyph option={o} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+      <button
+        type="button"
+        className="subdivision-trigger"
+        ref={subdWheelRef}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Subdivision: ${current.name}`}
+      >
+        <Glyph option={current} />
+        <span className="subdivision-chevron" aria-hidden="true">
+          &#9662;
+        </span>
+      </button>
+      {open && (
+        <ul className="subdivision-menu" role="listbox">
+          {options.map((o) => (
+            <li key={o.count} role="option" aria-selected={o.count === value}>
+              <button
+                type="button"
+                className={o.count === value ? 'active' : ''}
+                onClick={() => {
+                  onChange(o.count);
+                  setOpen(false);
+                }}
+                title={o.name}
+              >
+                <Glyph option={o} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

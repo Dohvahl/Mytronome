@@ -15,7 +15,9 @@
   color: var(--text-h);
   font-size: 1.2222rem;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 .menu-toggle:hover {
   border-color: var(--accent-border);
@@ -128,7 +130,9 @@
   color: var(--text);
   cursor: pointer;
   font-size: 0.7778rem;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .storage-switch button:hover {
   color: var(--accent);
@@ -160,7 +164,9 @@
   color: var(--text-h);
   cursor: pointer;
   font-size: 0.7778rem;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 .cloud-connect:hover {
   border-color: var(--accent-border);
@@ -292,7 +298,9 @@
   color: var(--text-h);
   cursor: pointer;
   font-size: 0.7778rem;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 .account-button:hover {
   border-color: var(--accent-border);
@@ -470,7 +478,9 @@
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 /* Size the trash SVG with the font so it matches the text glyphs and centers. */
 .preset-actions button svg {

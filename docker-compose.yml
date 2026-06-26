@@ -11,11 +11,19 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3306:3306"
+      - '3306:3306'
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-p${MYSQL_ROOT_PASSWORD}',
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -31,9 +39,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       # Inside the Docker network the database host is the service name "mysql".
-      ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD}"
+      ConnectionStrings__DefaultConnection: 'Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD}'
     ports:
-      - "5046:8080"
+      - '5046:8080'
 
   web:
     build:
@@ -44,7 +52,7 @@ services:
     depends_on:
       - api
     ports:
-      - "8080:80"
+      - '8080:80'
 
 volumes:
   mysql-data:

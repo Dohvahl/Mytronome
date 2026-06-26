@@ -220,7 +220,10 @@ export class Metronome {
         }
 
         // Always notify — muted beats still advance the visual indicator.
-        this.onBeat?.({ beatIndex: this.nextBeatIndex, time: this.nextBeatTime });
+        this.onBeat?.({
+          beatIndex: this.nextBeatIndex,
+          time: this.nextBeatTime,
+        });
       } else {
         // An in-between subdivision: a softer tick (audio only, no visual).
         this.scheduleClick(this.nextBeatTime, 'sub');
@@ -230,7 +233,8 @@ export class Metronome {
       this.subIndex += 1;
       if (this.subIndex >= this.subdivisions) {
         this.subIndex = 0;
-        this.nextBeatIndex = (this.nextBeatIndex + 1) % this.timeSignature.beats;
+        this.nextBeatIndex =
+          (this.nextBeatIndex + 1) % this.timeSignature.beats;
       }
     }
   }

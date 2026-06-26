@@ -9,10 +9,9 @@
 }
 
 /* --- "How to use" hint (top-right, mirrors the ☰ menu top-left) --- */
-:root
-{
-	--help-icon-color: var(--border);
-	--help-icon-border-radius: 2.4444rem;
+:root {
+  --help-icon-color: var(--border);
+  --help-icon-border-radius: 2.4444rem;
 }
 .help-hint {
   position: fixed;
@@ -34,7 +33,9 @@
   background: var(--bg);
   color: var(--help-icon-color);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 .help-toggle:hover,
 .help-toggle:focus-visible {
@@ -151,7 +152,9 @@
   background: var(--bg);
   color: var(--text-h);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 .step:hover {
   border-color: var(--accent-border);
@@ -195,7 +198,9 @@
   border-radius: 0.7778rem;
   background: var(--bg);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 .bpm-chip:hover {
   border-color: var(--accent-border);
@@ -268,7 +273,9 @@
   background: var(--accent-bg);
   color: var(--accent);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .play.running {
   background: var(--accent);
@@ -305,7 +312,7 @@
   border-color: var(--accent-border);
 }
 .subdivision-chevron {
-  font-size: 0.6111rem;
+  font-size: 1rem;
   color: var(--text);
 }
 .subdivision-menu {
@@ -347,7 +354,8 @@
   color: var(--accent);
 }
 .sub-note {
-  font-family: 'Segoe UI Symbol', 'Noto Music', 'Noto Sans Symbols2', var(--sans);
+  font-family:
+    'Segoe UI Symbol', 'Noto Music', 'Noto Sans Symbols2', var(--sans);
   font-size: 1.1111rem;
   line-height: 1;
 }
@@ -372,8 +380,11 @@
   border: 0.1111rem solid var(--border);
   background: transparent;
   cursor: pointer;
-  transition: transform 0.06s ease, background 0.06s ease,
-    border-color 0.06s ease, opacity 0.06s ease;
+  transition:
+    transform 0.06s ease,
+    background 0.06s ease,
+    border-color 0.06s ease,
+    opacity 0.06s ease;
 }
 .beat-dot:hover {
   border-color: var(--accent-border);
@@ -453,7 +464,7 @@
   font-weight: 600;
 }
 .ts-trigger-chevron {
-  font-size: 0.6111rem;
+  font-size: 1rem;
   color: var(--text);
 }
 
@@ -537,7 +548,9 @@
   background: var(--accent-bg);
   color: var(--accent);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .ts-accept:hover {
   background: var(--accent);

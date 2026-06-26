@@ -100,7 +100,9 @@ function AccountModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <form className="auth-form" onSubmit={submit}>
-            <h2 className="auth-title">{isSignin ? 'Log in' : 'Create account'}</h2>
+            <h2 className="auth-title">
+              {isSignin ? 'Log in' : 'Create account'}
+            </h2>
             {!isSignin && (
               <p className="auth-subtitle">
                 Create an account to sync your presets to the server.
