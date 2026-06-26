@@ -149,12 +149,18 @@ presets.MapPut("/{id}", async (string id, Preset preset, ClaimsPrincipal user, I
         return Results.ValidationProblem(errors);
 
     var result = await store.SaveAsync(UserId(user), preset);
-    return result == SaveResult.QuotaExceeded
-        ? Results.Problem(
+    return result switch
+    {
+        SaveResult.QuotaExceeded => Results.Problem(
             statusCode: StatusCodes.Status409Conflict,
             title: "Preset limit reached",
-            detail: $"You can store at most {EfPresetStore.MaxPresetsPerOwner} presets.")
-        : Results.NoContent();
+            detail: $"You can store at most {EfPresetStore.MaxPresetsPerOwner} presets."),
+        SaveResult.IdConflict => Results.Problem(
+            statusCode: StatusCodes.Status409Conflict,
+            title: "Preset id already in use",
+            detail: "That preset id is already taken. Use a different id."),
+        _ => Results.NoContent(),
+    };
 });
 
 presets.MapDelete("/{id}", async (string id, ClaimsPrincipal user, IPresetStore store) =>

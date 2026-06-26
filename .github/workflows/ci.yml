@@ -34,7 +34,7 @@ jobs:
         with:
           dotnet-version: "10.0.x"
       - run: dotnet build preset-api --configuration Release
-      # TODO: add `dotnet test` once the xUnit project (tasks #12/#13) exists.
+      - run: dotnet test test/PresetApi.Tests --configuration Release
 
   secrets:
     name: Secret scan (gitleaks)

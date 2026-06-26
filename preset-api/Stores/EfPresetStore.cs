@@ -30,6 +30,13 @@ public class EfPresetStore(PresetDbContext db) : IPresetStore
 
         if (existing is null)
         {
+            // Id is the global primary key, so a client-chosen id that already
+            // belongs to ANOTHER user can't be inserted. Reject it cleanly instead
+            // of hitting a primary-key violation — and so one user can't clobber or
+            // probe another's preset by supplying its id.
+            if (await db.Presets.AnyAsync(p => p.Id == preset.Id))
+                return SaveResult.IdConflict;
+
             // The cap applies only to NEW presets; updating an existing one always passes.
             var ownedCount = await db.Presets
                 .CountAsync(p => EF.Property<string>(p, "OwnerId") == ownerId);
