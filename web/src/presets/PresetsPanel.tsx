@@ -127,7 +127,9 @@ export function PresetsPanel({
       {!loading && error && <p className="preset-error">{error}</p>}
 
       {!loading && !error && presets.length === 0 && (
-        <p className="preset-empty">No presets yet — set a tempo and save it.</p>
+        <p className="preset-empty">
+          No presets yet — set a tempo and save it.
+        </p>
       )}
 
       {!loading && presets.length > 0 && (

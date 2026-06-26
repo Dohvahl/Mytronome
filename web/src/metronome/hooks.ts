@@ -102,7 +102,10 @@ export function useResizableWidth(options: {
     const startWidth = widthRef.current;
 
     const onMove = (ev: PointerEvent) => {
-      const next = Math.min(max, Math.max(min, startWidth + ev.clientX - startX));
+      const next = Math.min(
+        max,
+        Math.max(min, startWidth + ev.clientX - startX),
+      );
       setWidth(next);
     };
     const onUp = () => {

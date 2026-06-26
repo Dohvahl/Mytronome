@@ -34,7 +34,9 @@ export function DriveProvider({ children }: { children: ReactNode }) {
     [connected],
   );
 
-  return <DriveContext.Provider value={value}>{children}</DriveContext.Provider>;
+  return (
+    <DriveContext.Provider value={value}>{children}</DriveContext.Provider>
+  );
 }
 
 export function useDrive(): DriveValue {

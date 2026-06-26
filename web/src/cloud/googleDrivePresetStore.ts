@@ -22,7 +22,8 @@ export class GoogleDrivePresetStore implements PresetStore {
     const res = await fetch(`${DRIVE}/files/${id}?alt=media`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) throw new Error(`Couldn't read presets from Drive (${res.status}).`);
+    if (!res.ok)
+      throw new Error(`Couldn't read presets from Drive (${res.status}).`);
 
     const data = await res.json();
     return Array.isArray(data) ? (data as Preset[]) : [];
@@ -89,7 +90,8 @@ export class GoogleDrivePresetStore implements PresetStore {
       },
       body: multipart,
     });
-    if (!res.ok) throw new Error(`Couldn't create the Drive file (${res.status}).`);
+    if (!res.ok)
+      throw new Error(`Couldn't create the Drive file (${res.status}).`);
     const data = await res.json();
     this.fileId = data.id;
   }

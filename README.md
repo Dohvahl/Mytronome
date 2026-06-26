@@ -6,13 +6,13 @@ A cross-platform metronome with an accurate, fully client-side tick and savable 
 
 An npm-workspaces monorepo (TypeScript) alongside a separate .NET API. Top-level folders name the app's capabilities and surfaces, not generic layers:
 
-| Folder | What it is |
-|--------|-----------|
-| `metronome-engine/` | Framework-agnostic tick engine: tempo, time signature, Web Audio scheduler. No UI framework. Shared by every front-end. |
-| `presets/` | Framework-agnostic preset domain: types, the `PresetStore` contract, and pure helpers. |
-| `web/` | The React + TypeScript (Vite) web client. |
-| `preset-api/` | C#/.NET 10 minimal API: EF Core 9 (Pomelo MySQL) + ASP.NET Core Identity, with Scalar API docs. |
-| `docker-compose.yml` | Full local/prod stack: MySQL + the API + the web app served by nginx. |
+| Folder               | What it is                                                                                                              |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `metronome-engine/`  | Framework-agnostic tick engine: tempo, time signature, Web Audio scheduler. No UI framework. Shared by every front-end. |
+| `presets/`           | Framework-agnostic preset domain: types, the `PresetStore` contract, and pure helpers.                                  |
+| `web/`               | The React + TypeScript (Vite) web client.                                                                               |
+| `preset-api/`        | C#/.NET 10 minimal API: EF Core 9 (Pomelo MySQL) + ASP.NET Core Identity, with Scalar API docs.                         |
+| `docker-compose.yml` | Full local/prod stack: MySQL + the API + the web app served by nginx.                                                   |
 
 **Key pattern:** one `PresetStore` interface with three implementations — browser `localStorage`, the REST API, and Google Drive (`appDataFolder`). Switching storage only changes which implementation is used; the rest of the app is unaware. Adding a backend = a new implementation, nothing else.
 
@@ -45,11 +45,11 @@ Rebuild just the web image: `docker compose up -d --build --no-deps web`. Stop: 
 
 ## Configuration
 
-| What | Where | Notes |
-|------|-------|-------|
-| MySQL credentials (compose) | `.env` (repo root, gitignored) | See `.env.example` for the variable names. |
-| Google Drive client ID | `web/.env.local` → `VITE_GOOGLE_CLIENT_ID` | Public OAuth client ID. Baked into the web image at build time. |
-| API DB connection string | user-secrets (local) **or** `ConnectionStrings__DefaultConnection` env var (Docker) | `appsettings.json` ships an empty-password placeholder; the real value never lives in a committed file. |
+| What                        | Where                                                                               | Notes                                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| MySQL credentials (compose) | `.env` (repo root, gitignored)                                                      | See `.env.example` for the variable names.                                                              |
+| Google Drive client ID      | `web/.env.local` → `VITE_GOOGLE_CLIENT_ID`                                          | Public OAuth client ID. Baked into the web image at build time.                                         |
+| API DB connection string    | user-secrets (local) **or** `ConnectionStrings__DefaultConnection` env var (Docker) | `appsettings.json` ships an empty-password placeholder; the real value never lives in a committed file. |
 
 ## Testing
 

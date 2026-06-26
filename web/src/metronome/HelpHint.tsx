@@ -79,15 +79,14 @@ export function HelpHint() {
             <li>
               <kbd>Click</kbd> the time signature to open the editor
             </li>
-            <li>
-              Scroll the wheels to set the beats and note value
-            </li>
+            <li>Scroll the wheels to set the beats and note value</li>
           </ul>
 
           <h3 className="help-group">Presets</h3>
           <ul className="help-list">
             <li>
-              Open the <kbd>&#9776;</kbd> menu to save, load, and reorder presets
+              Open the <kbd>&#9776;</kbd> menu to save, load, and reorder
+              presets
             </li>
           </ul>
         </div>

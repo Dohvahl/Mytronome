@@ -9,7 +9,9 @@ async function checkOk(res: Response, action: string): Promise<void> {
   }
   // Prefer the server's ProblemDetails reason (e.g. the preset-limit message)
   // over a bare status code, so the user sees why the request was rejected.
-  throw new Error((await problemDetail(res)) ?? `Couldn't ${action} (${res.status}).`);
+  throw new Error(
+    (await problemDetail(res)) ?? `Couldn't ${action} (${res.status}).`,
+  );
 }
 
 async function problemDetail(res: Response): Promise<string | null> {

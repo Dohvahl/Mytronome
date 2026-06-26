@@ -55,7 +55,9 @@ describe('duplicatePreset', () => {
 describe('updatePreset', () => {
   it('applies changes, trims the label, keeps the id, and bumps updatedAt', () => {
     const original = createPreset(settings, 'Old');
-    const spy = vi.spyOn(Date, 'now').mockReturnValue(original.updatedAt + 1000);
+    const spy = vi
+      .spyOn(Date, 'now')
+      .mockReturnValue(original.updatedAt + 1000);
     const updated = updatePreset(original, { bpm: 140, label: '  New  ' });
     spy.mockRestore();
 
@@ -76,7 +78,10 @@ describe('updatePreset', () => {
 describe('samePresetSettings', () => {
   it('is true for musically identical settings', () => {
     expect(
-      samePresetSettings(settings, { ...settings, pattern: [...settings.pattern] }),
+      samePresetSettings(settings, {
+        ...settings,
+        pattern: [...settings.pattern],
+      }),
     ).toBe(true);
   });
 

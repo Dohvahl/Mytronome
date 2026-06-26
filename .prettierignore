@@ -1,0 +1,11 @@
+# Dependencies & build output (node_modules is ignored by Prettier already)
+node_modules
+dist
+**/dist
+
+# C# projects are formatted via dotnet format / .editorconfig, not Prettier
+preset-api
+test/PresetApi.Tests
+
+# Husky internals
+.husky/_

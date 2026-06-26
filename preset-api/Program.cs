@@ -171,3 +171,7 @@ app.Run();
 // The authenticated user's id (Identity stores it as the NameIdentifier claim).
 static string UserId(ClaimsPrincipal user) =>
     user.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+// Exposes the implicit top-level Program class so the test project's
+// WebApplicationFactory<Program> can reference it.
+public partial class Program { }

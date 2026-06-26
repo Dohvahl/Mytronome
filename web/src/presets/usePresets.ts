@@ -84,7 +84,9 @@ export function usePresets() {
 
   // If the saved choice isn't currently usable (e.g. "server" while signed out),
   // fall back to Local — without forgetting the saved preference.
-  const effectiveLocation: StorageLocation = availableLocations.includes(location)
+  const effectiveLocation: StorageLocation = availableLocations.includes(
+    location,
+  )
     ? location
     : 'local';
 
@@ -107,7 +109,10 @@ export function usePresets() {
       const all = await store.list();
       const ordered = orderPresets(all, readOrder(effectiveLocation));
       setPresets(ordered);
-      writeOrder(effectiveLocation, ordered.map((p) => p.id));
+      writeOrder(
+        effectiveLocation,
+        ordered.map((p) => p.id),
+      );
     } catch (e) {
       setPresets([]);
       if (e instanceof UnauthorizedError) {
@@ -144,7 +149,10 @@ export function usePresets() {
     presetsRef.current = next;
     setPresets(next);
     setError(null);
-    writeOrder(effectiveLocation, next.map((p) => p.id));
+    writeOrder(
+      effectiveLocation,
+      next.map((p) => p.id),
+    );
   };
 
   // Serialize background writes so concurrent ops can't clobber each other
