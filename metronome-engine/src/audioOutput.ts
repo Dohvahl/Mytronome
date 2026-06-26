@@ -60,6 +60,11 @@ export interface IntervalTimer {
 
 /** The default timer: the host's real `setInterval`/`clearInterval`. */
 export const browserTimer: IntervalTimer = {
-  setInterval: (handler, ms) => globalThis.setInterval(handler, ms),
+  // In the browser `setInterval` returns a number (the IntervalTimer handle is
+  // just an opaque token we hand back to clearInterval). The cast sidesteps
+  // @types/node's overload, which — when present in the type-check — widens the
+  // return to NodeJS.Timeout.
+  setInterval: (handler, ms) =>
+    globalThis.setInterval(handler, ms) as unknown as number,
   clearInterval: (id) => globalThis.clearInterval(id),
 };
