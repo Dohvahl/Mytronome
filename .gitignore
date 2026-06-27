@@ -29,3 +29,5 @@ Thumbs.db
 certs/
 
 .local
+
+*.bat
