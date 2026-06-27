@@ -6,14 +6,14 @@ A cross-platform metronome with an accurate, fully client-side tick and savable 
 
 An npm-workspaces monorepo (TypeScript) alongside a separate .NET API. Top-level folders name the app's capabilities and surfaces, not generic layers:
 
-| Folder               | What it is                                                                                                              |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `metronome-engine/`  | Framework-agnostic tick engine: tempo, time signature, Web Audio scheduler. No UI framework. Shared by every front-end. |
-| `presets/`           | Framework-agnostic preset domain: types, the `PresetStore` contract, and pure helpers.                                  |
-| `web/`               | The React + TypeScript (Vite) web client.                                                                               |
-| `preset-api/`        | C#/.NET 10 minimal API: EF Core 9 (Pomelo MySQL) + ASP.NET Core Identity, with Scalar API docs.                         |
-| `docker-compose.yml` | Local dev / demo stack: MySQL + the API + the web app served by nginx.                                                  |
-| `docker-compose.prod.yml` | Production stack: API & DB unpublished (nginx-only), `Production` mode, HTTPS, migrations as a deliberate step.     |
+| Folder                    | What it is                                                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `metronome-engine/`       | Framework-agnostic tick engine: tempo, time signature, Web Audio scheduler. No UI framework. Shared by every front-end. |
+| `presets/`                | Framework-agnostic preset domain: types, the `PresetStore` contract, and pure helpers.                                  |
+| `web/`                    | The React + TypeScript (Vite) web client.                                                                               |
+| `preset-api/`             | C#/.NET 10 minimal API: EF Core 9 (Pomelo MySQL) + ASP.NET Core Identity, with Scalar API docs.                         |
+| `docker-compose.yml`      | Local dev / demo stack: MySQL + the API + the web app served by nginx.                                                  |
+| `docker-compose.prod.yml` | Production stack: API & DB unpublished (nginx-only), `Production` mode, HTTPS, migrations as a deliberate step.         |
 
 **Key pattern:** one `PresetStore` interface with three implementations — browser `localStorage`, the REST API, and Google Drive (`appDataFolder`). Switching storage only changes which implementation is used; the rest of the app is unaware. Adding a backend = a new implementation, nothing else.
 

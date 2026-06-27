@@ -65,7 +65,10 @@ export class GoogleDrivePresetStore implements PresetStore {
   }
 
   /** The file's `version` (Drive bumps it on every change). Best-effort. */
-  private async fetchVersion(token: string, id: string): Promise<string | null> {
+  private async fetchVersion(
+    token: string,
+    id: string,
+  ): Promise<string | null> {
     const res = await fetch(`${DRIVE}/files/${id}?fields=version`, {
       headers: { Authorization: `Bearer ${token}` },
     });
