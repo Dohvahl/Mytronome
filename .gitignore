@@ -30,4 +30,4 @@ certs/
 
 .local
 
-*.bat
+scripts/*
