@@ -30,12 +30,9 @@ public class EfPresetStore(PresetDbContext db) : IPresetStore
 
         if (existing is null)
         {
-            // Id is the global primary key, so a client-chosen id that already
-            // belongs to ANOTHER user can't be inserted. Reject it cleanly instead
-            // of hitting a primary-key violation — and so one user can't clobber or
-            // probe another's preset by supplying its id.
-            if (await db.Presets.AnyAsync(p => p.Id == preset.Id))
-                return SaveResult.IdConflict;
+            // The key is composite (OwnerId, Id), so an id is unique only within
+            // this owner — another user's identical id is a separate row. There's
+            // no cross-owner collision (or probe) to guard against here.
 
             // The cap applies only to NEW presets; updating an existing one always passes.
             var ownedCount = await db.Presets
@@ -47,8 +44,14 @@ public class EfPresetStore(PresetDbContext db) : IPresetStore
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             preset.CreatedAt = now;
             preset.UpdatedAt = now;
-            var entry = db.Presets.Add(preset);
+
+            // OwnerId is now part of the (composite) key, so it must be set BEFORE
+            // the entity starts being tracked as Added — EF rejects a null key the
+            // moment it transitions to Added. So set the shadow value on a detached
+            // entry first, then mark it Added.
+            var entry = db.Entry(preset);
             entry.Property("OwnerId").CurrentValue = ownerId;
+            entry.State = EntityState.Added;
             await db.SaveChangesAsync();
             return SaveResult.Created;
         }

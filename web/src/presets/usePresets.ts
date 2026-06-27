@@ -19,7 +19,10 @@ export type StorageLocation = 'local' | 'server' | 'cloud';
 const LOCATION_KEY = 'mytronome.storageLocation';
 
 function readSavedLocation(): StorageLocation {
-  return localStorage.getItem(LOCATION_KEY) === 'server' ? 'server' : 'local';
+  const saved = localStorage.getItem(LOCATION_KEY);
+  // Recognize every real location — otherwise a saved "cloud" choice silently
+  // reverts to "local" on reload.
+  return saved === 'server' || saved === 'cloud' ? saved : 'local';
 }
 
 function errorMessage(e: unknown): string {
@@ -102,11 +105,18 @@ export function usePresets() {
     }
   }, [effectiveLocation]);
 
+  // Bumped on every refresh so a slow in-flight load that's been superseded
+  // (e.g. you switched location before it resolved) can't overwrite the list
+  // that now belongs to the active store.
+  const refreshIdRef = useRef(0);
+
   const refresh = useCallback(async () => {
+    const requestId = ++refreshIdRef.current;
     setLoading(true);
     setError(null);
     try {
       const all = await store.list();
+      if (refreshIdRef.current !== requestId) return; // superseded — drop it
       const ordered = orderPresets(all, readOrder(effectiveLocation));
       setPresets(ordered);
       writeOrder(
@@ -114,6 +124,7 @@ export function usePresets() {
         ordered.map((p) => p.id),
       );
     } catch (e) {
+      if (refreshIdRef.current !== requestId) return; // stale failure — ignore
       setPresets([]);
       if (e instanceof UnauthorizedError) {
         setSessionExpired(true);
@@ -122,7 +133,8 @@ export function usePresets() {
         setError(errorMessage(e));
       }
     } finally {
-      setLoading(false);
+      // Only the latest request owns the loading flag.
+      if (refreshIdRef.current === requestId) setLoading(false);
     }
   }, [store, signOut, effectiveLocation]);
 
@@ -162,13 +174,15 @@ export function usePresets() {
   const enqueueWrite = (op: () => Promise<void>) => {
     writeChain.current = writeChain.current
       .then(() => op())
-      .catch((e) => {
+      .catch(async (e) => {
         if (e instanceof UnauthorizedError) {
           setSessionExpired(true);
           signOut();
         } else {
           setError(errorMessage(e));
-          void refresh(); // reconcile the optimistic change with the store
+          // Await so the chain stays serialized: the next queued write waits for
+          // this reconciliation read instead of racing it.
+          await refresh(); // reconcile the optimistic change with the store
         }
       });
   };

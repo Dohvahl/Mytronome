@@ -1,0 +1,93 @@
+# Production stack — safe to deploy, unlike docker-compose.yml (which is a local
+# dev convenience that publishes the API and database ports and runs in
+# Development). Here:
+#   * Only the web/nginx service is reachable from the host. The API and database
+#     have NO published ports — the API is reachable solely THROUGH nginx, so a
+#     caller can't hit it directly to spoof X-Forwarded-For and evade the
+#     IP-based auth rate limiter.
+#   * The API runs in Production: no Scalar docs, and no auto-migrate on startup.
+#   * nginx terminates HTTPS (see web/nginx.prod.conf) and redirects HTTP -> HTTPS.
+#   * Migrations are an explicit step via the one-shot `migrate` service.
+#
+# Deploy:
+#   1. Provide TLS certs at ./certs (fullchain.pem + privkey.pem).
+#   2. docker compose -f docker-compose.prod.yml build
+#   3. docker compose -f docker-compose.prod.yml --profile migrate run --rm migrate
+#   4. docker compose -f docker-compose.prod.yml up -d
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mytronome-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    # No host port mapping: the database is reachable only on the internal Docker
+    # network, never from the host or the internet.
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-p${MYSQL_ROOT_PASSWORD}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: applies pending EF migrations, then exits (see Program.cs --migrate).
+  # Run it deliberately before bringing the stack up after a schema change. The
+  # `migrate` profile keeps a normal `up` from ever starting it. Reuses the API
+  # image (built by the `api` service).
+  migrate:
+    image: mytronome-preset-api
+    profiles: ['migrate']
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: 'Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD}'
+    command: ['--migrate']
+    restart: 'no'
+
+  api:
+    image: mytronome-preset-api
+    build:
+      context: ./preset-api
+    container_name: mytronome-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: 'Server=mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD}'
+    # No host port mapping: reachable only via the nginx reverse proxy (web).
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: mytronome-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      # Replace the image's HTTP-only config with the TLS-terminating one, and
+      # mount the certs the operator provides (gitignored).
+      - ./web/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+
+volumes:
+  mysql-data:

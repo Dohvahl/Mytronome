@@ -7,6 +7,7 @@ import {
   type TimeSignature,
 } from '@mytronome/engine';
 import { clampSubdivision } from './subdivisions';
+import { WebAudioOutput } from './webAudioOutput';
 
 const DEFAULT_BPM = 120;
 const DEFAULT_TIME_SIGNATURE: TimeSignature = { beats: 4, noteValue: 4 };
@@ -21,7 +22,7 @@ const NEXT_EMPHASIS: Record<BeatEmphasis, BeatEmphasis> = {
 const VOLUME_KEY = 'mytronome.volume';
 
 function readSavedVolume(): number {
-  const saved = Number(localStorage.getItem(VOLUME_KEY));
+  const saved = Number(localStorage.getItem(VOLUME_KEY) ?? 1);
   return Number.isFinite(saved) && saved >= 0 && saved <= 1 ? saved : 1;
 }
 
@@ -62,6 +63,7 @@ export function useMetronome() {
   // Create the engine when the component mounts; dispose it when it unmounts.
   useEffect(() => {
     const engine = new Metronome({
+      audioOutput: new WebAudioOutput(), // the browser / Tauri-webview adapter
       bpm: DEFAULT_BPM,
       timeSignature: DEFAULT_TIME_SIGNATURE,
       pattern: defaultPattern(DEFAULT_TIME_SIGNATURE),

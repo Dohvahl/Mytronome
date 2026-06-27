@@ -2,7 +2,7 @@
   "name": "@mytronome/engine",
   "version": "0.0.0",
   "private": true,
-  "description": "Framework-agnostic metronome tick engine (Web Audio scheduler, tempo, time signature).",
+  "description": "Platform-agnostic metronome scheduling engine (beat scheduler, tempo, time signature); audio output is injected per platform.",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts"

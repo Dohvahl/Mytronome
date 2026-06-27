@@ -44,7 +44,7 @@ public class EfPresetStoreTests
     }
 
     [Fact]
-    public async Task A_user_cannot_take_over_an_id_owned_by_someone_else()
+    public async Task Two_users_can_independently_use_the_same_id()
     {
         await using var db = NewContext();
         var store = new EfPresetStore(db);
@@ -57,9 +57,12 @@ public class EfPresetStoreTests
         b.Bpm = 200;
         var result = await store.SaveAsync("userB", b); // same id, different owner
 
-        Assert.Equal(SaveResult.IdConflict, result); // rejected cleanly, no PK blow-up
-        Assert.Equal(100, (await store.GetAsync("userA", "shared-id"))!.Bpm); // A untouched
-        Assert.Null(await store.GetAsync("userB", "shared-id")); // B got nothing
+        // The composite (OwnerId, Id) key scopes ids per owner: B's save is a
+        // separate row, not a collision, and neither user can see or affect the
+        // other's preset.
+        Assert.Equal(SaveResult.Created, result);
+        Assert.Equal(100, (await store.GetAsync("userA", "shared-id"))!.Bpm); // A's own
+        Assert.Equal(200, (await store.GetAsync("userB", "shared-id"))!.Bpm); // B's own
     }
 
     [Fact]

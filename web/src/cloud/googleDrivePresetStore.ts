@@ -13,11 +13,17 @@ const BOUNDARY = 'mytronome-boundary';
  */
 export class GoogleDrivePresetStore implements PresetStore {
   private fileId: string | null = null;
+  // The Drive `version` of the file as of our last read. Used to detect that
+  // another device changed it before we overwrite (optimistic concurrency).
+  private fileVersion: string | null = null;
 
   async list(): Promise<Preset[]> {
     const token = await getAccessToken();
     const id = await this.findFileId(token);
-    if (!id) return [];
+    if (!id) {
+      this.fileVersion = null;
+      return [];
+    }
 
     const res = await fetch(`${DRIVE}/files/${id}?alt=media`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -26,6 +32,9 @@ export class GoogleDrivePresetStore implements PresetStore {
       throw new Error(`Couldn't read presets from Drive (${res.status}).`);
 
     const data = await res.json();
+    // Capture the version of what we just read, so a later write can tell whether
+    // the file changed underneath us in the meantime.
+    this.fileVersion = await this.fetchVersion(token, id);
     return Array.isArray(data) ? (data as Preset[]) : [];
   }
 
@@ -55,22 +64,53 @@ export class GoogleDrivePresetStore implements PresetStore {
     return this.fileId;
   }
 
+  /** The file's `version` (Drive bumps it on every change). Best-effort. */
+  private async fetchVersion(
+    token: string,
+    id: string,
+  ): Promise<string | null> {
+    const res = await fetch(`${DRIVE}/files/${id}?fields=version`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null; // a failed version read just disables the check
+    const data = await res.json();
+    return data.version ?? null;
+  }
+
   private async writeAll(presets: Preset[]): Promise<void> {
     const token = await getAccessToken();
     const body = JSON.stringify(presets);
     const id = await this.findFileId(token);
 
     if (id) {
+      // Optimistic concurrency: if the file changed on another device since we
+      // last read it, don't blindly overwrite — surface a conflict so the caller
+      // can reload and reapply. (Best-effort: Drive has no atomic compare-and-set,
+      // so a small window remains between this check and the write below.)
+      if (this.fileVersion !== null) {
+        const current = await this.fetchVersion(token, id);
+        if (current !== null && current !== this.fileVersion) {
+          throw new Error(
+            'Your presets were changed on another device. Reload and try again.',
+          );
+        }
+      }
+
       // Overwrite the existing file's content.
-      const res = await fetch(`${UPLOAD}/files/${id}?uploadType=media`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const res = await fetch(
+        `${UPLOAD}/files/${id}?uploadType=media&fields=version`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body,
         },
-        body,
-      });
+      );
       if (!res.ok) throw new Error(`Couldn't save to Drive (${res.status}).`);
+      const data = await res.json();
+      this.fileVersion = data.version ?? null; // advance to the version we wrote
       return;
     }
 
@@ -82,17 +122,21 @@ export class GoogleDrivePresetStore implements PresetStore {
       `--${BOUNDARY}\r\nContent-Type: application/json\r\n\r\n${body}\r\n` +
       `--${BOUNDARY}--`;
 
-    const res = await fetch(`${UPLOAD}/files?uploadType=multipart&fields=id`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': `multipart/related; boundary=${BOUNDARY}`,
+    const res = await fetch(
+      `${UPLOAD}/files?uploadType=multipart&fields=id,version`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': `multipart/related; boundary=${BOUNDARY}`,
+        },
+        body: multipart,
       },
-      body: multipart,
-    });
+    );
     if (!res.ok)
       throw new Error(`Couldn't create the Drive file (${res.status}).`);
     const data = await res.json();
     this.fileId = data.id;
+    this.fileVersion = data.version ?? null;
   }
 }

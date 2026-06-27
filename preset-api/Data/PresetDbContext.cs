@@ -17,18 +17,22 @@ public class PresetDbContext(DbContextOptions<PresetDbContext> options)
 
         modelBuilder.Entity<Preset>(preset =>
         {
-            preset.HasKey(p => p.Id);
+            // OwnerId is a SHADOW property: a real column that scopes each preset
+            // to a user, but deliberately NOT a field on the Preset class — so it
+            // never appears in the JSON the client sends or receives.
+            preset.Property<string>("OwnerId").HasMaxLength(64).IsRequired();
+
+            // Composite primary key (OwnerId, Id): a preset id is unique PER OWNER,
+            // not globally. Two users can independently use the same id, and one
+            // user's ids can't collide with — or be probed via — another's. The
+            // leading OwnerId column also indexes the per-owner queries, so no
+            // separate OwnerId index is needed.
+            preset.HasKey("OwnerId", "Id");
             preset.Property(p => p.Id).HasMaxLength(64);
             preset.Property(p => p.Label).HasMaxLength(200);
 
             // TimeSignature is stored as extra columns in the presets table.
             preset.OwnsOne(p => p.TimeSignature);
-
-            // OwnerId is a SHADOW property: a real column that scopes each preset
-            // to a user, but deliberately NOT a field on the Preset class — so it
-            // never appears in the JSON the client sends or receives.
-            preset.Property<string>("OwnerId").HasMaxLength(64).IsRequired();
-            preset.HasIndex("OwnerId");
 
             // Pattern (List<string>) maps to a JSON column (primitive collection).
         });

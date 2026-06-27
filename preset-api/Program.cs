@@ -82,6 +82,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Deliberate, opt-in migration step for production deploys: running
+// `dotnet preset-api.dll --migrate` applies any pending EF migrations and exits,
+// without starting the web host. This makes schema changes a controlled deploy
+// action (e.g. a one-shot "migrate" container) instead of a race on every start.
+if (args.Contains("--migrate"))
+{
+    using var scope = app.Services.CreateScope();
+    scope.ServiceProvider.GetRequiredService<PresetDbContext>().Database.Migrate();
+    return;
+}
+
 // Apply pending EF migrations at startup in development only — convenient for
 // local dev and the demo container. In production, run migrations as an explicit,
 // controlled deploy step instead of racing them on every app start (and to avoid
@@ -139,26 +150,23 @@ presets.MapGet("/{id}", async (string id, ClaimsPrincipal user, IPresetStore sto
         ? Results.Ok(preset)
         : Results.NotFound());
 
-presets.MapPut("/{id}", async (string id, Preset preset, ClaimsPrincipal user, IPresetStore store) =>
+presets.MapPut("/{id}", async (string id, PresetInput input, ClaimsPrincipal user, IPresetStore store) =>
 {
-    if (preset.Id != id)
+    if (input.Id != id)
         return Results.BadRequest("The preset id in the body must match the URL.");
 
-    var errors = PresetValidator.Validate(preset);
+    var errors = PresetValidator.Validate(input);
     if (errors.Count > 0)
         return Results.ValidationProblem(errors);
 
-    var result = await store.SaveAsync(UserId(user), preset);
+    // Only a validated input is mapped to the domain model.
+    var result = await store.SaveAsync(UserId(user), input.ToPreset());
     return result switch
     {
         SaveResult.QuotaExceeded => Results.Problem(
             statusCode: StatusCodes.Status409Conflict,
             title: "Preset limit reached",
             detail: $"You can store at most {EfPresetStore.MaxPresetsPerOwner} presets."),
-        SaveResult.IdConflict => Results.Problem(
-            statusCode: StatusCodes.Status409Conflict,
-            title: "Preset id already in use",
-            detail: "That preset id is already taken. Use a different id."),
         _ => Results.NoContent(),
     };
 });
