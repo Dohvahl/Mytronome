@@ -115,7 +115,9 @@ export function Metronome() {
       <aside
         className={`sidebar ${presetsOpen ? 'open' : ''}`}
         style={{ width: drawerWidth }}
-        aria-hidden={!presetsOpen}
+        // When closed, `inert` removes the off-screen drawer from the tab order
+        // and the accessibility tree, so its controls can't be focused or read.
+        inert={!presetsOpen}
       >
         <div className="sidebar-content">
           <VolumeControl volume={volume} onChange={setVolume} />

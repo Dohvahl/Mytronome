@@ -167,10 +167,6 @@ presets.MapPut("/{id}", async (string id, PresetInput input, ClaimsPrincipal use
             statusCode: StatusCodes.Status409Conflict,
             title: "Preset limit reached",
             detail: $"You can store at most {EfPresetStore.MaxPresetsPerOwner} presets."),
-        SaveResult.IdConflict => Results.Problem(
-            statusCode: StatusCodes.Status409Conflict,
-            title: "Preset id already in use",
-            detail: "That preset id is already taken. Use a different id."),
         _ => Results.NoContent(),
     };
 });
