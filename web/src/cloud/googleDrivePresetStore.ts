@@ -1,5 +1,5 @@
 import type { Preset, PresetStore } from '@mytronome/presets';
-import { getAccessToken } from './googleAuth';
+import { driveAuth } from './driveAuth';
 
 const FILE_NAME = 'presets.json';
 const DRIVE = 'https://www.googleapis.com/drive/v3';
@@ -18,7 +18,7 @@ export class GoogleDrivePresetStore implements PresetStore {
   private fileVersion: string | null = null;
 
   async list(): Promise<Preset[]> {
-    const token = await getAccessToken();
+    const token = await driveAuth.getAccessToken();
     const id = await this.findFileId(token);
     if (!id) {
       this.fileVersion = null;
@@ -78,7 +78,7 @@ export class GoogleDrivePresetStore implements PresetStore {
   }
 
   private async writeAll(presets: Preset[]): Promise<void> {
-    const token = await getAccessToken();
+    const token = await driveAuth.getAccessToken();
     const body = JSON.stringify(presets);
     const id = await this.findFileId(token);
 

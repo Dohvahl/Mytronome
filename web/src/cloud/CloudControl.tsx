@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDrive } from './DriveContext';
-import { isDriveConfigured } from './googleAuth';
+import { driveAuth } from './driveAuth';
 
 /** Connect / disconnect Google Drive. Hidden entirely if no client id is set. */
 export function CloudControl() {
@@ -8,7 +8,12 @@ export function CloudControl() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isDriveConfigured()) return null;
+  const [configured, setConfigured] = useState(false);
+  useEffect(() => {
+    driveAuth.isConfigured().then(setConfigured);
+  }, []);
+
+  if (!configured) return null;
 
   if (connected) {
     return (

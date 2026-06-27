@@ -1,3 +1,5 @@
+import type { DriveAuth } from './driveAuth';
+
 // Client-side Google OAuth via Google Identity Services (GIS) token model.
 // Talks to the user's own Google account — our backend is not involved.
 
@@ -94,3 +96,11 @@ export async function getAccessToken(): Promise<string> {
   if (accessToken && Date.now() < expiresAt) return accessToken;
   return requestToken('');
 }
+
+export const gisDriveAuth: DriveAuth = {
+  isConfigured: async () => isDriveConfigured(),
+  isConnected: () => isDriveConnected(),
+  connect: connectDrive,
+  disconnect: async () => disconnectDrive(),
+  getAccessToken,
+};
