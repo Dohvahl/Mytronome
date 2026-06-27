@@ -114,3 +114,10 @@ code {
   padding: 0.2222rem 0.4444rem;
   background: var(--code-bg);
 }
+
+/* This allows keyboard input on a release build desktop version */
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
