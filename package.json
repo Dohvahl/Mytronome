@@ -13,11 +13,13 @@
     "test": "tsc --noEmit -p tsconfig.test.json && vitest run",
     "test:watch": "vitest",
     "test:types": "tsc --noEmit -p tsconfig.test.json",
+    "deploy:web": "npm run build -w web && node scripts/deploy-web.mjs",
     "prepare": "husky"
   },
   "devDependencies": {
     "husky": "^9.1.7",
     "prettier": "^3.8.5",
+    "ssh2-sftp-client": "^12.1.1",
     "typescript": "~6.0.2",
     "vitest": "^3.2.4"
   }
