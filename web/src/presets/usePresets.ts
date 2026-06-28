@@ -110,37 +110,51 @@ export function usePresets() {
   // that now belongs to the active store.
   const refreshIdRef = useRef(0);
 
-  const refresh = useCallback(async () => {
-    const requestId = ++refreshIdRef.current;
-    setLoading(true);
-    setError(null);
-    try {
-      const all = await store.list();
-      if (refreshIdRef.current !== requestId) return; // superseded — drop it
-      const ordered = orderPresets(all, readOrder(effectiveLocation));
-      setPresets(ordered);
-      writeOrder(
-        effectiveLocation,
-        ordered.map((p) => p.id),
-      );
-    } catch (e) {
-      if (refreshIdRef.current !== requestId) return; // stale failure — ignore
-      setPresets([]);
-      if (e instanceof UnauthorizedError) {
-        setSessionExpired(true);
-        signOut(); // expired/invalid token -> sign out and fall back to Local
-      } else {
-        setError(errorMessage(e));
+  const cacheRef = useRef<Partial<Record<StorageLocation, Preset[]>>>({});
+
+  const refresh = useCallback(
+    async (opts?: { background?: boolean }) => {
+      const requestId = ++refreshIdRef.current;
+      if (!opts?.background) setLoading(true); // no spinner when we have cache
+      setError(null);
+      try {
+        const all = await store.list();
+        if (refreshIdRef.current !== requestId) return; // superseded — drop it
+        const ordered = orderPresets(all, readOrder(effectiveLocation));
+        cacheRef.current[effectiveLocation] = ordered;
+        setPresets(ordered);
+        writeOrder(
+          effectiveLocation,
+          ordered.map((p) => p.id),
+        );
+      } catch (e) {
+        if (refreshIdRef.current !== requestId) return; // stale failure — ignore
+        if (e instanceof UnauthorizedError) {
+          setSessionExpired(true);
+          signOut();
+        } else if (!opts?.background) {
+          setPresets([]); // only clear/surface when we had nothing cached to show
+          setError(errorMessage(e));
+        }
+        // background failure: keep showing the cached list silently
+      } finally {
+        if (refreshIdRef.current === requestId && !opts?.background) {
+          setLoading(false);
+        }
       }
-    } finally {
-      // Only the latest request owns the loading flag.
-      if (refreshIdRef.current === requestId) setLoading(false);
-    }
-  }, [store, signOut, effectiveLocation]);
+    },
+    [store, signOut, effectiveLocation],
+  );
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    const cached = cacheRef.current[effectiveLocation];
+    if (cached) {
+      setPresets(cached); // instant
+      void refresh({ background: true }); // ...then quietly check for changes
+    } else {
+      void refresh();
+    }
+  }, [refresh, effectiveLocation]);
 
   // Signing back in clears the expired notice.
   useEffect(() => {
@@ -161,6 +175,8 @@ export function usePresets() {
     presetsRef.current = next;
     setPresets(next);
     setError(null);
+    cacheRef.current[effectiveLocation] = next;
+    refreshIdRef.current++; // supersede any in-flight load so it can't overwrite this edit
     writeOrder(
       effectiveLocation,
       next.map((p) => p.id),

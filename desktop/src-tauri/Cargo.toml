@@ -24,3 +24,21 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.11.3", features = [] }
 tauri-plugin-log = "2"
+
+# --- Google Drive OAuth (desktop): loopback + PKCE, exchange done natively ---
+# Spins up the temporary localhost server that captures Google's redirect.
+tauri-plugin-oauth = "2.0.0"
+# Authorization-code + PKCE flow and token exchange/refresh. Default features
+# pull in the async reqwest client (rustls TLS), so no separate HTTP/OpenSSL dep.
+oauth2 = "5"
+# Stores the refresh token in the OS credential store. `windows-native` =
+# Windows Credential Manager; add `apple-native` / `sync-secret-service` when we
+# build for macOS / Linux.
+keyring = { version = "3", features = ["windows-native"] }
+# Opens the consent page in the user's real browser (Google blocks consent in
+# embedded webviews).
+open = "5"
+# The async HTTP client oauth2 hands its token requests to (rustls, no OpenSSL).
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+# Async channel + timeout to bridge the loopback callback into our async command.
+tokio = { version = "1", features = ["sync", "time"] }

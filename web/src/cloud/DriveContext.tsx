@@ -5,29 +5,29 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { connectDrive, disconnectDrive, isDriveConnected } from './googleAuth';
+import { driveAuth } from './driveAuth';
 
 interface DriveValue {
   connected: boolean;
   connect: () => Promise<void>;
-  disconnect: () => void;
+  disconnect: () => Promise<void>;
 }
 
 const DriveContext = createContext<DriveValue | null>(null);
 
 /** Holds the Drive connection state so the storage options react to it. */
 export function DriveProvider({ children }: { children: ReactNode }) {
-  const [connected, setConnected] = useState<boolean>(() => isDriveConnected());
+  const [connected, setConnected] = useState(() => driveAuth.isConnected());
 
   const value = useMemo<DriveValue>(
     () => ({
       connected,
       connect: async () => {
-        await connectDrive();
+        await driveAuth.connect();
         setConnected(true);
       },
-      disconnect: () => {
-        disconnectDrive();
+      disconnect: async () => {
+        await driveAuth.disconnect();
         setConnected(false);
       },
     }),

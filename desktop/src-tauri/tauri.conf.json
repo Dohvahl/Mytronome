@@ -14,15 +14,17 @@
       {
         "label": "main",
         "title": "Mytronome",
-        "width": 1100,
-        "height": 760,
+        "width": 900,
+        "height": 750,
+        "minWidth": 600,
+        "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
         "dragDropEnabled": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://localhost:5046 https://www.googleapis.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'"
     }
   },
   "bundle": {

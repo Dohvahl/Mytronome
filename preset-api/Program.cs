@@ -75,7 +75,10 @@ const string WebClientPolicy = "web-client";
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(WebClientPolicy, policy =>
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(
+            "http://localhost:5173",  // web dev server
+            "http://tauri.localhost", // desktop build (Windows/WebView2)
+            "tauri://localhost")      // desktop build (macOS/Linux)
             .WithMethods("GET", "POST", "PUT", "DELETE")
             .WithHeaders("Content-Type", "Authorization"));
 });
