@@ -10,7 +10,7 @@ import {
 import { LocalStoragePresetStore } from './localStoragePresetStore';
 import { ApiPresetStore } from './apiPresetStore';
 import { GoogleDrivePresetStore } from '../cloud/googleDrivePresetStore';
-import { UnauthorizedError } from '../apiBase';
+import { SERVER_ENABLED, UnauthorizedError } from '../apiBase';
 import { useAuth } from '../auth/AuthContext';
 import { useDrive } from '../cloud/DriveContext';
 
@@ -81,7 +81,9 @@ export function usePresets() {
   // Server once signed in; Cloud once Google Drive is connected.
   const availableLocations: StorageLocation[] = [
     'local',
-    ...(isAuthenticated ? (['server'] as StorageLocation[]) : []),
+    ...(SERVER_ENABLED && isAuthenticated
+      ? (['server'] as StorageLocation[])
+      : []),
     ...(driveConnected ? (['cloud'] as StorageLocation[]) : []),
   ];
 

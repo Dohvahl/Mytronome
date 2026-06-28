@@ -1,6 +1,6 @@
 {
   "name": "@mytronome/engine",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Platform-agnostic metronome scheduling engine (beat scheduler, tempo, time signature); audio output is injected per platform.",
   "type": "module",

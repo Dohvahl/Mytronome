@@ -1,7 +1,7 @@
 {
   "name": "mytronome",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "A cross-platform metronome. Accurate client-side tick; presets with local/cloud/server storage.",
   "workspaces": [
     "metronome-engine",

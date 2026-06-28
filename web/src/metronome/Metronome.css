@@ -43,6 +43,10 @@
   color: var(--accent);
   outline: none;
 }
+.help-toggle svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
 
 /* Drops down from the button, aligned to the right edge. */
 .help-panel {
@@ -96,6 +100,14 @@
   background: var(--accent-bg);
   border: 0.0556rem solid var(--border);
   border-radius: 0.2778rem;
+}
+.help-version {
+  margin: 0.7778rem 0 0;
+  padding-top: 0.6667rem;
+  border-top: 0.0556rem solid var(--border);
+  font-size: 0.6111rem;
+  color: var(--text);
+  opacity: 0.7;
 }
 
 /* Name of the currently loaded preset — faint, and reserves its line so the

@@ -4,6 +4,7 @@ import type { StorageLocation } from './usePresets';
 import { PresetItem } from './PresetItem';
 import { AccountControl } from '../auth/AccountControl';
 import { CloudControl } from '../cloud/CloudControl';
+import { SERVER_ENABLED } from '../apiBase';
 import './Presets.css';
 
 const LOCATION_LABELS: Record<string, string> = {
@@ -157,7 +158,7 @@ export function PresetsPanel({
       )}
 
       <div className="drawer-footer">
-        <AccountControl />
+        {SERVER_ENABLED && <AccountControl />}
         <CloudControl />
       </div>
     </section>
