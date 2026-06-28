@@ -14,6 +14,7 @@ import {
 } from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
 import { usePresets } from '../presets/usePresets';
+import { ThemePicker } from '../theme/ThemePicker';
 import { samePresetSettings } from '@mytronome/presets';
 import { isCompound, MIN_BPM, MAX_BPM } from '@mytronome/engine';
 import './Metronome.css';
@@ -121,6 +122,7 @@ export function Metronome() {
       >
         <div className="sidebar-content">
           <VolumeControl volume={volume} onChange={setVolume} />
+          <ThemePicker />
           <PresetsPanel
             presets={presets}
             current={current}

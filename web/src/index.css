@@ -12,6 +12,16 @@
     rgba(0, 0, 0, 0.1) 0 0.5556rem 0.8333rem -0.1667rem,
     rgba(0, 0, 0, 0.05) 0 0.2222rem 0.3333rem -0.1111rem;
 
+  /* Material variables for theming (see web/src/theme). Used as BACKGROUNDS, so
+     they may be gradients/textures. The default "Studio" theme maps them to the
+     flat palette (so the current look is unchanged); alternate themes in
+     themes.css give them real materials (wood, brass, ...). */
+  --casing: var(--bg); /* the metronome's outer shell */
+  --casing-edge: var(--border); /* shell seam/edge */
+  --face: var(--bg); /* front panel behind the controls */
+  --metal: var(--bg); /* tempo indicator / metal parts (flat by default) */
+  --metal-text: var(--text-h); /* markings drawn on metal */
+
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -65,11 +75,13 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  background: var(--face);
 }
 
 body {
   margin: 0;
   min-width: 600px;
+  background: var(--casing);
 }
 
 h1,

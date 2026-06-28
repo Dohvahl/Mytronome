@@ -1,0 +1,71 @@
+/*
+ * Alternate themes. Each block overrides the CSS variables from index.css when
+ * <html data-theme="..."> is set. This file is imported AFTER index.css (in
+ * main.tsx), so a chosen theme wins the cascade over the prefers-color-scheme
+ * dark defaults — a walnut metronome should look walnut in light OR dark mode.
+ *
+ * The material variables (--casing, --face, --metal, ...) are meant to be used
+ * as BACKGROUNDS, so they can hold gradients (and later, textures). --metal-text
+ * is the color for markings drawn on top of a metal surface.
+ *
+ * To add a theme: copy a block, change the [data-theme='id'] and the values,
+ * then register the id+name in themes.ts.
+ */
+
+[data-theme='walnut'] {
+  /* Cohesive warm base palette */
+  --bg: #241812;
+  --text: #cbb491;
+  --text-h: #f6ecda;
+  --border: #4d3a28;
+  --code-bg: #2e2017;
+  --accent: #c79a3a; /* brass */
+  --accent-bg: rgba(199, 154, 58, 0.14);
+  --accent-border: rgba(199, 154, 58, 0.5);
+  --social-bg: rgba(46, 32, 23, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.45) 0 0.5556rem 0.8333rem -0.1667rem,
+    rgba(0, 0, 0, 0.3) 0 0.2222rem 0.3333rem -0.1111rem;
+
+  /* Materials (use as backgrounds) */
+  --casing: #3a2718 url('/wood-walnut.svg') center / cover no-repeat fixed;
+  --casing-edge: #1c120a;
+  --face: linear-gradient(180deg, #3a2818 0%, #2a1b10 100%);
+  --metal: linear-gradient(
+    180deg,
+    #f3e3ab 0%,
+    #d9b24e 42%,
+    #b8862f 58%,
+    #efd99e 100%
+  ); /* brushed brass with a highlight band */
+  --metal-text: #3a2a0e;
+}
+
+[data-theme='onyx'] {
+  /* Cohesive cool/charcoal base palette */
+  --bg: #1a1a1d;
+  --text: #b4b6bd;
+  --text-h: #f2f3f6;
+  --border: #3a3b42;
+  --code-bg: #232429;
+  --accent: #8aa0c0; /* cool steel-blue */
+  --accent-bg: rgba(138, 160, 192, 0.16);
+  --accent-border: rgba(138, 160, 192, 0.5);
+  --social-bg: rgba(35, 36, 41, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.5) 0 0.5556rem 0.8333rem -0.1667rem,
+    rgba(0, 0, 0, 0.35) 0 0.2222rem 0.3333rem -0.1111rem;
+
+  /* Materials (use as backgrounds) */
+  --casing: linear-gradient(160deg, #2c2c31 0%, #1c1c1f 55%, #141416 100%);
+  --casing-edge: #0d0d0f;
+  --face: linear-gradient(180deg, #232327 0%, #19191c 100%);
+  --metal: linear-gradient(
+    180deg,
+    #f1f2f5 0%,
+    #c8cdd5 45%,
+    #9aa0aa 55%,
+    #e6e8ec 100%
+  ); /* brushed silver with a highlight band */
+  --metal-text: #26282c;
+}

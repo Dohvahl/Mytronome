@@ -1,0 +1,31 @@
+/* Minimal styling — extend/replace as you design the picker (e.g. swatches). */
+.theme-picker {
+  padding: 0.6667rem 0;
+}
+
+.theme-picker-title {
+  font-size: 0.9444rem;
+  margin: 0 0 0.4444rem;
+}
+
+.theme-picker-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4444rem;
+}
+
+.theme-option {
+  padding: 0.3333rem 0.6667rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.3333rem;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+
+.theme-option.selected {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
