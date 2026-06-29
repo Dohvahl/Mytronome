@@ -9,6 +9,7 @@ import { HelpHint } from './HelpHint';
 import {
   useKeyHeld,
   useKeyPressed,
+  usePointDragAdjust,
   useResizableWidth,
   useWheelAdjust,
 } from './hooks';
@@ -88,6 +89,9 @@ export function Metronome() {
   const tempoWheelRef = useWheelAdjust<HTMLDivElement>((dir) =>
     setBpm(bpm + dir * step),
   );
+  const tempoPointerRef = usePointDragAdjust<HTMLDivElement>((dir) =>
+    setBpm(bpm + dir * step),
+  );
   const sliderWheelRef = useWheelAdjust<HTMLInputElement>((dir) =>
     setBpm(bpm + dir * step),
   );
@@ -165,13 +169,6 @@ export function Metronome() {
           ) : null}
         </div>
 
-        <BeatIndicator
-          pattern={pattern}
-          currentBeat={currentBeat}
-          onCycle={cycleBeat}
-          beatsPerGroup={isCompound(timeSignature) ? 3 : 0}
-        />
-
         <div className="tempo-row">
           <button
             className={`step ${stepBoost ? 'step-10' : ''}`}
@@ -181,7 +178,13 @@ export function Metronome() {
             {stepBoost ? '−10' : '−'}
           </button>
 
-          <div className="tempo-display" ref={tempoWheelRef}>
+          <div
+            className="tempo-display"
+            ref={(el) => {
+              tempoWheelRef.current = el;
+              tempoPointerRef.current = el;
+            }}
+          >
             <div className="tempo-value-area">
               <TempoControl
                 value={bpm}
@@ -224,6 +227,13 @@ export function Metronome() {
             beatNoteValue={timeSignature.noteValue}
           />
         </div>
+
+        <BeatIndicator
+          pattern={pattern}
+          currentBeat={currentBeat}
+          onCycle={cycleBeat}
+          beatsPerGroup={isCompound(timeSignature) ? 3 : 0}
+        />
 
         <button
           className={`play ${isRunning ? 'running' : ''}`}

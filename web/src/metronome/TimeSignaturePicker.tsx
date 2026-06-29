@@ -5,7 +5,7 @@ import {
   NOTE_VALUES,
   isSameSignature,
 } from './timeSignatures';
-import { useWheelAdjust } from './hooks';
+import { usePointDragAdjust, useWheelAdjust } from './hooks';
 
 interface Props {
   value: TimeSignature;
@@ -63,13 +63,7 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
   }, [editing, draftBeats, draftNote]);
 
   const tsPresetsWheelRef = useWheelAdjust<HTMLButtonElement>((dir) => {
-    const currentIndex = COMMON_TIME_SIGNATURES.findIndex(
-      (ts) => ts.label === matchedPreset?.label,
-    );
-    const nextIndex = currentIndex - dir;
-    if (nextIndex >= 0 && nextIndex < COMMON_TIME_SIGNATURES.length) {
-      selectPreset(COMMON_TIME_SIGNATURES[nextIndex].label);
-    }
+    adjustTSPreset(dir);
   });
 
   return (
@@ -108,6 +102,7 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
               options={BEAT_OPTIONS}
               onChange={setDraftBeats}
               ariaLabel="Beats per measure"
+              swipeThreshold={24}
             />
             <span className="ts-slash">/</span>
             <WheelPicker
@@ -115,6 +110,7 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
               options={NOTE_VALUES}
               onChange={setDraftNote}
               ariaLabel="Beat unit"
+              swipeThreshold={48}
             />
             <button
               type="button"
@@ -129,6 +125,16 @@ export function TimeSignaturePicker({ value, onChange }: Props) {
       )}
     </div>
   );
+
+  function adjustTSPreset(dir: number) {
+    const currentIndex = COMMON_TIME_SIGNATURES.findIndex(
+      (ts) => ts.label === matchedPreset?.label,
+    );
+    const nextIndex = currentIndex - dir;
+    if (nextIndex >= 0 && nextIndex < COMMON_TIME_SIGNATURES.length) {
+      selectPreset(COMMON_TIME_SIGNATURES[nextIndex].label);
+    }
+  }
 }
 
 interface WheelPickerProps {
@@ -136,6 +142,7 @@ interface WheelPickerProps {
   options: readonly number[];
   onChange: (value: number) => void;
   ariaLabel: string;
+  swipeThreshold?: number;
 }
 
 /**
@@ -150,6 +157,7 @@ function WheelPicker({
   options,
   onChange,
   ariaLabel,
+  swipeThreshold,
 }: WheelPickerProps) {
   const index = options.indexOf(value);
   const above = index > 0 ? options[index - 1] : null;
@@ -163,11 +171,17 @@ function WheelPicker({
     }
   };
   const wheelRef = useWheelAdjust<HTMLDivElement>(step);
+  const pointerRef = usePointDragAdjust<HTMLDivElement>(step, {
+    threshold: swipeThreshold,
+  });
 
   return (
     <div
       className="ts-wheel"
-      ref={wheelRef}
+      ref={(el) => {
+        wheelRef.current = el;
+        pointerRef.current = el;
+      }}
       role="spinbutton"
       tabIndex={0}
       aria-valuenow={value}

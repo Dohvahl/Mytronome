@@ -183,6 +183,7 @@
   flex-direction: column;
   align-items: center;
   cursor: default;
+  touch-action: none;
 }
 .tempo-display .unit {
   font-size: 0.7778rem;
@@ -503,6 +504,7 @@
   border-radius: 0.6667rem;
   box-shadow: var(--shadow);
 }
+
 .ts-slash {
   font: 300 1.2222rem/1 var(--heading);
   color: var(--text);
@@ -514,7 +516,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: 2.6em;
+  width: clamp(2.6rem, 15vw, 5rem);
   border: 0.0556rem solid var(--border);
   border-radius: 0.4444rem;
   overflow: hidden;
@@ -523,17 +525,18 @@
   font-variant-numeric: tabular-nums;
   cursor: ns-resize;
   user-select: none;
+  touch-action: none;
 }
 .ts-wheel:focus-visible {
   outline: none;
   border-color: var(--accent-border);
 }
 .ts-wheel-option {
-  height: 1.4444rem;
-  line-height: 1.4444rem;
+  height: clamp(0.5rem, 4vh, 3rem);
+  line-height: clamp(0.5rem, 4vh, 3rem);
 }
 .ts-wheel-option.ghost {
-  font-size: 0.7222rem;
+  font-size: clamp(0.75rem, 2vh, 1.5rem);
   color: var(--text);
   opacity: 0.4;
   cursor: pointer;
@@ -542,7 +545,7 @@
   opacity: 0.75;
 }
 .ts-wheel-option.current {
-  font-size: 1.0556rem;
+  font-size: clamp(1rem, 4vh, 3rem);
   font-weight: 600;
   color: var(--accent);
   background: var(--accent-bg);

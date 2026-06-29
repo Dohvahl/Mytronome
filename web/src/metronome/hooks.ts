@@ -39,6 +39,100 @@ export function useWheelAdjust<T extends HTMLElement>(
   return ref;
 }
 
+interface SwipeOptions {
+  threshold?: number;
+}
+
+export function usePointDragAdjust<T extends HTMLElement>(
+  onSwipe: (direction: 1 | -1) => void,
+  { threshold = 12 }: SwipeOptions = {},
+) {
+  const ref = useRef<T>(null);
+  // Keep the latest callback in a ref so we attach the listener only once.
+  // Assigned in an effect (not during render) per the react-hooks/refs rule.
+  const callbackRef = useRef(onSwipe);
+  useEffect(() => {
+    callbackRef.current = onSwipe;
+  }, [onSwipe]);
+
+  const activePointerIdRef = useRef<number | null>(null);
+  const lastYRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const clearGesture = () => {
+      if (
+        activePointerIdRef.current !== null &&
+        el.hasPointerCapture(activePointerIdRef.current)
+      ) {
+        el.releasePointerCapture(activePointerIdRef.current);
+      }
+      activePointerIdRef.current = null;
+      lastYRef.current = null;
+    };
+
+    const handlePointerDown = (e: globalThis.PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      if (activePointerIdRef.current !== null) return;
+
+      activePointerIdRef.current = e.pointerId;
+      lastYRef.current = e.clientY;
+      el.setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerMove = (e: globalThis.PointerEvent) => {
+      if (
+        activePointerIdRef.current !== e.pointerId ||
+        lastYRef.current === null
+      ) {
+        return;
+      }
+
+      const distance = e.clientY - lastYRef.current;
+      const steps = Math.floor(Math.abs(distance) / threshold);
+
+      if (steps > 0) {
+        const direction = distance < 0 ? -1 : 1;
+        for (let i = 0; i < steps; i += 1) {
+          callbackRef.current(direction);
+        }
+        lastYRef.current += threshold * steps * Math.sign(distance);
+      }
+    };
+
+    const handlePointerUp = (e: globalThis.PointerEvent) => {
+      if (activePointerIdRef.current !== e.pointerId) return;
+      clearGesture();
+    };
+
+    const handlePointerCancel = (e: globalThis.PointerEvent) => {
+      if (activePointerIdRef.current !== e.pointerId) return;
+      clearGesture();
+    };
+
+    el.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove, {
+      passive: false,
+    });
+    window.addEventListener('pointerup', handlePointerUp, { passive: false });
+    window.addEventListener('pointercancel', handlePointerCancel, {
+      passive: false,
+    });
+
+    return () => {
+      clearGesture();
+      el.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerCancel);
+    };
+  }, [threshold]);
+
+  return ref;
+}
+
 /**
  * Tracks whether a given key (e.g. 'Shift') is currently held down, so the UI
  * can react live. Resets on window blur so the held state can't get "stuck" if
