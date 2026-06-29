@@ -31,3 +31,4 @@ certs/
 .local
 
 scripts/*
+!scripts/*.mjs

@@ -14,6 +14,9 @@
     "test:watch": "vitest",
     "test:types": "tsc --noEmit -p tsconfig.test.json",
     "deploy:web": "npm run build -w web && node scripts/deploy-web.mjs",
+    "bump:major": "node scripts/bumpVersion.mjs --major",
+    "bump:minor": "node scripts/bumpVersion.mjs --minor",
+    "bump:patch": "node scripts/bumpVersion.mjs --patch",
     "prepare": "husky"
   },
   "devDependencies": {
