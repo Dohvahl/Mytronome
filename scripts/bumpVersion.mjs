@@ -39,8 +39,8 @@ let next;
 
 if (LEVELS[arg]) {
   let [maj, min, pat] = currentVersion();
-  if (LEVELS[arg] === 'major') (maj += 1), (min = 0), (pat = 0);
-  else if (LEVELS[arg] === 'minor') (min += 1), (pat = 0);
+  if (LEVELS[arg] === 'major') ((maj += 1), (min = 0), (pat = 0));
+  else if (LEVELS[arg] === 'minor') ((min += 1), (pat = 0));
   else pat += 1;
   next = `${maj}.${min}.${pat}`;
 } else if (/^\d+\.\d+\.\d+$/.test(arg ?? '')) {
