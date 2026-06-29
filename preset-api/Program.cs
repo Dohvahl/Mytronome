@@ -78,7 +78,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "http://localhost:5173",  // web dev server
             "http://tauri.localhost", // desktop build (Windows/WebView2)
-            "tauri://localhost")      // desktop build (macOS/Linux)
+            "tauri://localhost",      // desktop build (macOS/Linux)
+            "tauri://10.0.0.125")
             .WithMethods("GET", "POST", "PUT", "DELETE")
             .WithHeaders("Content-Type", "Authorization"));
 });

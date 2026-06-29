@@ -1,7 +1,7 @@
 /* Hamburger toggle (fixed, always on top) */
 .menu-toggle {
   position: fixed;
-  top: 0.8889rem;
+  top: calc(1.1111rem + env(safe-area-inset-top, 0px));
   left: 0.8889rem;
   z-index: 30;
   width: 2.4444rem;

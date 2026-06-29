@@ -1,11 +1,39 @@
 .metronome {
+  flex: 1;
+  width: min(100%, 23.3333rem);
   max-width: 23.3333rem;
   margin: 0 auto;
-  padding: 1.7778rem 1.3333rem;
+  padding: 1rem 1.3333rem 1.3333rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5556rem;
+  justify-content: center;
+  gap: 1rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .metronome {
+    gap: 0.875rem;
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  .tempo-row {
+    gap: 0.75rem;
+  }
+
+  .meter-row {
+    gap: 0.6667rem;
+  }
+
+  .tempo-value-area {
+    height: 5.3333rem;
+  }
+
+  .play {
+    width: 7.3333rem;
+    padding: 0.6667rem 0;
+  }
 }
 
 /* --- "How to use" hint (top-right, mirrors the ☰ menu top-left) --- */
@@ -15,7 +43,7 @@
 }
 .help-hint {
   position: fixed;
-  top: 0.8889rem;
+  top: calc(1.1111rem + env(safe-area-inset-top, 0px));
   right: 0.8889rem;
   /* Below the drawer backdrop (z-index 20) so it dims with the rest of the
      screen when the presets drawer is open. */
