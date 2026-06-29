@@ -79,12 +79,6 @@ npm test          # type-checks the suites (tsc) then runs Vitest
 
 Suites live in each package's `test/` directory and cover the framework-agnostic core (the metronome engine, the preset domain, and the beat-relative subdivision logic).
 
-## Status & roadmap
-
-Milestones complete: metronome engine, local presets, REST API + MySQL (Dockerized), optional accounts (ASP.NET Identity), and Google Drive cloud storage. **The app is fully usable with no account** — an account is only needed for the "Server" storage option.
-
-Next: additional front-ends (Tauri desktop first, then mobile via React Native) reusing `metronome-engine` + the `PresetStore` interface, plus production deployment (HTTPS).
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
