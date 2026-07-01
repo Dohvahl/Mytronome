@@ -120,6 +120,19 @@
   line-height: 1.45;
   color: var(--text);
 }
+/* Show the desktop gestures by default and swap to the touch phrasing on coarse
+   (touch) pointers, where there's no scroll wheel or Shift key. */
+.help-list li.help-touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .help-list li.help-desktop {
+    display: none;
+  }
+  .help-list li.help-touch {
+    display: block;
+  }
+}
 .help-list kbd {
   display: inline-block;
   padding: 0.0556rem 0.3333rem;

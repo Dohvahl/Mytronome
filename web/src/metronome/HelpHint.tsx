@@ -69,30 +69,47 @@ export function HelpHint() {
 
           <h3 className="help-group">Tempo</h3>
           <ul className="help-list">
-            <li>
+            <li className="help-desktop">
               <kbd>Scroll</kbd> over the BPM number or slider to nudge by 1
             </li>
-            <li>
+            <li className="help-desktop">
               Hold <kbd>Shift</kbd> to step by 10 (buttons and scroll)
             </li>
-            <li>
+            <li className="help-desktop">
               <kbd>Click</kbd> the BPM to type or scroll an exact value
+            </li>
+            <li className="help-touch">
+              <kbd>Drag</kbd> up or down over the BPM or slider to adjust
+            </li>
+            <li className="help-touch">
+              <kbd>Tap</kbd> the BPM to type an exact value
             </li>
           </ul>
 
           <h3 className="help-group">Beats</h3>
           <ul className="help-list">
-            <li>
+            <li className="help-desktop">
               <kbd>Click</kbd> a beat dot to cycle normal → accent → muted
+            </li>
+            <li className="help-touch">
+              <kbd>Tap</kbd> a beat dot to cycle normal → accent → muted
             </li>
           </ul>
 
           <h3 className="help-group">Time signature</h3>
           <ul className="help-list">
-            <li>
+            <li className="help-desktop">
               <kbd>Click</kbd> the time signature to open the editor
             </li>
-            <li>Scroll the wheels to set the beats and note value</li>
+            <li className="help-desktop">
+              Scroll the wheels to set the beats and note value
+            </li>
+            <li className="help-touch">
+              <kbd>Tap</kbd> the time signature to open the editor
+            </li>
+            <li className="help-touch">
+              Drag the wheels to set the beats and note value
+            </li>
           </ul>
 
           <h3 className="help-group">Presets</h3>
