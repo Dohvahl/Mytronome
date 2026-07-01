@@ -25,6 +25,15 @@ export interface AudioOutput {
    */
   readonly currentTime: number;
 
+  /**
+   * Estimated seconds between a click being scheduled at its audio-clock `time`
+   * and it actually reaching the speaker (the hardware output buffer). Near-zero
+   * on desktop, but often 100–300 ms in a mobile webview. A UI uses this to delay
+   * the visual beat so it lands when the click is *heard*, not when it's rendered.
+   * 0 if the platform can't report it (treated as no compensation).
+   */
+  readonly outputLatency: number;
+
   /** Master output volume, 0 (silent) to 1 (full); applied to every click. */
   setVolume(volume: number): void;
 

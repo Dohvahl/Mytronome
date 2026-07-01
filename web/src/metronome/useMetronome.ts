@@ -72,7 +72,14 @@ export function useMetronome() {
       onBeat: (beat) => {
         // onBeat fires when a beat is *scheduled* (up to ~100ms early). Wait
         // until it actually sounds before flashing the visual, so they line up.
-        const delayMs = Math.max(0, (beat.time - engine.currentTime) * 1000);
+        // Two gaps to cover: (1) beat.time - currentTime, the scheduling lead;
+        // (2) outputLatency, the hardware buffer delay before the click reaches
+        // the speaker (tiny on desktop, but 100-300ms in a mobile webview — this
+        // is what keeps the dot and the tick in sync on Android).
+        const delayMs = Math.max(
+          0,
+          (beat.time - engine.currentTime + engine.outputLatency) * 1000,
+        );
         const timerId = window.setTimeout(() => {
           setCurrentBeat(beat.beatIndex);
           beatTimersRef.current = beatTimersRef.current.filter(
