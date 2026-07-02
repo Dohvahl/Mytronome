@@ -189,6 +189,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Layout switch (drawer) — a labelled segmented control; reuses .storage-switch
+   from the presets panel for the buttons. */
+.layout-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5556rem;
+  padding-bottom: 0.8889rem;
+  border-bottom: 0.0556rem solid var(--border);
+}
+.layout-toggle-label {
+  font-size: 0.7778rem;
+  color: var(--text);
+}
+
 .tempo-row {
   display: flex;
   align-items: center;
@@ -315,6 +330,46 @@
   width: 100%;
   max-width: 17.7778rem;
   accent-color: var(--accent);
+}
+
+/* ---------------------------------------------------------------------------
+   Tower layout (data-layout="tower") — the vertical, mechanical-metronome-style
+   arrangement. The classic horizontal layout above is the default; these rules
+   apply only under <html data-layout="tower">. Stage 1 is a functional reflow;
+   sizing and mechanical styling come in later stages.
+   --------------------------------------------------------------------------- */
+
+/* The wrapper is invisible to layout in classic mode (its children lay out in
+   the .metronome column exactly as before); in tower mode it becomes the row
+   that sits the vertical slider beside the tempo readout + step buttons. */
+.tempo-cluster {
+  display: contents;
+}
+:root[data-layout='tower'] .tempo-cluster {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Stack the −, number, + vertically beside the slider. */
+:root[data-layout='tower'] .tempo-row {
+  flex-direction: column;
+  gap: 0.8889rem;
+}
+
+/* The slider becomes the tall, primary drag driver. `writing-mode` turns a
+   native range vertical; the slow end sits at the top (drag up = slower, like a
+   real metronome's weight). touch-action:none so dragging it can't scroll the
+   page on touch. */
+:root[data-layout='tower'] .tempo-slider {
+  writing-mode: vertical-lr;
+  width: auto;
+  max-width: none;
+  height: 15rem;
+  touch-action: none;
 }
 
 .play {

@@ -6,9 +6,11 @@ import { TempoControl } from './TempoControl';
 import { VolumeControl } from './VolumeControl';
 import { SubdivisionControl } from './SubdivisionControl';
 import { HelpHint } from './HelpHint';
+import { LayoutToggle } from './LayoutToggle';
 import {
   useKeyHeld,
   useKeyPressed,
+  useLayoutMode,
   usePointDragAdjust,
   useResizableWidth,
   useWheelAdjust,
@@ -96,6 +98,8 @@ export function Metronome() {
     setBpm(bpm + dir * step),
   );
 
+  const [layoutMode, setLayoutMode] = useLayoutMode();
+
   return (
     <>
       <button
@@ -125,6 +129,7 @@ export function Metronome() {
       >
         <div className="sidebar-content">
           <VolumeControl volume={volume} onChange={setVolume} />
+          <LayoutToggle mode={layoutMode} onChange={setLayoutMode} />
           <PresetsPanel
             presets={presets}
             current={current}
@@ -169,6 +174,7 @@ export function Metronome() {
           ) : null}
         </div>
 
+        <div className="tempo-cluster">
         <div className="tempo-row">
           <button
             className={`step ${stepBoost ? 'step-10' : ''}`}
@@ -215,6 +221,7 @@ export function Metronome() {
           onChange={(e) => setBpm(Number(e.target.value))}
           ref={sliderWheelRef}
         />
+        </div>
 
         <div className="meter-row">
           <TimeSignaturePicker
