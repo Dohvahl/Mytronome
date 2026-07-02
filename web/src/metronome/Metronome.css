@@ -477,15 +477,27 @@
 /* --- Beat indicator --- */
 .beat-indicator {
   display: flex;
-  gap: 0.7778rem;
-  min-height: 1.5556rem;
+  flex-wrap: nowrap;
+  justify-content: center;
   align-items: center;
+  /* Gap shrinks on narrow rows so a full 16-beat bar still fits any screen. */
+  gap: clamp(0.1667rem, 2.5vw, 0.7778rem);
+  width: 100%;
+  /* Tall enough to hold the fixed-height bars plus their active-beat scale-up. */
+  min-height: 2.8889rem;
 }
 .beat-dot {
-  width: 1.2222rem;
-  height: 1.2222rem;
+  /* Rounded bars, not circles: a *fixed height* with a flexible width. Circles
+     coupled width and height, so shrinking to fit 16 beats also shortened them
+     into unusable specks. Here the height stays constant and only the width
+     narrows — few beats read as wide pills, 16 as slim bars, all equally tall
+     and tappable. min-width:0 lets them narrow enough that 16 always fit. */
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 1.6667rem;
+  height: 2.2222rem;
   padding: 0;
-  border-radius: 50%;
+  border-radius: 0.6667rem;
   border: 0.1111rem solid var(--border);
   background: transparent;
   cursor: pointer;

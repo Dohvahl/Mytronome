@@ -30,7 +30,13 @@
   -moz-osx-font-smoothing: grayscale;
 
   @media (max-width: 1024px) {
-    font-size: 1rem; /* 16px, relative to browser default */
+    font-size: 1rem; /* 16px — small laptop windows / tablets */
+  }
+  /* Phones: scale the whole (rem-based) UI *up*, not down — at desktop sizes it
+     reads too small on a handset. This one value is the master size dial for
+     mobile; every element is rem-relative to it. */
+  @media (max-width: 640px) {
+    font-size: 1.25rem; /* 20px */
   }
 }
 
