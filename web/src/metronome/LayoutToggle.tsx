@@ -8,6 +8,7 @@ interface Props {
 const OPTIONS: { value: LayoutMode; label: string }[] = [
   { value: 'classic', label: 'Classic' },
   { value: 'tower', label: 'Tower' },
+  { value: 'pendulum', label: 'Pendulum' },
 ];
 
 /**

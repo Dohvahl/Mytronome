@@ -57,6 +57,10 @@ export function useMetronome() {
   );
   const [isRunning, setIsRunning] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
+  // Monotonic count of beats heard since the last start — its parity drives the
+  // pendulum's swing direction (flips each beat), incremented on the same
+  // latency-compensated signal as currentBeat so the swing stays in sync.
+  const [beatTick, setBeatTick] = useState(0);
   const [volume, setVolumeState] = useState(readSavedVolume);
   const [subdivisions, setSubdivisionsState] = useState(readSavedSubdivisions);
 
@@ -82,6 +86,7 @@ export function useMetronome() {
         );
         const timerId = window.setTimeout(() => {
           setCurrentBeat(beat.beatIndex);
+          setBeatTick((t) => t + 1);
           beatTimersRef.current = beatTimersRef.current.filter(
             (id) => id !== timerId,
           );
@@ -110,6 +115,7 @@ export function useMetronome() {
     beatTimersRef.current = [];
     setIsRunning(false);
     setCurrentBeat(-1);
+    setBeatTick(0);
   };
 
   const toggle = () => (isRunning ? stop() : start());
@@ -188,6 +194,7 @@ export function useMetronome() {
     pattern,
     isRunning,
     currentBeat,
+    beatTick,
     volume,
     subdivisions,
     start,

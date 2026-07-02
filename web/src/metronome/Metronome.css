@@ -360,6 +360,113 @@
   gap: 0.8889rem;
 }
 
+/* --- Pendulum layout (data-layout="pendulum") — a mechanical-metronome mode:
+   the pendulum is the interface. The arm is an inverted pendulum, rising from a
+   fulcrum at its base and pivoting there; the weight rides it at a height set by
+   the tempo and is draggable to change it. The arm's rotate + transition-duration
+   are set inline (per-beat, from bpm); ease-in-out gives the slow-at-the-ends
+   motion of a real pendulum. Only rendered in this layout. --- */
+.pendulum-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+.pendulum {
+  position: relative;
+  width: 13rem; /* room for the arm to swing without clipping */
+  height: 11.1111rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+.pendulum-arm {
+  position: relative;
+  width: 0.3889rem;
+  height: 10.5556rem;
+  border-radius: 0.2222rem;
+  background: linear-gradient(
+    90deg,
+    var(--border),
+    var(--text) 50%,
+    var(--border)
+  );
+  transform-origin: bottom center;
+  transition-property: transform;
+  transition-timing-function: ease-in-out;
+}
+.pendulum-weight {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%); /* `top` set inline from the tempo */
+  width: 2.2222rem;
+  height: 1.3333rem;
+  padding: 0;
+  border-radius: 0.3333rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+  cursor: grab;
+  touch-action: none; /* vertical drag sets tempo — don't scroll the page */
+}
+.pendulum-weight:active {
+  cursor: grabbing;
+}
+.pendulum-pivot {
+  position: absolute;
+  bottom: -0.3333rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: var(--shadow);
+}
+
+/* Compact BPM readout beneath the pendulum (smaller than the classic chip). */
+.pendulum-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pendulum-readout .tempo-value-area {
+  height: auto;
+}
+.pendulum-readout .bpm-chip,
+.pendulum-readout .bpm-wheel {
+  font-size: 2.2222rem;
+}
+
+/* Collapsible time-signature control. */
+.pendulum-ts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6667rem;
+}
+.pendulum-ts-toggle {
+  padding: 0.3333rem 0.8889rem;
+  border-radius: 0.4444rem;
+  border: 0.0556rem solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.7778rem;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.pendulum-ts-toggle:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
 /* The slider becomes the metronome's pendulum rod + sliding weight, and the
    primary drag driver. writing-mode makes the native range vertical; the slow
    end sits at the top (drag up = slower, like a real metronome's weight).

@@ -6,15 +6,16 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 
-/** The two overall arrangements of the metronome. */
-export type LayoutMode = 'classic' | 'tower';
+/** The overall arrangements of the metronome. */
+export type LayoutMode = 'classic' | 'tower' | 'pendulum';
 
 const LAYOUT_KEY = 'layout';
+const LAYOUTS: readonly LayoutMode[] = ['classic', 'tower', 'pendulum'];
 
 /**
  * The default arrangement for a device: touch devices (phones) get the vertical
  * "tower" layout, pointer devices the classic horizontal one. Either can be
- * overridden — {@link useLayoutMode} remembers the choice.
+ * overridden — {@link useLayoutMode} remembers the choice. (Pendulum is opt-in.)
  */
 function defaultLayout(): LayoutMode {
   return window.matchMedia('(pointer: coarse)').matches ? 'tower' : 'classic';
@@ -27,8 +28,8 @@ function defaultLayout(): LayoutMode {
  */
 export function useLayoutMode(): [LayoutMode, (mode: LayoutMode) => void] {
   const [mode, setMode] = useState<LayoutMode>(() => {
-    const saved = localStorage.getItem(LAYOUT_KEY);
-    return saved === 'tower' || saved === 'classic' ? saved : defaultLayout();
+    const saved = localStorage.getItem(LAYOUT_KEY) as LayoutMode | null;
+    return saved && LAYOUTS.includes(saved) ? saved : defaultLayout();
   });
 
   // useLayoutEffect so the attribute is set before the browser paints — a phone
