@@ -360,16 +360,78 @@
   gap: 0.8889rem;
 }
 
-/* The slider becomes the tall, primary drag driver. `writing-mode` turns a
-   native range vertical; the slow end sits at the top (drag up = slower, like a
-   real metronome's weight). touch-action:none so dragging it can't scroll the
-   page on touch. */
+/* The slider becomes the metronome's pendulum rod + sliding weight, and the
+   primary drag driver. writing-mode makes the native range vertical; the slow
+   end sits at the top (drag up = slower, like a real metronome's weight).
+   appearance:none so we paint the rod (track) and weight (thumb) ourselves. */
 :root[data-layout='tower'] .tempo-slider {
   writing-mode: vertical-lr;
-  width: auto;
-  max-width: none;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 2.8889rem; /* room for the weight to sit across the rod */
   height: 15rem;
+  max-width: none;
+  background: transparent;
+  cursor: pointer;
   touch-action: none;
+}
+
+/* The rod: a thin pole down the centre with faint tempo-scale tick marks.
+   (Chromium — the target engine — uses the -webkit- pseudo-elements.) */
+:root[data-layout='tower'] .tempo-slider::-webkit-slider-runnable-track {
+  width: 0.4444rem;
+  height: 100%;
+  border-radius: 0.2222rem;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--text) 50%, transparent) 0 0.0833rem,
+      transparent 0.0833rem 0.8333rem
+    ),
+    linear-gradient(90deg, var(--border), var(--text) 50%, var(--border));
+}
+
+/* The weight: a chunky block that slides on the rod — wide across it, short
+   along it. Negative inline margin re-centres it over the thin rod. */
+:root[data-layout='tower'] .tempo-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 2.8889rem;
+  height: 1.3333rem;
+  border-radius: 0.3333rem;
+  /* Top highlight → accent gives the weight a subtle convex, physical look. */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+  margin-left: -1.2222rem; /* (thumb − track thickness) / 2, to centre on the rod */
+}
+
+/* Firefox equivalents (secondary; Tauri/Android are Chromium). */
+:root[data-layout='tower'] .tempo-slider::-moz-range-track {
+  width: 0.4444rem;
+  height: 100%;
+  border-radius: 0.2222rem;
+  background: linear-gradient(
+    90deg,
+    var(--border),
+    var(--text) 50%,
+    var(--border)
+  );
+}
+:root[data-layout='tower'] .tempo-slider::-moz-range-thumb {
+  width: 2.8889rem;
+  height: 1.3333rem;
+  border-radius: 0.3333rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
 }
 
 .play {
