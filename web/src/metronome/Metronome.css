@@ -469,10 +469,11 @@
 
 /* The slider becomes the metronome's pendulum rod + sliding weight, and the
    primary drag driver. writing-mode makes the native range vertical; the slow
-   end sits at the top (drag up = slower, like a real metronome's weight).
+   end sits at the bottom (drag up = faster).
    appearance:none so we paint the rod (track) and weight (thumb) ourselves. */
 :root[data-layout='tower'] .tempo-slider {
   writing-mode: vertical-lr;
+  direction: rtl;
   -webkit-appearance: none;
   appearance: none;
   width: 2.8889rem; /* room for the weight to sit across the rod */
