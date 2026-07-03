@@ -354,9 +354,10 @@
   width: 100%;
 }
 
-/* Stack the −, number, + vertically beside the slider. */
+/* Stack the +, number, − vertically beside the slider (column-reverse puts +
+   on top and − on bottom). */
 :root[data-layout='tower'] .tempo-row {
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 0.8889rem;
 }
 
