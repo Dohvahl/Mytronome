@@ -1,8 +1,8 @@
 [package]
 name = "tauri-plugin-google-drive-auth"
 version = "0.1.0"
-authors = [ "You" ]
-description = ""
+authors = ["Tyler Dovall"]
+description = "Native Google Drive authorization for Mytronome on Android, via the Google Identity Services AuthorizationClient (access tokens only)."
 edition = "2021"
 rust-version = "1.77.2"
 exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
