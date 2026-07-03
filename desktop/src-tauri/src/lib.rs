@@ -13,6 +13,10 @@ pub fn run() {
             .build(),
         )?;
       }
+      // Native Google Drive authorization (Android Identity Services). Desktop
+      // uses the loopback + PKCE flow in drive_auth.rs instead.
+      #[cfg(mobile)]
+      app.handle().plugin(tauri_plugin_google_drive_auth::init())?;
       Ok(())
     })
     .manage(DriveState::default())
