@@ -1,0 +1,11 @@
+# Generated build caches for the Tauri app and its native plugins.
+# (Rust `target/` and generic `build/` are already ignored at the repo root
+# and per-crate; `src-tauri/gen/` is ignored in src-tauri/.gitignore.)
+
+# Gradle
+.gradle/
+.cxx/
+local.properties
+
+# Tauri artifacts copied into native plugin projects during an Android build
+.tauri/
