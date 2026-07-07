@@ -82,11 +82,15 @@ keyPassword=<keystore password>
 `tauri android init` regenerates `src-tauri/gen/android/app/build.gradle.kts` from
 Tauri's template, wiping any edits. After a regenerate, re-append this block
 **verbatim** to the end of that file (after the `apply(from = "tauri.build.gradle.kts")`
-line). It's self-contained — it creates its own scope and only uses the `android {}`
-accessor, so it doesn't depend on any line in the generated template and won't rot
-when Tauri updates that template. When `keystore.properties` is absent it does
-nothing (release stays unsigned, debug is unaffected), so a fresh checkout still
-builds.
+line). It creates its own scope and only touches the `android {}` accessor, so it
+doesn't depend on the template's *structure* (buildTypes layout, etc.) and won't rot
+when Tauri reshuffles that. Its one dependency is the `import java.util.Properties`
+at the top of the generated file — which the template always emits because it uses
+`Properties` itself (`tauriProperties`). Do **not** fully-qualify it as
+`java.util.Properties`: in a Gradle Kotlin DSL script `java` resolves to the Java
+plugin accessor, not the package root, so it fails with `Unresolved reference: util`.
+When `keystore.properties` is absent the block does nothing (release stays unsigned,
+debug is unaffected), so a fresh checkout still builds.
 
 ```kotlin
 // --- Release signing (Mytronome) -------------------------------------------
@@ -95,7 +99,7 @@ builds.
 run {
     val keystorePropertiesFile = rootProject.file("keystore.properties")
     if (keystorePropertiesFile.exists()) {
-        val keystoreProperties = java.util.Properties().apply {
+        val keystoreProperties = Properties().apply {
             keystorePropertiesFile.inputStream().use { load(it) }
         }
         android {
