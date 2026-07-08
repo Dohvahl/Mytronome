@@ -24,7 +24,10 @@ const apkPath = path.resolve(
 function appId() {
   try {
     const conf = JSON.parse(
-      readFileSync(path.resolve(repoRoot, 'desktop/src-tauri/tauri.conf.json'), 'utf-8'),
+      readFileSync(
+        path.resolve(repoRoot, 'desktop/src-tauri/tauri.conf.json'),
+        'utf-8',
+      ),
     );
     return conf.identifier ?? 'ca.dovall.mytronome';
   } catch {
@@ -80,12 +83,16 @@ if (devices.length === 0) {
   );
 }
 if (devices.length > 1) {
-  console.log(`Multiple devices (${devices.join(', ')}); installing on the first: ${devices[0]}`);
+  console.log(
+    `Multiple devices (${devices.join(', ')}); installing on the first: ${devices[0]}`,
+  );
 }
 const serial = devices[0];
 
 console.log(`Installing ${path.basename(apkPath)} -> ${serial} ...`);
-const install = spawnSync(adb, ['-s', serial, 'install', '-r', apkPath], { stdio: 'inherit' });
+const install = spawnSync(adb, ['-s', serial, 'install', '-r', apkPath], {
+  stdio: 'inherit',
+});
 
 if (install.status !== 0) {
   console.error(

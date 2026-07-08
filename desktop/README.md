@@ -29,8 +29,8 @@ both install side by side.
 
 > On Windows, `tauri android build` symlinks the compiled `.so` into `jniLibs/`.
 > That needs **Developer Mode** on (Settings → System → For developers) or an
-> elevated terminal, otherwise it fails with *"Creation symbolic link is not
-> allowed for this system."* A first release build can also flake once on a
+> elevated terminal, otherwise it fails with _"Creation symbolic link is not
+> allowed for this system."_ A first release build can also flake once on a
 > cross-drive `IllegalArgumentException: ... different roots` (the Kotlin daemon,
 > when the Cargo registry and project are on different drives) — just re-run.
 
@@ -58,7 +58,7 @@ signature.
     -dname "CN=Mytronome, O=Dovall, C=CA"
   ```
 
-The signing certificate's **SHA-1** must be registered on the *release* Android
+The signing certificate's **SHA-1** must be registered on the _release_ Android
 OAuth client in Google Cloud Console (package `ca.dovall.mytronome`, no `.debug`),
 or native Drive sign-in fails at runtime with `APIException: 10 (DEVELOPER_ERROR)`.
 Read the SHA-1 with `keytool -list -v -keystore <path> -alias mytronome`, or from a
@@ -83,7 +83,7 @@ keyPassword=<keystore password>
 Tauri's template, wiping any edits. After a regenerate, re-append this block
 **verbatim** to the end of that file (after the `apply(from = "tauri.build.gradle.kts")`
 line). It creates its own scope and only touches the `android {}` accessor, so it
-doesn't depend on the template's *structure* (buildTypes layout, etc.) and won't rot
+doesn't depend on the template's _structure_ (buildTypes layout, etc.) and won't rot
 when Tauri reshuffles that. Its one dependency is the `import java.util.Properties`
 at the top of the generated file — which the template always emits because it uses
 `Properties` itself (`tauriProperties`). Do **not** fully-qualify it as
