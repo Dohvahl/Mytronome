@@ -11,6 +11,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import * as readline from 'node:readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -83,3 +85,28 @@ replaceOnce(
 );
 
 console.log(`\n${current} -> ${next}`);
+
+// Wait for a y/n from the user before committing the version bump,
+// tagging it, and pushing it.
+try {
+  const rl = await readline.createInterface({ input, output });
+  const answer = await rl.question(
+    'Commit, tag, and push this version bump? (y/n) ',
+  );
+  rl.close();
+  if (answer.toLowerCase() === 'y') {
+    console.log('Committing...');
+    const { execSync } = await import('node:child_process');
+    execSync(`git add ${jsonFiles.join(' ')}`, { stdio: 'inherit' });
+    execSync(`git add desktop/src-tauri/Cargo.toml`, { stdio: 'inherit' });
+    execSync(`git commit -m "Bump version to ${next}"`, { stdio: 'inherit' });
+    execSync(`git tag v${next}`, { stdio: 'inherit' });
+    execSync(`git push && git push --tags`, { stdio: 'inherit' });
+    console.log('Done.');
+  } else {
+    console.log('Aborted. You can commit and tag manually.');
+  }
+} catch (error) {
+  console.error('Error during commit/tag/push:', error);
+  process.exit(1);
+}
