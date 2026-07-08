@@ -119,7 +119,7 @@ export function PresetsPanel({
           placeholder="Label (optional)"
         />
         <button className="preset-save-btn" onClick={handleSave}>
-          Save current
+          Save preset
         </button>
       </div>
 
@@ -128,9 +128,7 @@ export function PresetsPanel({
       {!loading && error && <p className="preset-error">{error}</p>}
 
       {!loading && !error && presets.length === 0 && (
-        <p className="preset-empty">
-          No presets yet — set a tempo and save it.
-        </p>
+        <p className="preset-empty">No presets yet.</p>
       )}
 
       {!loading && presets.length > 0 && (

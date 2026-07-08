@@ -9,6 +9,20 @@
       content="Mytronome is a free, cross-platform metronome: set your tempo, time signature, and subdivisions for a precise, click-accurate beat, and save presets — on web, desktop, and Android."
     />
     <title>Mytronome</title>
+    <script>
+      // Apply the saved theme + accent before first paint so there's no flash.
+      // useTheme/useAccent refine these on mount; "system" theme is left to the
+      // prefers-color-scheme media query.
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'light' || t === 'dark')
+            document.documentElement.setAttribute('data-theme', t);
+          var a = localStorage.getItem('accent');
+          if (a) document.documentElement.style.setProperty('--accent', a);
+        } catch (e) {}
+      })();
+    </script>
     <style>
       /* Hidden for real (JS) visitors so it never flashes before React mounts.
          The <noscript> below re-shows it for no-JS agents — including Google's

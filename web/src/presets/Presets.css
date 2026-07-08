@@ -24,6 +24,48 @@
   color: var(--accent);
 }
 
+/* Three bars that morph into an X when the drawer is open (driven off
+   aria-expanded, so no extra state). The button stays put; only the icon
+   changes, so it reads as a close button on the drawer's own corner. */
+.menu-icon {
+  position: relative;
+  display: block;
+  width: 1.2222rem;
+  height: 0.8889rem;
+}
+.menu-icon span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0.1111rem;
+  border-radius: 0.0556rem;
+  background: currentColor;
+  transition:
+    top 0.25s ease,
+    transform 0.25s ease,
+    opacity 0.2s ease;
+}
+.menu-icon span:nth-child(1) {
+  top: 0;
+}
+.menu-icon span:nth-child(2) {
+  top: 0.3889rem;
+}
+.menu-icon span:nth-child(3) {
+  top: 0.7778rem;
+}
+.menu-toggle[aria-expanded='true'] .menu-icon span:nth-child(1) {
+  top: 0.3889rem;
+  transform: rotate(45deg);
+}
+.menu-toggle[aria-expanded='true'] .menu-icon span:nth-child(2) {
+  opacity: 0;
+}
+.menu-toggle[aria-expanded='true'] .menu-icon span:nth-child(3) {
+  top: 0.3889rem;
+  transform: rotate(-45deg);
+}
+
 /* Click-away backdrop while the drawer is open */
 .sidebar-backdrop {
   position: fixed;
@@ -144,7 +186,7 @@
 }
 .storage-switch button.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
 }
 
 /* Cloud (Google Drive) connect / disconnect */
@@ -233,7 +275,7 @@
   border: none;
   border-radius: 55.5rem;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
   font-size: 0.8889rem;
   font-weight: 600;
   cursor: pointer;
