@@ -73,6 +73,28 @@
   box-sizing: border-box;
 }
 
+/* App wordmark at the top, centered between the fixed corner controls (the
+   inline padding keeps it clear of the hamburger / help buttons on narrow
+   screens). */
+.app-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4444rem;
+  padding: calc(0.7778rem + env(safe-area-inset-top, 0px)) 3.3333rem 0.4444rem;
+  font-family: var(--heading);
+  font-weight: 600;
+  font-size: 1.1667rem;
+  letter-spacing: 0.01em;
+  color: var(--text-h);
+}
+.app-brand svg {
+  width: 1.4444rem;
+  height: 1.4444rem;
+  flex-shrink: 0;
+  display: block;
+}
+
 body {
   margin: 0;
 }

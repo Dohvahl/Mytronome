@@ -6,6 +6,7 @@ import { TempoControl } from './TempoControl';
 import { VolumeControl } from './VolumeControl';
 import { SubdivisionControl } from './SubdivisionControl';
 import { HelpHint } from './HelpHint';
+import { BrandHeader } from './BrandHeader';
 import { LayoutToggle } from './LayoutToggle';
 import { Pendulum } from './Pendulum';
 import {
@@ -164,6 +165,8 @@ export function Metronome() {
           aria-label="Resize panel"
         />
       </aside>
+
+      <BrandHeader />
 
       <div className="metronome">
         <div className="loaded-preset">

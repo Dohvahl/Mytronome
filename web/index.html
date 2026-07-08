@@ -4,10 +4,58 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Mytronome is a free, cross-platform metronome: set your tempo, time signature, and subdivisions for a precise, click-accurate beat, and save presets — on web, desktop, and Android."
+    />
     <title>Mytronome</title>
+    <style>
+      /* Hidden for real (JS) visitors so it never flashes before React mounts.
+         The <noscript> below re-shows it for no-JS agents — including Google's
+         OAuth brand-verification crawler, which still reads this text from the
+         HTML. React replaces #root on mount either way. */
+      .app-preload {
+        display: none;
+        max-width: 34rem;
+        margin: 4rem auto 0;
+        padding: 0 1.5rem;
+        font-family: system-ui, -apple-system, sans-serif;
+        text-align: center;
+        line-height: 1.6;
+      }
+      .app-preload h1 {
+        font-size: 1.6rem;
+        margin: 0 0 0.5rem;
+      }
+    </style>
+    <noscript>
+      <style>
+        .app-preload {
+          display: block;
+        }
+      </style>
+    </noscript>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      The static content below is the crawlable home page: it names the app and
+      explains its purpose for Google's OAuth brand verification (whose crawler
+      does not run JavaScript). React replaces #root on mount, so real users see
+      the app, not this. Keep the name "Mytronome" and a purpose description here.
+    -->
+    <div id="root">
+      <main class="app-preload">
+        <h1>Mytronome</h1>
+        <p>
+          Mytronome is a free, cross-platform metronome. Set your tempo
+          (40–320 BPM), time signature, and subdivisions for a precise,
+          click-accurate beat, and save your presets — on web, desktop, and
+          Android.
+        </p>
+        <noscript>This metronome requires JavaScript to be enabled.</noscript>
+        <p><a href="/privacy.html">Privacy Policy</a></p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
