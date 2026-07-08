@@ -128,3 +128,18 @@ apksigner verify --verbose --print-certs \
 Expect `Verified using v2 scheme ... : true` and
 `Signer #1 certificate DN: CN=Mytronome, O=Dovall, C=CA`. (v1/JAR signing is
 correctly absent — `minSdk = 24`, so the v2 scheme covers every supported device.)
+
+## App icons
+
+The master is `src-tauri/app-icon.svg` (the filled tile). `npm run gen:icon`
+rasterizes it to a 1024×1024 `app-icon.png` (via `@resvg/resvg-js`, gitignored)
+and runs `tauri icon`, which writes:
+
+- **committed:** the desktop set + `icons/ios/` under `src-tauri/icons/`;
+- **into the gitignored `gen/` project:** the Android `mipmap-*` launcher icons.
+
+Because the Android icons land in `gen/` (which `tauri android init` regenerates
+from Tauri defaults), **re-run `npm run gen:icon` after any `android init`** to
+restore the launcher icon — same post-regenerate ritual as the signing block.
+The web favicon is a separate hand-authored file, `web/public/favicon.svg`
+(theme-adaptive via `prefers-color-scheme`).

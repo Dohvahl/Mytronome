@@ -15,12 +15,14 @@
     "test:types": "tsc --noEmit -p tsconfig.test.json",
     "deploy:web": "npm run build -w web && node scripts/deploy-web.mjs",
     "deploy:android": "npm run tauri -w desktop -- android build --apk --target aarch64 && node scripts/install-android.mjs",
+    "gen:icon": "node scripts/gen-icon.mjs",
     "bump:major": "node scripts/bumpVersion.mjs --major",
     "bump:minor": "node scripts/bumpVersion.mjs --minor",
     "bump:patch": "node scripts/bumpVersion.mjs --patch",
     "prepare": "husky"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "husky": "^9.1.7",
     "prettier": "^3.9.3",
     "ssh2-sftp-client": "^12.1.1",
