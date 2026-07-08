@@ -16,6 +16,7 @@ export interface ScheduledClick {
  */
 export class MockAudioOutput implements AudioOutput {
   currentTime = 0;
+  outputLatency = 0;
   volume = 1;
   readonly scheduled: ScheduledClick[] = [];
   cancelCount = 0;

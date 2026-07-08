@@ -160,6 +160,14 @@ export function PresetsPanel({
       <div className="drawer-footer">
         {SERVER_ENABLED && <AccountControl />}
         <CloudControl />
+        <a
+          className="drawer-legal"
+          href="/privacy.html"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Privacy
+        </a>
       </div>
     </section>
   );

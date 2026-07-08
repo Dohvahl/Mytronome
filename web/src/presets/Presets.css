@@ -1,7 +1,7 @@
 /* Hamburger toggle (fixed, always on top) */
 .menu-toggle {
   position: fixed;
-  top: 0.8889rem;
+  top: calc(1.1111rem + env(safe-area-inset-top, 0px));
   left: 0.8889rem;
   z-index: 30;
   width: 2.4444rem;
@@ -50,11 +50,16 @@
 .sidebar.open {
   transform: translateX(0);
 }
-/* Scrolling content area inside the fixed drawer frame. */
+/* Scrolling content area inside the fixed drawer frame. The top padding clears
+   the fixed menu button, which itself sits below the top safe-area inset — so
+   the padding must include that same inset, or the content rides up under the
+   button on notched phones. The bottom picks up the safe-area inset too, so the
+   last preset isn't hidden behind the gesture-nav bar. */
 .sidebar-content {
   height: 100%;
   box-sizing: border-box;
-  padding: 3.5556rem 0.8889rem 0.8889rem;
+  padding: calc(4.5rem + env(safe-area-inset-top, 0px)) 0.8889rem
+    calc(0.8889rem + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -270,6 +275,17 @@
   display: flex;
   flex-direction: column;
   gap: 0.5556rem;
+}
+.drawer-legal {
+  align-self: flex-end;
+  font-size: 0.6667rem;
+  color: var(--text);
+  opacity: 0.6;
+  text-decoration: none;
+}
+.drawer-legal:hover {
+  opacity: 1;
+  text-decoration: underline;
 }
 .account-footer {
   display: flex;

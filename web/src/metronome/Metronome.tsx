@@ -6,9 +6,13 @@ import { TempoControl } from './TempoControl';
 import { VolumeControl } from './VolumeControl';
 import { SubdivisionControl } from './SubdivisionControl';
 import { HelpHint } from './HelpHint';
+import { BrandHeader } from './BrandHeader';
+import { LayoutToggle } from './LayoutToggle';
+import { Pendulum } from './Pendulum';
 import {
   useKeyHeld,
   useKeyPressed,
+  useLayoutMode,
   usePointDragAdjust,
   useResizableWidth,
   useWheelAdjust,
@@ -26,6 +30,7 @@ export function Metronome() {
     pattern,
     isRunning,
     currentBeat,
+    beatTick,
     volume,
     subdivisions,
     toggle,
@@ -96,6 +101,10 @@ export function Metronome() {
     setBpm(bpm + dir * step),
   );
 
+  const [layoutMode, setLayoutMode] = useLayoutMode();
+  // Pendulum layout: the time-signature control is collapsed by default.
+  const [tsOpen, setTsOpen] = useState(false);
+
   return (
     <>
       <button
@@ -125,6 +134,7 @@ export function Metronome() {
       >
         <div className="sidebar-content">
           <VolumeControl volume={volume} onChange={setVolume} />
+          <LayoutToggle mode={layoutMode} onChange={setLayoutMode} />
           <PresetsPanel
             presets={presets}
             current={current}
@@ -156,6 +166,8 @@ export function Metronome() {
         />
       </aside>
 
+      <BrandHeader />
+
       <div className="metronome">
         <div className="loaded-preset">
           {loadedPreset?.label}
@@ -169,71 +181,122 @@ export function Metronome() {
           ) : null}
         </div>
 
-        <div className="tempo-row">
-          <button
-            className={`step ${stepBoost ? 'step-10' : ''}`}
-            onClick={() => setBpm(bpm - step)}
-            aria-label={`Decrease tempo by ${step}`}
-          >
-            {stepBoost ? '−10' : '−'}
-          </button>
+        {layoutMode === 'pendulum' ? (
+          <div className="pendulum-layout">
+            <Pendulum
+              beatTick={beatTick}
+              bpm={bpm}
+              running={isRunning}
+              min={MIN_BPM}
+              max={MAX_BPM}
+              onBpmChange={setBpm}
+            />
+            <div className="pendulum-readout">
+              <div
+                className="tempo-value-area"
+                ref={(el) => {
+                  tempoWheelRef.current = el;
+                  tempoPointerRef.current = el;
+                }}
+              >
+                <TempoControl
+                  value={bpm}
+                  min={MIN_BPM}
+                  max={MAX_BPM}
+                  step={step}
+                  onChange={setBpm}
+                />
+              </div>
+              <span className="unit">BPM</span>
+            </div>
+            <div className="pendulum-ts">
+              <button
+                type="button"
+                className="pendulum-ts-toggle"
+                onClick={() => setTsOpen((open) => !open)}
+                aria-expanded={tsOpen}
+              >
+                Time signature
+              </button>
+              {tsOpen && (
+                <TimeSignaturePicker
+                  value={timeSignature}
+                  onChange={setTimeSignature}
+                />
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="tempo-cluster">
+              <div className="tempo-row">
+                <button
+                  className={`step ${stepBoost ? 'step-10' : ''}`}
+                  onClick={() => setBpm(bpm - step)}
+                  aria-label={`Decrease tempo by ${step}`}
+                >
+                  {stepBoost ? '−10' : '−'}
+                </button>
 
-          <div
-            className="tempo-display"
-            ref={(el) => {
-              tempoWheelRef.current = el;
-              tempoPointerRef.current = el;
-            }}
-          >
-            <div className="tempo-value-area">
-              <TempoControl
-                value={bpm}
+                <div
+                  className="tempo-display"
+                  ref={(el) => {
+                    tempoWheelRef.current = el;
+                    tempoPointerRef.current = el;
+                  }}
+                >
+                  <div className="tempo-value-area">
+                    <TempoControl
+                      value={bpm}
+                      min={MIN_BPM}
+                      max={MAX_BPM}
+                      step={step}
+                      onChange={setBpm}
+                    />
+                  </div>
+                  <span className="unit">BPM</span>
+                </div>
+
+                <button
+                  className={`step ${stepBoost ? 'step-10' : ''}`}
+                  onClick={() => setBpm(bpm + step)}
+                  aria-label={`Increase tempo by ${step}`}
+                >
+                  {stepBoost ? '+10' : '+'}
+                </button>
+              </div>
+
+              <input
+                className="tempo-slider"
+                type="range"
                 min={MIN_BPM}
                 max={MAX_BPM}
-                step={step}
-                onChange={setBpm}
+                value={bpm}
+                onChange={(e) => setBpm(Number(e.target.value))}
+                ref={sliderWheelRef}
               />
             </div>
-            <span className="unit">BPM</span>
-          </div>
 
-          <button
-            className={`step ${stepBoost ? 'step-10' : ''}`}
-            onClick={() => setBpm(bpm + step)}
-            aria-label={`Increase tempo by ${step}`}
-          >
-            {stepBoost ? '+10' : '+'}
-          </button>
-        </div>
+            <div className="meter-row">
+              <TimeSignaturePicker
+                value={timeSignature}
+                onChange={setTimeSignature}
+              />
+              <SubdivisionControl
+                value={subdivisions}
+                onChange={setSubdivisions}
+                beatNoteValue={timeSignature.noteValue}
+              />
+            </div>
 
-        <input
-          className="tempo-slider"
-          type="range"
-          min={MIN_BPM}
-          max={MAX_BPM}
-          value={bpm}
-          onChange={(e) => setBpm(Number(e.target.value))}
-          ref={sliderWheelRef}
-        />
-
-        <div className="meter-row">
-          <TimeSignaturePicker
-            value={timeSignature}
-            onChange={setTimeSignature}
-          />
-          <SubdivisionControl
-            value={subdivisions}
-            onChange={setSubdivisions}
-            beatNoteValue={timeSignature.noteValue}
-          />
-        </div>
-
-        <BeatIndicator
-          pattern={pattern}
-          currentBeat={currentBeat}
-          onCycle={cycleBeat}
-          beatsPerGroup={isCompound(timeSignature) ? 3 : 0}
-        />
+            <BeatIndicator
+              pattern={pattern}
+              currentBeat={currentBeat}
+              onCycle={cycleBeat}
+              beatsPerGroup={isCompound(timeSignature) ? 3 : 0}
+            />
+          </>
+        )}
 
         <button
           className={`play ${isRunning ? 'running' : ''}`}

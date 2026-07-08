@@ -128,6 +128,16 @@ export class Metronome {
     return this.output.currentTime;
   }
 
+  /**
+   * Estimated seconds between a click being scheduled and it reaching the
+   * speaker (see {@link AudioOutput.outputLatency}). A UI adds this to the delay
+   * before flashing the visual beat so it lands when the click is *heard* — the
+   * difference is negligible on desktop but large in a mobile webview.
+   */
+  get outputLatency(): number {
+    return this.output.outputLatency;
+  }
+
   /** Set the tempo. Clamped to a sane musical range. Safe to call while running. */
   setBpm(bpm: number): void {
     this.bpm = clampBpm(bpm);

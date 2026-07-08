@@ -32,6 +32,15 @@ export class WebAudioOutput implements AudioOutput {
     return this.audioContext?.currentTime ?? 0;
   }
 
+  get outputLatency(): number {
+    const ctx = this.audioContext;
+    if (!ctx) return 0;
+    // `outputLatency` is the hardware buffer delay (large on mobile webviews);
+    // some engines only expose `baseLatency`. Fall back through both, then to 0
+    // (older Safari has neither) so we never return NaN/undefined.
+    return ctx.outputLatency || ctx.baseLatency || 0;
+  }
+
   setVolume(volume: number): void {
     this.volume = clamp01(volume);
     if (this.masterGain && this.audioContext) {
@@ -54,8 +63,28 @@ export class WebAudioOutput implements AudioOutput {
       this.masterGain = this.audioContext.createGain();
       this.masterGain.gain.value = this.volume;
       this.masterGain.connect(this.audioContext.destination);
+      this.prime();
     }
     return this.audioContext.resume();
+  }
+
+  /**
+   * Play one sample of silence the moment the context is created (inside the
+   * start gesture). On mobile, opening the hardware output device takes ~100-200
+   * ms; without this, the very first click — scheduled only a brief lead-in
+   * ahead — can be rendered into a not-yet-ready device and lost (the missing
+   * downbeat on the first-ever play). Priming kicks that device-open off early
+   * so it's flowing by the time the first real click sounds. A no-op cost after
+   * the first start, since the context is then reused warm.
+   */
+  private prime(): void {
+    const ctx = this.audioContext;
+    if (!ctx) return;
+    const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
   }
 
   scheduleClick(time: number, sound: ClickSound): void {

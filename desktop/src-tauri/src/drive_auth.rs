@@ -1,40 +1,65 @@
-//! Google Drive OAuth for the desktop app.
+//! Google Drive OAuth for the Tauri app (desktop + mobile).
 //!
-//! GIS (the web app's browser token flow) can't run in a webview, so on desktop
-//! we do the Authorization-Code + PKCE flow natively: open the system browser
-//! for consent, capture Google's redirect on a temporary loopback server, and
-//! exchange the code here in Rust. The long-lived refresh token is kept in the
-//! OS keychain; the webview only ever receives short-lived access tokens via
-//! `drive_get_access_token`.
+//! The two platforms take completely different routes, because Google no longer
+//! allows a browser-redirect OAuth flow for Android (custom-scheme and loopback
+//! redirects are both blocked for Android clients):
+//!   - DESKTOP: hand-rolled Authorization-Code + PKCE over a loopback redirect,
+//!     token exchange in Rust, refresh token in the OS keychain (`keyring`).
+//!   - MOBILE: the native Android Authorization API (Google Identity Services)
+//!     via the `google-drive-auth` plugin — access tokens only, NO refresh token,
+//!     nothing stored on device (Google remembers the grant). The Android OAuth
+//!     client is matched by package + SHA-1, so no client id/secret is baked in.
+//!
+//! Both platforms expose the same commands, so the JS `getAccessToken()` seam is
+//! identical and `googleDrivePresetStore` (Drive REST in JS) is unchanged.
 
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+use tauri::State;
+#[cfg(mobile)]
+use tauri::AppHandle;
+
+// ---- Desktop-only OAuth machinery (loopback redirect + PKCE + keychain) ----
+#[cfg(desktop)]
 use oauth2::basic::BasicClient;
+#[cfg(desktop)]
 use oauth2::url::Url;
+#[cfg(desktop)]
 use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl,
     RefreshToken, Scope, TokenResponse, TokenUrl,
 };
-use tauri::State;
+#[cfg(desktop)]
 use tauri_plugin_oauth::{start_with_config, OauthConfig};
 
-// Public app identifiers, injected at build time (see README/handoff), never
-// committed — mirrors the web app's VITE_GOOGLE_CLIENT_ID. For Google "Desktop
-// app" clients the secret is explicitly non-confidential and meant to be
-// embedded, so option_env! baking it into the binary is acceptable.
+// ---- Mobile-only: the native authorization plugin ----
+#[cfg(mobile)]
+use tauri_plugin_google_drive_auth::{AuthorizeRequest, GoogleDriveAuthExt};
+
+// Desktop OAuth client identifiers, baked at build time (see README/handoff),
+// never committed. Mobile's native flow doesn't use them.
+#[cfg(desktop)]
 const CLIENT_ID: Option<&str> = option_env!("MYTRONOME_GOOGLE_CLIENT_ID");
+#[cfg(desktop)]
 const CLIENT_SECRET: Option<&str> = option_env!("MYTRONOME_GOOGLE_CLIENT_SECRET");
 
+#[cfg(desktop)]
 const AUTH_URI: &str = "https://accounts.google.com/o/oauth2/v2/auth";
+#[cfg(desktop)]
 const TOKEN_URI: &str = "https://oauth2.googleapis.com/token";
+
 const SCOPE: &str = "https://www.googleapis.com/auth/drive.appdata";
 
-// Refresh token lives in the OS credential store under these keys.
+// Refresh token lives in the OS keychain (desktop only) under these keys.
+#[cfg(desktop)]
 const KEYRING_SERVICE: &str = "ca.dovall.mytronome";
+#[cfg(desktop)]
 const KEYRING_USER: &str = "google-drive-refresh-token";
 
-/// Cached access token, held in memory only. Managed as Tauri state.
+/// Cached access token, held in memory only. Managed as Tauri state. On desktop
+/// it holds the token from the last refresh; on mobile it caches the token the
+/// native API hands back, to avoid a plugin round-trip on every Drive call.
 #[derive(Default)]
 pub struct DriveState {
     cached: Mutex<Option<CachedToken>>,
@@ -43,20 +68,6 @@ pub struct DriveState {
 struct CachedToken {
     access_token: String,
     expires_at: Instant,
-}
-
-fn client_id() -> Result<&'static str, String> {
-    CLIENT_ID
-        .filter(|s| !s.is_empty())
-        .ok_or_else(|| "Google Drive isn't configured in this build.".to_string())
-}
-
-fn http_client() -> Result<reqwest::Client, String> {
-    // Don't follow redirects: oauth2 recommends this to avoid SSRF.
-    reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .map_err(|e| e.to_string())
 }
 
 fn cache(state: &State<'_, DriveState>, access_token: String, expires_in: Duration) {
@@ -68,46 +79,87 @@ fn cache(state: &State<'_, DriveState>, access_token: String, expires_in: Durati
     });
 }
 
-// --- keychain helpers ------------------------------------------------------
-
-fn store_refresh_token(token: &str) -> Result<(), String> {
-    keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
-        .and_then(|e| e.set_password(token))
-        .map_err(|e| format!("Couldn't save Drive credentials: {e}"))
+#[cfg(desktop)]
+fn client_id() -> Result<&'static str, String> {
+    CLIENT_ID
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "Google Drive isn't configured in this build.".to_string())
 }
 
-fn load_refresh_token() -> Result<Option<String>, String> {
-    match keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER).and_then(|e| e.get_password()) {
-        Ok(token) => Ok(Some(token)),
-        Err(keyring::Error::NoEntry) => Ok(None),
-        Err(e) => Err(format!("Couldn't read Drive credentials: {e}")),
+#[cfg(desktop)]
+fn http_client() -> Result<reqwest::Client, String> {
+    // Don't follow redirects: oauth2 recommends this to avoid SSRF.
+    reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .map_err(|e| e.to_string())
+}
+
+// --- desktop token storage (OS keychain) -----------------------------------
+
+#[cfg(desktop)]
+mod token_store {
+    use super::{KEYRING_SERVICE, KEYRING_USER};
+
+    pub fn store(token: &str) -> Result<(), String> {
+        keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
+            .and_then(|e| e.set_password(token))
+            .map_err(|e| format!("Couldn't save Drive credentials: {e}"))
+    }
+
+    pub fn load() -> Result<Option<String>, String> {
+        match keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER).and_then(|e| e.get_password()) {
+            Ok(token) => Ok(Some(token)),
+            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(e) => Err(format!("Couldn't read Drive credentials: {e}")),
+        }
+    }
+
+    pub fn delete() -> Result<(), String> {
+        match keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER).and_then(|e| e.delete_credential())
+        {
+            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+            Err(e) => Err(format!("Couldn't clear Drive credentials: {e}")),
+        }
     }
 }
 
-fn delete_refresh_token() -> Result<(), String> {
-    match keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER).and_then(|e| e.delete_credential()) {
-        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
-        Err(e) => Err(format!("Couldn't clear Drive credentials: {e}")),
-    }
-}
+// --- commands: is-configured / is-connected --------------------------------
 
-// --- commands --------------------------------------------------------------
-
-/// True when this build has a client id baked in (so the UI can hide the option
-/// otherwise) — parallels the web app's `isDriveConfigured`.
+/// True when Drive can be offered. Desktop needs a baked client id; mobile always
+/// supports it via the native SDK (assuming the Console Android client is set up).
+#[cfg(desktop)]
 #[tauri::command]
 pub fn drive_is_configured() -> bool {
     CLIENT_ID.map(|s| !s.is_empty()).unwrap_or(false)
 }
 
-/// True when a refresh token is stored (i.e. previously connected).
+#[cfg(mobile)]
 #[tauri::command]
-pub fn drive_is_connected() -> bool {
-    load_refresh_token().ok().flatten().is_some()
+pub fn drive_is_configured() -> bool {
+    true
 }
 
-/// Run the full consent flow: loopback + system browser + PKCE exchange, then
-/// persist the refresh token. Call from a user click.
+/// True when previously connected. Desktop checks the stored refresh token; mobile
+/// has no on-device state, so this reflects only the in-session cache (the JS layer
+/// keeps the persistent "connected" hint in localStorage).
+#[cfg(desktop)]
+#[tauri::command]
+pub fn drive_is_connected() -> bool {
+    token_store::load().ok().flatten().is_some()
+}
+
+#[cfg(mobile)]
+#[tauri::command]
+pub fn drive_is_connected(state: State<'_, DriveState>) -> bool {
+    state.cached.lock().unwrap().is_some()
+}
+
+// --- commands: connect -----------------------------------------------------
+
+/// Desktop consent flow: loopback + system browser + PKCE exchange, then persist
+/// the refresh token. Call from a user click.
+#[cfg(desktop)]
 #[tauri::command]
 pub async fn drive_connect(state: State<'_, DriveState>) -> Result<(), String> {
     let client_id = client_id()?;
@@ -187,18 +239,36 @@ pub async fn drive_connect(state: State<'_, DriveState>) -> Result<(), String> {
         .ok_or_else(|| "Google didn't return a refresh token.".to_string())?
         .secret()
         .to_string();
-    store_refresh_token(&refresh)?;
+    token_store::store(&refresh)?;
 
     let expires_in = token.expires_in().unwrap_or(Duration::from_secs(3600));
     cache(&state, token.access_token().secret().to_string(), expires_in);
     Ok(())
 }
 
-/// Return a valid access token, refreshing via the stored refresh token when the
-/// cached one has expired. This is the seam the JS `getAccessToken()` calls.
+/// Mobile consent flow: the native Android Authorization API. Shows the native
+/// consent dialog the first time; the returned access token is cached.
+#[cfg(mobile)]
+#[tauri::command]
+pub async fn drive_connect(app: AppHandle, state: State<'_, DriveState>) -> Result<(), String> {
+    let token = app
+        .google_drive_auth()
+        .authorize(AuthorizeRequest {
+            scopes: Some(vec![SCOPE.to_string()]),
+        })
+        .map_err(|e| e.to_string())?
+        .access_token;
+    cache(&state, token, MOBILE_TOKEN_TTL);
+    Ok(())
+}
+
+// --- commands: get access token --------------------------------------------
+
+/// Desktop: return a valid access token, refreshing via the stored refresh token
+/// when the cached one has expired.
+#[cfg(desktop)]
 #[tauri::command]
 pub async fn drive_get_access_token(state: State<'_, DriveState>) -> Result<String, String> {
-    // Fast path: a still-valid cached token.
     if let Some(cached) = state.cached.lock().unwrap().as_ref() {
         if Instant::now() < cached.expires_at {
             return Ok(cached.access_token.clone());
@@ -206,7 +276,7 @@ pub async fn drive_get_access_token(state: State<'_, DriveState>) -> Result<Stri
     }
 
     let refresh =
-        load_refresh_token()?.ok_or_else(|| "Not connected to Google Drive.".to_string())?;
+        token_store::load()?.ok_or_else(|| "Not connected to Google Drive.".to_string())?;
     let client_id = client_id()?;
     let client_secret = CLIENT_SECRET.unwrap_or("");
 
@@ -228,10 +298,52 @@ pub async fn drive_get_access_token(state: State<'_, DriveState>) -> Result<Stri
     Ok(access_token)
 }
 
-/// Forget the connection: clear the cached token and remove the stored refresh
-/// token. (Server-side token revocation is a follow-up.)
+/// Mobile: return a valid access token from the cache, or ask the native
+/// Authorization API for a fresh one (silent while the grant is still valid).
+#[cfg(mobile)]
+#[tauri::command]
+pub async fn drive_get_access_token(
+    app: AppHandle,
+    state: State<'_, DriveState>,
+) -> Result<String, String> {
+    if let Some(cached) = state.cached.lock().unwrap().as_ref() {
+        if Instant::now() < cached.expires_at {
+            return Ok(cached.access_token.clone());
+        }
+    }
+
+    let token = app
+        .google_drive_auth()
+        .authorize(AuthorizeRequest {
+            scopes: Some(vec![SCOPE.to_string()]),
+        })
+        .map_err(|e| e.to_string())?
+        .access_token;
+    cache(&state, token.clone(), MOBILE_TOKEN_TTL);
+    Ok(token)
+}
+
+// --- commands: disconnect --------------------------------------------------
+
+/// Desktop: clear the cached token and remove the stored refresh token.
+/// (Server-side token revocation is a follow-up.)
+#[cfg(desktop)]
 #[tauri::command]
 pub fn drive_disconnect(state: State<'_, DriveState>) -> Result<(), String> {
     *state.cached.lock().unwrap() = None;
-    delete_refresh_token()
+    token_store::delete()
 }
+
+/// Mobile: nothing is stored on device, so just drop the cached token. The grant
+/// itself lives in the Google account (revoking it is a follow-up).
+#[cfg(mobile)]
+#[tauri::command]
+pub fn drive_disconnect(state: State<'_, DriveState>) -> Result<(), String> {
+    *state.cached.lock().unwrap() = None;
+    Ok(())
+}
+
+// Google access tokens last ~1h; the native API doesn't hand us the exact expiry,
+// so we cache conservatively and let the next call re-authorize silently.
+#[cfg(mobile)]
+const MOBILE_TOKEN_TTL: Duration = Duration::from_secs(50 * 60);

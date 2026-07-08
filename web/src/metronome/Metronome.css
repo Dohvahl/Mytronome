@@ -1,11 +1,39 @@
 .metronome {
+  flex: 1;
+  width: min(100%, 23.3333rem);
   max-width: 23.3333rem;
   margin: 0 auto;
-  padding: 1.7778rem 1.3333rem;
+  padding: 1rem 1.3333rem 1.3333rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5556rem;
+  justify-content: center;
+  gap: 1rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .metronome {
+    gap: 0.875rem;
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  .tempo-row {
+    gap: 0.75rem;
+  }
+
+  .meter-row {
+    gap: 0.6667rem;
+  }
+
+  .tempo-value-area {
+    height: 5.3333rem;
+  }
+
+  .play {
+    width: 7.3333rem;
+    padding: 0.6667rem 0;
+  }
 }
 
 /* --- "How to use" hint (top-right, mirrors the ☰ menu top-left) --- */
@@ -15,7 +43,7 @@
 }
 .help-hint {
   position: fixed;
-  top: 0.8889rem;
+  top: calc(1.1111rem + env(safe-area-inset-top, 0px));
   right: 0.8889rem;
   /* Below the drawer backdrop (z-index 20) so it dims with the rest of the
      screen when the presets drawer is open. */
@@ -92,6 +120,19 @@
   line-height: 1.45;
   color: var(--text);
 }
+/* Show the desktop gestures by default and swap to the touch phrasing on coarse
+   (touch) pointers, where there's no scroll wheel or Shift key. */
+.help-list li.help-touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .help-list li.help-desktop {
+    display: none;
+  }
+  .help-list li.help-touch {
+    display: block;
+  }
+}
 .help-list kbd {
   display: inline-block;
   padding: 0.0556rem 0.3333rem;
@@ -146,6 +187,21 @@
   font-size: 0.7222rem;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+
+/* Layout switch (drawer) — a labelled segmented control; reuses .storage-switch
+   from the presets panel for the buttons. */
+.layout-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5556rem;
+  padding-bottom: 0.8889rem;
+  border-bottom: 0.0556rem solid var(--border);
+}
+.layout-toggle-label {
+  font-size: 0.7778rem;
+  color: var(--text);
 }
 
 .tempo-row {
@@ -276,6 +332,217 @@
   accent-color: var(--accent);
 }
 
+/* ---------------------------------------------------------------------------
+   Tower layout (data-layout="tower") — the vertical, mechanical-metronome-style
+   arrangement. The classic horizontal layout above is the default; these rules
+   apply only under <html data-layout="tower">. Stage 1 is a functional reflow;
+   sizing and mechanical styling come in later stages.
+   --------------------------------------------------------------------------- */
+
+/* The wrapper is invisible to layout in classic mode (its children lay out in
+   the .metronome column exactly as before); in tower mode it becomes the row
+   that sits the vertical slider beside the tempo readout + step buttons. */
+.tempo-cluster {
+  display: contents;
+}
+:root[data-layout='tower'] .tempo-cluster {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Stack the +, number, − vertically beside the slider (column-reverse puts +
+   on top and − on bottom). */
+:root[data-layout='tower'] .tempo-row {
+  flex-direction: column-reverse;
+  gap: 0.8889rem;
+}
+
+/* --- Pendulum layout (data-layout="pendulum") — a mechanical-metronome mode:
+   the pendulum is the interface. The arm is an inverted pendulum, rising from a
+   fulcrum at its base and pivoting there; the weight rides it at a height set by
+   the tempo and is draggable to change it. The arm's rotate + transition-duration
+   are set inline (per-beat, from bpm); ease-in-out gives the slow-at-the-ends
+   motion of a real pendulum. Only rendered in this layout. --- */
+.pendulum-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+.pendulum {
+  position: relative;
+  width: 13rem; /* room for the arm to swing without clipping */
+  height: 11.1111rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+.pendulum-arm {
+  position: relative;
+  width: 0.3889rem;
+  height: 10.5556rem;
+  border-radius: 0.2222rem;
+  background: linear-gradient(
+    90deg,
+    var(--border),
+    var(--text) 50%,
+    var(--border)
+  );
+  transform-origin: bottom center;
+  transition-property: transform;
+  transition-timing-function: ease-in-out;
+}
+.pendulum-weight {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%); /* `top` set inline from the tempo */
+  width: 2.2222rem;
+  height: 1.3333rem;
+  padding: 0;
+  border-radius: 0.3333rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+  cursor: grab;
+  touch-action: none; /* vertical drag sets tempo — don't scroll the page */
+}
+.pendulum-weight:active {
+  cursor: grabbing;
+}
+.pendulum-pivot {
+  position: absolute;
+  bottom: -0.3333rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: var(--shadow);
+}
+
+/* Compact BPM readout beneath the pendulum (smaller than the classic chip). */
+.pendulum-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pendulum-readout .tempo-value-area {
+  height: auto;
+}
+.pendulum-readout .bpm-chip,
+.pendulum-readout .bpm-wheel {
+  font-size: 2.2222rem;
+}
+
+/* Collapsible time-signature control. */
+.pendulum-ts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6667rem;
+}
+.pendulum-ts-toggle {
+  padding: 0.3333rem 0.8889rem;
+  border-radius: 0.4444rem;
+  border: 0.0556rem solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.7778rem;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.pendulum-ts-toggle:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* The slider becomes the metronome's pendulum rod + sliding weight, and the
+   primary drag driver. writing-mode makes the native range vertical; the slow
+   end sits at the bottom (drag up = faster).
+   appearance:none so we paint the rod (track) and weight (thumb) ourselves. */
+:root[data-layout='tower'] .tempo-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 2.8889rem; /* room for the weight to sit across the rod */
+  height: 15rem;
+  max-width: none;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* The rod: a thin pole down the centre with faint tempo-scale tick marks.
+   (Chromium — the target engine — uses the -webkit- pseudo-elements.) */
+:root[data-layout='tower'] .tempo-slider::-webkit-slider-runnable-track {
+  width: 0.4444rem;
+  height: 100%;
+  border-radius: 0.2222rem;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--text) 50%, transparent) 0 0.0833rem,
+      transparent 0.0833rem 0.8333rem
+    ),
+    linear-gradient(90deg, var(--border), var(--text) 50%, var(--border));
+}
+
+/* The weight: a chunky block that slides on the rod — wide across it, short
+   along it. Negative inline margin re-centres it over the thin rod. */
+:root[data-layout='tower'] .tempo-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 2.8889rem;
+  height: 1.3333rem;
+  border-radius: 0.3333rem;
+  /* Top highlight → accent gives the weight a subtle convex, physical look. */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+  margin-left: -1.2222rem; /* (thumb − track thickness) / 2, to centre on the rod */
+}
+
+/* Firefox equivalents (secondary; Tauri/Android are Chromium). */
+:root[data-layout='tower'] .tempo-slider::-moz-range-track {
+  width: 0.4444rem;
+  height: 100%;
+  border-radius: 0.2222rem;
+  background: linear-gradient(
+    90deg,
+    var(--border),
+    var(--text) 50%,
+    var(--border)
+  );
+}
+:root[data-layout='tower'] .tempo-slider::-moz-range-thumb {
+  width: 2.8889rem;
+  height: 1.3333rem;
+  border-radius: 0.3333rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+}
+
 .play {
   width: 8.8889rem;
   padding: 0.7778rem 0;
@@ -381,15 +648,27 @@
 /* --- Beat indicator --- */
 .beat-indicator {
   display: flex;
-  gap: 0.7778rem;
-  min-height: 1.5556rem;
+  flex-wrap: nowrap;
+  justify-content: center;
   align-items: center;
+  /* Gap shrinks on narrow rows so a full 16-beat bar still fits any screen. */
+  gap: clamp(0.1667rem, 2.5vw, 0.7778rem);
+  width: 100%;
+  /* Tall enough to hold the fixed-height bars plus their active-beat scale-up. */
+  min-height: 2.8889rem;
 }
 .beat-dot {
-  width: 1.2222rem;
-  height: 1.2222rem;
+  /* Rounded bars, not circles: a *fixed height* with a flexible width. Circles
+     coupled width and height, so shrinking to fit 16 beats also shortened them
+     into unusable specks. Here the height stays constant and only the width
+     narrows — few beats read as wide pills, 16 as slim bars, all equally tall
+     and tappable. min-width:0 lets them narrow enough that 16 always fit. */
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 1.6667rem;
+  height: 2.2222rem;
   padding: 0;
-  border-radius: 50%;
+  border-radius: 0.6667rem;
   border: 0.1111rem solid var(--border);
   background: transparent;
   cursor: pointer;

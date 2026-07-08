@@ -6,6 +6,9 @@ const { version } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf-8'),
 );
 
+// Read the host, provided by Tauri
+const host = process.env.TAURI_DEV_HOST;
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -18,5 +21,13 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    host: host || false,
+    hmr: host
+      ? {
+          protocol: 'ws',
+          host,
+          port: 5173,
+        }
+      : undefined,
   },
 });
