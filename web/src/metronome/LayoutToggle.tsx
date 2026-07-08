@@ -12,24 +12,30 @@ const OPTIONS: { value: LayoutMode; label: string }[] = [
 ];
 
 /**
- * A segmented switch in the drawer for choosing the overall layout. It defaults
- * per device (see {@link useLayoutMode}) but lets either arrangement be forced
- * on any device. Reuses the `.storage-switch` look from the presets panel.
+ * Layout picker — a vertical `.option-stack` of selectable buttons. Defaults per
+ * device (see {@link useLayoutMode}) but lets any arrangement be forced. Lives in
+ * the Settings modal.
  */
 export function LayoutToggle({ mode, onChange }: Props) {
   return (
-    <div className="layout-toggle">
-      <span className="layout-toggle-label">Layout</span>
-      <div className="storage-switch" role="group" aria-label="Layout">
+    <div className="setting-group">
+      <span className="setting-label">Layout</span>
+      <div className="option-stack" role="radiogroup" aria-label="Layout">
         {OPTIONS.map((o) => (
           <button
             key={o.value}
             type="button"
-            className={o.value === mode ? 'active' : ''}
-            aria-pressed={o.value === mode}
+            role="radio"
+            aria-checked={o.value === mode}
+            className="option"
             onClick={() => onChange(o.value)}
           >
             {o.label}
+            {o.value === mode && (
+              <span className="option-check" aria-hidden="true">
+                ✓
+              </span>
+            )}
           </button>
         ))}
       </div>

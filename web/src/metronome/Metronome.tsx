@@ -7,14 +7,16 @@ import { VolumeControl } from './VolumeControl';
 import { SubdivisionControl } from './SubdivisionControl';
 import { HelpHint } from './HelpHint';
 import { BrandHeader } from './BrandHeader';
-import { LayoutToggle } from './LayoutToggle';
+import { SettingsModal } from './SettingsModal';
 import { Pendulum } from './Pendulum';
 import {
+  useAccent,
   useKeyHeld,
   useKeyPressed,
   useLayoutMode,
   usePointDragAdjust,
   useResizableWidth,
+  useTheme,
   useWheelAdjust,
 } from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
@@ -102,6 +104,9 @@ export function Metronome() {
   );
 
   const [layoutMode, setLayoutMode] = useLayoutMode();
+  const [theme, setTheme] = useTheme();
+  const [accent, setAccent] = useAccent(theme);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   // Pendulum layout: the time-signature control is collapsed by default.
   const [tsOpen, setTsOpen] = useState(false);
 
@@ -113,10 +118,48 @@ export function Metronome() {
         aria-label="Toggle presets panel"
         aria-expanded={presetsOpen}
       >
-        &#9776;
+        <span className="menu-icon" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
       </button>
 
       <HelpHint />
+
+      <button
+        type="button"
+        className="settings-toggle"
+        onClick={() => setSettingsOpen(true)}
+        aria-label="Open settings"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </button>
+
+      {settingsOpen && (
+        <SettingsModal
+          theme={theme}
+          onThemeChange={setTheme}
+          layout={layoutMode}
+          onLayoutChange={setLayoutMode}
+          accent={accent}
+          onAccentChange={setAccent}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
 
       {presetsOpen && (
         <div
@@ -134,7 +177,6 @@ export function Metronome() {
       >
         <div className="sidebar-content">
           <VolumeControl volume={volume} onChange={setVolume} />
-          <LayoutToggle mode={layoutMode} onChange={setLayoutMode} />
           <PresetsPanel
             presets={presets}
             current={current}

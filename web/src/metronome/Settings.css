@@ -1,0 +1,128 @@
+/* Settings modal — mirrors the account modal (Presets.css). */
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8889rem;
+}
+.settings-modal {
+  position: relative;
+  z-index: 41;
+  width: 20rem;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 1.5556rem 1.3333rem 1.3333rem;
+  border-radius: 0.7778rem;
+  background: var(--bg);
+  border: 0.0556rem solid var(--border);
+  box-shadow: var(--shadow);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1111rem;
+}
+.settings-close {
+  position: absolute;
+  top: 0.4444rem;
+  right: 0.5556rem;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 1.2222rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.settings-title {
+  margin: 0;
+}
+
+/* A labelled settings group (label above its control). */
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4444rem;
+}
+.setting-label {
+  font-size: 0.8333rem;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+/* Vertical stack of full-width selectable buttons — fits narrow (mobile/Android)
+   widths where a horizontal segmented row would overflow. */
+.option-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3333rem;
+}
+.option-stack .option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.7778rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.8333rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+.option-stack .option:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.option-stack .option[aria-checked='true'] {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+.option-check {
+  margin-left: auto;
+  padding-left: 0.5rem;
+}
+
+/* Accent colour picker */
+.accent-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5556rem;
+}
+.accent-swatch {
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: none;
+  cursor: pointer;
+}
+.accent-value {
+  font-family: var(--mono);
+  font-size: 0.7778rem;
+  color: var(--text);
+}
+.accent-reset {
+  margin-left: auto;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.7222rem;
+  padding: 0.2778rem 0.5556rem;
+  cursor: pointer;
+}
+.accent-reset:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}

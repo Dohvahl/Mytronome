@@ -44,10 +44,32 @@
 .help-hint {
   position: fixed;
   top: calc(1.1111rem + env(safe-area-inset-top, 0px));
-  right: 0.8889rem;
+  /* Sits just left of the settings gear, which takes the corner. */
+  right: 3.7778rem;
   /* Below the drawer backdrop (z-index 20) so it dims with the rest of the
      screen when the presets drawer is open. */
   z-index: 10;
+}
+.settings-toggle {
+  position: fixed;
+  top: calc(1.1111rem + env(safe-area-inset-top, 0px));
+  right: 0.8889rem;
+  z-index: 10;
+  width: 2.4444rem;
+  height: 2.4444rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.settings-toggle:hover,
+.settings-toggle:focus-visible {
+  color: var(--accent);
+  outline: none;
 }
 .help-toggle {
   width: var(--help-icon-border-radius);
@@ -76,7 +98,8 @@
   height: 1.5rem;
 }
 
-/* Drops down from the button, aligned to the right edge. */
+/* Drops down from the button,
+aligned to the right edge. */
 .help-panel {
   position: absolute;
   top: calc(100% + 0.4444rem);
@@ -89,6 +112,14 @@
   border: 0.0556rem solid var(--border);
   border-radius: 0.6667rem;
   box-shadow: var(--shadow);
+}
+@media (max-width: 640px) {
+  .help-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
 }
 .help-title {
   margin: 0 0 0.5556rem;
@@ -187,21 +218,6 @@
   font-size: 0.7222rem;
   color: var(--text);
   font-variant-numeric: tabular-nums;
-}
-
-/* Layout switch (drawer) — a labelled segmented control; reuses .storage-switch
-   from the presets panel for the buttons. */
-.layout-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5556rem;
-  padding-bottom: 0.8889rem;
-  border-bottom: 0.0556rem solid var(--border);
-}
-.layout-toggle-label {
-  font-size: 0.7778rem;
-  color: var(--text);
 }
 
 .tempo-row {
@@ -559,7 +575,7 @@
 }
 .play.running {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
 }
 
 /* Time signature + subdivision side by side */
@@ -848,5 +864,5 @@
 }
 .ts-accept:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
 }

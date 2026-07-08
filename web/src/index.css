@@ -4,9 +4,13 @@
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
+  /* Accent: brass default. useAccent() overrides --accent (legibility-clamped)
+     and --accent-contrast per the user's pick; the tint/border derive from
+     whatever --accent is, so any colour works in both themes. */
+  --accent: #b8935a;
+  --accent-contrast: #000000;
+  --accent-bg: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-border: color-mix(in srgb, var(--accent) 45%, transparent);
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
     rgba(0, 0, 0, 0.1) 0 0.5556rem 0.8333rem -0.1667rem,
@@ -40,23 +44,43 @@
   }
 }
 
+/* Dark neutrals. Applied when the user explicitly picks dark, OR when they're on
+   "system" (no data-theme attribute) and the OS prefers dark. An explicit light
+   choice sets data-theme='light' and matches neither, so it overrides the OS.
+   Accent is not set here — useAccent() drives --accent for both themes. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --text: #9ca3af;
+  --text-h: #f3f4f6;
+  --bg: #16171d;
+  --border: #2e303a;
+  --code-bg: #1f2028;
+  --social-bg: rgba(47, 48, 58, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 0.5556rem 0.8333rem -0.1667rem,
+    rgba(0, 0, 0, 0.25) 0 0.2222rem 0.3333rem -0.1111rem;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --text: #9ca3af;
     --text-h: #f3f4f6;
     --bg: #16171d;
     --border: #2e303a;
     --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
       rgba(0, 0, 0, 0.4) 0 0.5556rem 0.8333rem -0.1667rem,
       rgba(0, 0, 0, 0.25) 0 0.2222rem 0.3333rem -0.1111rem;
   }
-
-  #social .button-icon {
+}
+:root[data-theme='dark'] #social .button-icon {
+  filter: invert(1) brightness(2);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) #social .button-icon {
     filter: invert(1) brightness(2);
   }
 }
@@ -93,6 +117,11 @@
   height: 1.4444rem;
   flex-shrink: 0;
   display: block;
+}
+@media (max-width: 640px) {
+  .app-brand {
+    display: none;
+  }
 }
 
 body {
