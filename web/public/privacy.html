@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Privacy Policy — Mytronome</title>
+    <style>
+      :root {
+        --bg: #faf8f4;
+        --fg: #26221d;
+        --muted: #6b6459;
+        --rule: #e4ddd0;
+        --brass: #a97f3f;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1a1815;
+          --fg: #ece6d8;
+          --muted: #a39a89;
+          --rule: #34302a;
+          --brass: #c99a5b;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        line-height: 1.65;
+        font-size: 17px;
+      }
+      main {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 5rem;
+      }
+      h1 {
+        font-size: 1.9rem;
+        margin: 0 0 0.25rem;
+      }
+      h2 {
+        font-size: 1.2rem;
+        margin: 2.25rem 0 0.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--rule);
+      }
+      .updated {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin: 0 0 2rem;
+      }
+      .lead {
+        font-size: 1.05rem;
+      }
+      a {
+        color: var(--brass);
+      }
+      code {
+        background: var(--rule);
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      .back {
+        display: inline-block;
+        margin-bottom: 2rem;
+        font-size: 0.95rem;
+      }
+      footer {
+        margin-top: 3rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="/">← Back to Mytronome</a>
+
+      <h1>Mytronome — Privacy Policy</h1>
+      <p class="updated">Last updated: 8 July 2026</p>
+
+      <p class="lead">
+        Mytronome (“the app,” “we,” “us”) is a metronome for web, desktop, and
+        Android. In short: the app runs on your device, uses no analytics or
+        advertising, and never sends your data to us — we operate no server that
+        receives your personal information.
+      </p>
+
+      <h2>Who we are</h2>
+      <p>
+        Mytronome is developed by <strong>Tyler Dovall</strong>. Contact:
+        <strong>contact@mytronome.dovall.ca</strong>.
+      </p>
+
+      <h2>What the app does with data</h2>
+      <p>
+        The metronome runs entirely on your device — tempo, time signature, and
+        sound are never transmitted.
+      </p>
+      <p>
+        Your presets (saved tempo/time-signature settings and any labels you
+        add) are stored using the option you choose:
+      </p>
+      <ul>
+        <li>
+          <strong>On this device (default).</strong> Saved in your browser's or
+          device's local storage. They stay on your device; we cannot see them.
+        </li>
+        <li>
+          <strong>Google Drive (optional).</strong> If you connect Google Drive,
+          presets are saved to a private, app-specific hidden folder
+          (<code>appDataFolder</code>) inside <em>your own</em> Google Drive.
+          The app talks directly to Google — there is no Mytronome server
+          involved. We request only the <code>drive.appdata</code> permission,
+          which grants access to that app-specific folder <strong>only</strong>;
+          the app cannot see or modify any of your other Drive files. This data
+          lives in your Google account, subject to
+          <a href="https://policies.google.com/privacy"
+            >Google's Privacy Policy</a
+          >.
+        </li>
+      </ul>
+
+      <h2>Google sign-in and access tokens</h2>
+      <p>
+        To read or write your Drive folder, the app gets an access token from
+        Google after you sign in and grant permission.
+      </p>
+      <ul>
+        <li>
+          On <strong>Android and web</strong>, the token is used only for the
+          current session and is not retained afterward (no long-lived refresh
+          token is stored).
+        </li>
+        <li>
+          On <strong>desktop</strong>, a refresh token is stored in your
+          operating system's secure credential store (e.g., Windows Credential
+          Manager) on your device, so you need not sign in every time.
+        </li>
+        <li>
+          Tokens are used solely to access the app's own Drive folder and are
+          <strong>never sent to us</strong>.
+        </li>
+      </ul>
+
+      <h2>What we do not collect</h2>
+      <p>
+        No analytics, telemetry, tracking, or advertising. No account or profile
+        is required. No access to your location, contacts, photos, microphone,
+        or any files outside the app's own Drive folder. We do not sell or share
+        your data — we do not receive it.
+      </p>
+
+      <h2>Third parties</h2>
+      <p>
+        The only third party is <strong>Google</strong>, and only if you choose
+        Drive storage, to save presets in your own Drive. Your use of Google
+        services is governed by Google's policies.
+      </p>
+
+      <h2>Data retention and deletion</h2>
+      <ul>
+        <li>
+          <strong>Local presets:</strong> delete them anytime in the app, or by
+          clearing the app's/browser's data.
+        </li>
+        <li>
+          <strong>Drive presets:</strong> delete them in the app, or revoke the
+          app's access and remove its data at
+          <a href="https://myaccount.google.com/permissions"
+            >myaccount.google.com/permissions</a
+          >. Disconnecting Drive in the app stops further access.
+        </li>
+        <li>
+          We hold none of your data on our servers, so there is nothing to
+          request from us.
+        </li>
+      </ul>
+
+      <h2>Your rights</h2>
+      <p>
+        Depending on where you live (e.g., GDPR/CCPA), you may have rights to
+        access, correct, or delete personal data held about you. Since we hold
+        none on our servers, you exercise these directly through your device
+        (local data) or your Google Account (Drive data). Questions:
+        <strong>contact@mytronome.dovall.ca</strong>.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        Mytronome is not directed to children under 13 and does not knowingly
+        collect their personal information.
+      </p>
+
+      <h2>Security</h2>
+      <p>
+        Local data is protected by your device; Drive data by Google and your
+        Google Account; desktop credentials by your operating system's secure
+        store. No storage is 100% secure, but because we do not collect your
+        data, exposure through us is not a factor.
+      </p>
+
+      <h2>Changes</h2>
+      <p>
+        We may update this policy; the “Last updated” date above will change to
+        reflect it.
+      </p>
+
+      <h2>Contact</h2>
+      <p><strong>contact@mytronome.dovall.ca</strong></p>
+
+      <footer>&#169; 2026 Mytronome</footer>
+    </main>
+  </body>
+</html>

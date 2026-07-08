@@ -276,6 +276,17 @@
   flex-direction: column;
   gap: 0.5556rem;
 }
+.drawer-legal {
+  align-self: flex-end;
+  font-size: 0.6667rem;
+  color: var(--text);
+  opacity: 0.6;
+  text-decoration: none;
+}
+.drawer-legal:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
 .account-footer {
   display: flex;
   align-items: center;
