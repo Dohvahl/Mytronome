@@ -129,9 +129,9 @@ describe('normalizePreset', () => {
 
   it('replaces an invalid subdivision with 1', () => {
     expect(normalizePreset({ ...base, subdivisions: 0 }).subdivisions).toBe(1);
-    expect(
-      normalizePreset({ ...base, subdivisions: 2.5 }).subdivisions,
-    ).toBe(1);
+    expect(normalizePreset({ ...base, subdivisions: 2.5 }).subdivisions).toBe(
+      1,
+    );
   });
 
   it('leaves a valid preset untouched (same reference)', () => {

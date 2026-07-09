@@ -42,6 +42,12 @@
   @media (max-width: 640px) {
     font-size: 1.25rem; /* 20px */
   }
+  /* Large screens: the same dial the other way — at 18px the UI reads as a small
+     island in a big window. Nudge everything up so it breathes. KNOB: raise this
+     (or add a wider tier) for more presence on big monitors. */
+  @media (min-width: 1440px) {
+    font-size: 1.25rem; /* 20px */
+  }
 }
 
 /* Dark neutrals. Applied when the user explicitly picks dark, OR when they're on
