@@ -85,7 +85,7 @@ export function Metronome() {
     if (!presetsOpen) dismissSessionExpired();
   }, [presetsOpen, dismissSessionExpired]);
 
-  const current = { bpm, timeSignature, pattern };
+  const current = { bpm, timeSignature, pattern, subdivisions };
   // Looked up fresh each render, so a rename in the drawer updates the header.
   const loadedPreset = presets.find((p) => p.id === loadedPresetId);
   const isModified =

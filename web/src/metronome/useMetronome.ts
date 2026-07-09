@@ -189,6 +189,7 @@ export function useMetronome(flatten = false) {
     bpm: number;
     timeSignature: TimeSignature;
     pattern: BeatEmphasis[];
+    subdivisions: number;
   }) => {
     const engine = metronomeRef.current;
     engine?.setBpm(settings.bpm);
@@ -197,12 +198,10 @@ export function useMetronome(flatten = false) {
     setTimeSignatureState(settings.timeSignature);
     setPatternState(settings.pattern);
 
-    // Keep the subdivision valid for the preset's beat note value.
-    const nextSub = clampSubdivision(
-      subdivisions,
-      settings.timeSignature.noteValue,
+    // Apply the preset's subdivision, clamped to what its beat note can show.
+    setSubdivisions(
+      clampSubdivision(settings.subdivisions, settings.timeSignature.noteValue),
     );
-    if (nextSub !== subdivisions) setSubdivisions(nextSub);
   };
 
   return {

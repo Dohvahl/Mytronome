@@ -4,13 +4,15 @@ import {
   duplicatePreset,
   updatePreset,
   samePresetSettings,
+  normalizePreset,
 } from '../src/presets';
-import type { PresetSettings } from '../src/types';
+import type { Preset, PresetSettings } from '../src/types';
 
 const settings: PresetSettings = {
   bpm: 120,
   timeSignature: { beats: 4, noteValue: 4 },
   pattern: ['accent', 'normal', 'normal', 'normal'],
+  subdivisions: 1,
 };
 
 describe('createPreset', () => {
@@ -20,6 +22,7 @@ describe('createPreset', () => {
     expect(p.bpm).toBe(120);
     expect(p.timeSignature).toEqual({ beats: 4, noteValue: 4 });
     expect(p.pattern).toEqual(['accent', 'normal', 'normal', 'normal']);
+    expect(p.subdivisions).toBe(1);
     expect(p.id).toBeTruthy();
     expect(p.createdAt).toBe(p.updatedAt);
   });
@@ -105,5 +108,34 @@ describe('samePresetSettings', () => {
     expect(
       samePresetSettings(settings, { ...settings, pattern: ['accent'] }),
     ).toBe(false);
+  });
+
+  it('is false when only the subdivision differs', () => {
+    expect(samePresetSettings(settings, { ...settings, subdivisions: 2 })).toBe(
+      false,
+    );
+  });
+});
+
+describe('normalizePreset', () => {
+  const base = createPreset(settings);
+
+  it('defaults a missing subdivision to 1 (older saved presets)', () => {
+    // Simulate a preset saved before `subdivisions` existed.
+    const legacy = { ...base };
+    delete (legacy as { subdivisions?: number }).subdivisions;
+    expect(normalizePreset(legacy as Preset).subdivisions).toBe(1);
+  });
+
+  it('replaces an invalid subdivision with 1', () => {
+    expect(normalizePreset({ ...base, subdivisions: 0 }).subdivisions).toBe(1);
+    expect(
+      normalizePreset({ ...base, subdivisions: 2.5 }).subdivisions,
+    ).toBe(1);
+  });
+
+  it('leaves a valid preset untouched (same reference)', () => {
+    const valid = { ...base, subdivisions: 3 };
+    expect(normalizePreset(valid)).toBe(valid);
   });
 });

@@ -10,6 +10,9 @@ export interface Preset {
   timeSignature: TimeSignature;
   /** Per-beat emphasis pattern; its length matches timeSignature.beats. */
   pattern: BeatEmphasis[];
+  /** Clicks per beat (1 = no subdivision). Added after launch — see
+   * {@link normalizePreset} for how older, subdivision-less presets load. */
+  subdivisions: number;
   /** When the preset was created (epoch milliseconds). */
   createdAt: number;
   /** When the preset was last changed (epoch milliseconds). */
@@ -17,4 +20,7 @@ export interface Preset {
 }
 
 /** The musical content of a preset — everything except identity and metadata. */
-export type PresetSettings = Pick<Preset, 'bpm' | 'timeSignature' | 'pattern'>;
+export type PresetSettings = Pick<
+  Preset,
+  'bpm' | 'timeSignature' | 'pattern' | 'subdivisions'
+>;
