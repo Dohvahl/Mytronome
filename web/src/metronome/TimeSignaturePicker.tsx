@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { TimeSignature } from '@mytronome/engine';
 import {
   COMMON_TIME_SIGNATURES,
@@ -174,14 +174,20 @@ function WheelPicker({
   const pointerRef = usePointDragAdjust<HTMLDivElement>(step, {
     threshold: swipeThreshold,
   });
+  // Wheel + touch-drag on the same element; memoized so the stable hook refs
+  // aren't re-bound on every render.
+  const wheelPointerRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      wheelRef(el);
+      pointerRef(el);
+    },
+    [wheelRef, pointerRef],
+  );
 
   return (
     <div
       className="ts-wheel"
-      ref={(el) => {
-        wheelRef.current = el;
-        pointerRef.current = el;
-      }}
+      ref={wheelPointerRef}
       role="spinbutton"
       tabIndex={0}
       aria-valuenow={value}
