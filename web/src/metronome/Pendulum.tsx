@@ -1,4 +1,8 @@
-import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useRef,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 
 interface Props {
   /** Beats heard since start; its parity picks the swing side (flips each beat). */
@@ -11,6 +15,8 @@ interface Props {
   max: number;
   /** Drag the weight to set the tempo (up = slower). */
   onBpmChange: (bpm: number) => void;
+  /** Tapping the swing area (but not the weight) starts/stops the metronome. */
+  onToggle: () => void;
 }
 
 /** Swing amplitude in degrees, each side of vertical. */
@@ -38,9 +44,13 @@ export function Pendulum({
   min,
   max,
   onBpmChange,
+  onToggle,
 }: Props) {
   const armRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
+  // True once a weight drag has actually moved, so the click that fires on
+  // release isn't mistaken for a tap-to-start/stop.
+  const didDragRef = useRef(false);
 
   const side = beatTick % 2 === 0 ? -1 : 1;
   const angle = running ? side * SWING_DEG : 0;
@@ -68,18 +78,33 @@ export function Pendulum({
   const onPointerDown = (e: ReactPointerEvent) => {
     e.currentTarget.setPointerCapture(e.pointerId);
     draggingRef.current = true;
+    didDragRef.current = false;
     bpmFromPointer(e.clientY);
   };
   const onPointerMove = (e: ReactPointerEvent) => {
-    if (draggingRef.current) bpmFromPointer(e.clientY);
+    if (draggingRef.current) {
+      didDragRef.current = true;
+      bpmFromPointer(e.clientY);
+    }
   };
   const onPointerUp = (e: ReactPointerEvent) => {
     draggingRef.current = false;
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
+  // A tap anywhere in the pendulum area toggles start/stop — except on the
+  // weight, which owns click+drag for tempo, and except right after a drag.
+  const onAreaClick = (e: ReactMouseEvent) => {
+    if ((e.target as HTMLElement).closest('.pendulum-weight')) return;
+    if (didDragRef.current) {
+      didDragRef.current = false;
+      return;
+    }
+    onToggle();
+  };
+
   return (
-    <div className="pendulum">
+    <div className="pendulum" onClick={onAreaClick}>
       <div
         className="pendulum-arm"
         ref={armRef}

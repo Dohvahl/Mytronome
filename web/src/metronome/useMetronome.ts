@@ -42,8 +42,14 @@ function readSavedSubdivisions(): number {
  * itself "render data"). React state mirrors the bits the UI needs to display
  * (bpm, time signature, accent pattern, running, current beat) so the screen
  * updates when they change.
+ *
+ * `flatten` makes the engine play an even, accent-free tick with no
+ * subdivisions — used by the Pendulum layout when its time-signature section is
+ * collapsed. It's a playback override: the stored pattern/subdivisions are left
+ * intact (the other layouts and saved presets keep them) and come back the
+ * moment `flatten` turns off.
  */
-export function useMetronome() {
+export function useMetronome(flatten = false) {
   const metronomeRef = useRef<Metronome | null>(null);
   // Pending visual-flash timers, so we can cancel them on stop/unmount.
   const beatTimersRef = useRef<number[]>([]);
@@ -104,6 +110,21 @@ export function useMetronome() {
     };
   }, []);
 
+  // Drive the engine's accent pattern and subdivisions from React state here
+  // (rather than imperatively in the setters) so `flatten` can override them in
+  // one place: when it's on, the engine plays an even, accent-free tick with no
+  // subdivisions; the stored `pattern`/`subdivisions` are untouched, so turning
+  // it back off restores them.
+  useEffect(() => {
+    const engine = metronomeRef.current;
+    if (!engine) return;
+    engine.setPattern(flatten ? pattern.map(() => 'normal' as const) : pattern);
+  }, [flatten, pattern]);
+
+  useEffect(() => {
+    metronomeRef.current?.setSubdivisions(flatten ? 1 : subdivisions);
+  }, [flatten, subdivisions]);
+
   const start = () => {
     metronomeRef.current?.start();
     setIsRunning(true);
@@ -135,7 +156,7 @@ export function useMetronome() {
   };
 
   const setSubdivisions = (value: number) => {
-    metronomeRef.current?.setSubdivisions(value);
+    // The engine is synced from `subdivisions` state by the effect above.
     setSubdivisionsState(value);
     localStorage.setItem(SUBDIVISIONS_KEY, String(value));
   };
@@ -147,9 +168,8 @@ export function useMetronome() {
     const nextPattern =
       value.beats === timeSignature.beats ? pattern : defaultPattern(value);
     engine?.setTimeSignature(value);
-    engine?.setPattern(nextPattern);
     setTimeSignatureState(value);
-    setPatternState(nextPattern);
+    setPatternState(nextPattern); // engine pattern is synced by the effect above
 
     // Subdivisions are shown relative to the beat. Keep the same division when
     // the new beat note can still represent it; otherwise step to the nearest.
@@ -158,12 +178,10 @@ export function useMetronome() {
   };
 
   const cycleBeat = (index: number) => {
-    const engine = metronomeRef.current;
     const next = pattern.map((emphasis, i) =>
       i === index ? NEXT_EMPHASIS[emphasis] : emphasis,
     );
-    engine?.setPattern(next);
-    setPatternState(next);
+    setPatternState(next); // engine pattern is synced by the effect above
   };
 
   // Apply a full saved configuration at once (used when loading a preset).
@@ -175,8 +193,7 @@ export function useMetronome() {
     const engine = metronomeRef.current;
     engine?.setBpm(settings.bpm);
     engine?.setTimeSignature(settings.timeSignature);
-    engine?.setPattern(settings.pattern);
-    setBpmState(engine?.tempo ?? settings.bpm);
+    setBpmState(engine?.tempo ?? settings.bpm); // pattern synced by effect above
     setTimeSignatureState(settings.timeSignature);
     setPatternState(settings.pattern);
 

@@ -483,6 +483,12 @@ aligned to the right edge. */
   border-color: var(--accent-border);
   color: var(--accent);
 }
+/* Time signature + subdivision sit side by side once the section is expanded. */
+.pendulum-ts-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6667rem;
+}
 
 /* The slider becomes the metronome's pendulum rod + sliding weight, and the
    primary drag driver. writing-mode makes the native range vertical; the slow
