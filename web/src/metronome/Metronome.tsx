@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useMetronome } from './useMetronome';
 import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
@@ -101,6 +101,16 @@ export function Metronome() {
   );
   const sliderWheelRef = useWheelAdjust<HTMLInputElement>((dir) =>
     setBpm(bpm + dir * step),
+  );
+  // The tempo display responds to both wheel and touch-drag; each layout's
+  // display element gets both. Memoized so switching layouts doesn't re-bind on
+  // every render (the underlying hook refs are stable).
+  const tempoDisplayRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      tempoWheelRef(el);
+      tempoPointerRef(el);
+    },
+    [tempoWheelRef, tempoPointerRef],
   );
 
   const [layoutMode, setLayoutMode] = useLayoutMode();
@@ -234,13 +244,7 @@ export function Metronome() {
               onBpmChange={setBpm}
             />
             <div className="pendulum-readout">
-              <div
-                className="tempo-value-area"
-                ref={(el) => {
-                  tempoWheelRef.current = el;
-                  tempoPointerRef.current = el;
-                }}
-              >
+              <div className="tempo-value-area" ref={tempoDisplayRef}>
                 <TempoControl
                   value={bpm}
                   min={MIN_BPM}
@@ -280,13 +284,7 @@ export function Metronome() {
                   {stepBoost ? '−10' : '−'}
                 </button>
 
-                <div
-                  className="tempo-display"
-                  ref={(el) => {
-                    tempoWheelRef.current = el;
-                    tempoPointerRef.current = el;
-                  }}
-                >
+                <div className="tempo-display" ref={tempoDisplayRef}>
                   <div className="tempo-value-area">
                     <TempoControl
                       value={bpm}
