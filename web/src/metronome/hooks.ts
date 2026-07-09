@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -109,37 +110,46 @@ export function useAccent(theme: ThemeMode): [string, (hex: string) => void] {
 }
 
 /**
- * Attaches a non-passive `wheel` listener to the returned ref. Calls `onStep`
- * with +1 (wheel up) or -1 (wheel down) and prevents the page from scrolling
- * while the pointer is over the element.
+ * Returns a callback ref that attaches a non-passive `wheel` listener to
+ * whatever element it is given. Calls `onStep` with +1 (wheel up) or -1 (wheel
+ * down) and prevents the page from scrolling while the pointer is over it.
  *
  * We attach the listener manually rather than using React's `onWheel`, because
  * React registers wheel handlers as "passive," where `preventDefault()` is
  * ignored — so the page would still scroll as you adjusted the value.
+ *
+ * A callback ref (not a mount-once effect reading `ref.current`) so the listener
+ * follows the element when it is swapped out under a persistent hook instance —
+ * e.g. switching layouts remounts the tempo controls while this hook lives on in
+ * <Metronome>. Binding once to the first element would strand the listener on a
+ * removed node, killing wheel adjustment after the first layout change.
  */
 export function useWheelAdjust<T extends HTMLElement>(
   onStep: (direction: 1 | -1) => void,
 ) {
-  const ref = useRef<T>(null);
-  // Keep the latest callback in a ref so we attach the listener only once.
-  // Assigned in an effect (not during render) per the react-hooks/refs rule.
+  // Keep the latest callback in a ref so the bound listener always calls the
+  // current one; assigned in an effect (not during render) per react-hooks/refs.
   const callbackRef = useRef(onStep);
   useEffect(() => {
     callbackRef.current = onStep;
   });
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      callbackRef.current(e.deltaY < 0 ? 1 : -1);
-    };
-    el.addEventListener('wheel', handleWheel, { passive: false });
-    return () => el.removeEventListener('wheel', handleWheel);
+  // Stable handler, so add/removeEventListener match across element swaps.
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault();
+    callbackRef.current(e.deltaY < 0 ? 1 : -1);
   }, []);
 
-  return ref;
+  const boundRef = useRef<T | null>(null);
+  return useCallback(
+    (el: T | null) => {
+      if (boundRef.current === el) return;
+      boundRef.current?.removeEventListener('wheel', handleWheel);
+      boundRef.current = el;
+      el?.addEventListener('wheel', handleWheel, { passive: false });
+    },
+    [handleWheel],
+  );
 }
 
 interface SwipeOptions {
@@ -150,23 +160,31 @@ export function usePointDragAdjust<T extends HTMLElement>(
   onSwipe: (direction: 1 | -1) => void,
   { threshold = 12 }: SwipeOptions = {},
 ) {
-  const ref = useRef<T>(null);
-  // Keep the latest callback in a ref so we attach the listener only once.
-  // Assigned in an effect (not during render) per the react-hooks/refs rule.
+  // Latest callback / threshold kept in refs so the window listeners (attached
+  // once below) always see current values without re-binding. Assigned in an
+  // effect (not during render) per the react-hooks/refs rule.
   const callbackRef = useRef(onSwipe);
   useEffect(() => {
     callbackRef.current = onSwipe;
   }, [onSwipe]);
+  const thresholdRef = useRef(threshold);
+  useEffect(() => {
+    thresholdRef.current = threshold;
+  }, [threshold]);
 
+  // The element `pointerdown` is currently bound to (set by the callback ref).
+  const boundRef = useRef<T | null>(null);
   const activePointerIdRef = useRef<number | null>(null);
   const lastYRef = useRef<number | null>(null);
 
+  // The move/up/cancel listeners live on `window` for the hook's lifetime; they
+  // read the active element from `boundRef`, so they keep working when the bound
+  // element is swapped out (e.g. a layout change remounts the tempo control).
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
     const clearGesture = () => {
+      const el = boundRef.current;
       if (
+        el &&
         activePointerIdRef.current !== null &&
         el.hasPointerCapture(activePointerIdRef.current)
       ) {
@@ -174,15 +192,6 @@ export function usePointDragAdjust<T extends HTMLElement>(
       }
       activePointerIdRef.current = null;
       lastYRef.current = null;
-    };
-
-    const handlePointerDown = (e: globalThis.PointerEvent) => {
-      if (e.pointerType === 'mouse') return;
-      if (activePointerIdRef.current !== null) return;
-
-      activePointerIdRef.current = e.pointerId;
-      lastYRef.current = e.clientY;
-      el.setPointerCapture(e.pointerId);
     };
 
     const handlePointerMove = (e: globalThis.PointerEvent) => {
@@ -194,6 +203,7 @@ export function usePointDragAdjust<T extends HTMLElement>(
       }
 
       const distance = e.clientY - lastYRef.current;
+      const threshold = thresholdRef.current;
       const steps = Math.floor(Math.abs(distance) / threshold);
 
       if (steps > 0) {
@@ -210,30 +220,43 @@ export function usePointDragAdjust<T extends HTMLElement>(
       clearGesture();
     };
 
-    const handlePointerCancel = (e: globalThis.PointerEvent) => {
-      if (activePointerIdRef.current !== e.pointerId) return;
-      clearGesture();
-    };
-
-    el.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('pointermove', handlePointerMove, {
       passive: false,
     });
     window.addEventListener('pointerup', handlePointerUp, { passive: false });
-    window.addEventListener('pointercancel', handlePointerCancel, {
+    window.addEventListener('pointercancel', handlePointerUp, {
       passive: false,
     });
 
     return () => {
       clearGesture();
-      el.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerCancel);
+      window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [threshold]);
+  }, []);
 
-  return ref;
+  // Stable handler, so add/removeEventListener match across element swaps.
+  const handlePointerDown = useCallback((e: globalThis.PointerEvent) => {
+    if (e.pointerType === 'mouse') return;
+    if (activePointerIdRef.current !== null) return;
+    const el = boundRef.current;
+    if (!el) return;
+
+    activePointerIdRef.current = e.pointerId;
+    lastYRef.current = e.clientY;
+    el.setPointerCapture(e.pointerId);
+  }, []);
+
+  return useCallback(
+    (el: T | null) => {
+      if (boundRef.current === el) return;
+      boundRef.current?.removeEventListener('pointerdown', handlePointerDown);
+      boundRef.current = el;
+      el?.addEventListener('pointerdown', handlePointerDown);
+    },
+    [handlePointerDown],
+  );
 }
 
 /**
