@@ -342,10 +342,70 @@ aligned to the right edge. */
   margin: 0;
 }
 
+/* The Classic tempo slider, styled as a horizontal version of the Tower layout's
+   mechanical rod + sliding weight (the vertical variant is further down under
+   [data-layout='tower'], which overrides these). appearance:none so we paint the
+   rod (track) and weight (thumb) ourselves. */
 .tempo-slider {
   width: 100%;
   max-width: 17.7778rem;
-  accent-color: var(--accent);
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2em; /* room for the weight to sit across the rod */
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+}
+/* The rod: a thin horizontal pole with faint tempo-scale tick marks. */
+.tempo-slider::-webkit-slider-runnable-track {
+  height: 0.4444rem;
+  border-radius: 0.2222rem;
+  background:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in srgb, var(--text) 50%, transparent) 0 0.0833rem,
+      transparent 0.0833rem 0.8333rem
+    ),
+    linear-gradient(180deg, var(--border), var(--text) 50%, var(--border));
+}
+/* The weight: a chunky block that slides along the rod — tall across it, narrow
+   along it. Negative top margin re-centres it over the thin rod. */
+.tempo-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 1.3333rem;
+  height: 2rem;
+  border-radius: 0.3333rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+  margin-top: -0.778rem; /* (thumb − track thickness) / 2, to centre on the rod */
+}
+/* Firefox equivalents (secondary; Tauri/Android are Chromium). */
+.tempo-slider::-moz-range-track {
+  height: 0.4444rem;
+  border-radius: 0.2222rem;
+  background: linear-gradient(
+    180deg,
+    var(--border),
+    var(--text) 50%,
+    var(--border)
+  );
+}
+.tempo-slider::-moz-range-thumb {
+  width: 1.3333rem;
+  height: 2rem;
+  border-radius: 0.3333rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
 }
 
 /* ---------------------------------------------------------------------------
@@ -390,18 +450,21 @@ aligned to the right edge. */
   gap: 1rem;
   width: 100%;
 }
+/* KNOB: the pendulum is the focus of this layout, so it's sized up. Scale the
+   four .pendulum* blocks together to resize it; the weight's travel is a ratio
+   of the arm height (Pendulum.tsx), so it follows automatically. */
 .pendulum {
   position: relative;
-  width: 13rem; /* room for the arm to swing without clipping */
-  height: 11.1111rem;
+  width: 17rem; /* room for the taller arm to swing without clipping */
+  height: 15rem;
   display: flex;
   justify-content: center;
   align-items: flex-end;
 }
 .pendulum-arm {
   position: relative;
-  width: 0.3889rem;
-  height: 10.5556rem;
+  width: 0.4444rem;
+  height: 14.2222rem;
   border-radius: 0.2222rem;
   background: linear-gradient(
     90deg,
@@ -417,10 +480,10 @@ aligned to the right edge. */
   position: absolute;
   left: 50%;
   transform: translateX(-50%); /* `top` set inline from the tempo */
-  width: 2.2222rem;
-  height: 1.3333rem;
+  width: 2.8889rem;
+  height: 1.7778rem;
   padding: 0;
-  border-radius: 0.3333rem;
+  border-radius: 0.3889rem;
   background: linear-gradient(
     to bottom,
     color-mix(in srgb, var(--accent) 80%, #fff),
@@ -436,11 +499,11 @@ aligned to the right edge. */
 }
 .pendulum-pivot {
   position: absolute;
-  bottom: -0.3333rem;
+  bottom: -0.4444rem;
   left: 50%;
   transform: translateX(-50%);
-  width: 1rem;
-  height: 1rem;
+  width: 1.3333rem;
+  height: 1.3333rem;
   border-radius: 50%;
   background: var(--text);
   box-shadow: var(--shadow);
@@ -482,6 +545,12 @@ aligned to the right edge. */
 .pendulum-ts-toggle:hover {
   border-color: var(--accent-border);
   color: var(--accent);
+}
+/* Time signature + subdivision sit side by side once the section is expanded. */
+.pendulum-ts-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6667rem;
 }
 
 /* The slider becomes the metronome's pendulum rod + sliding weight, and the
@@ -532,6 +601,7 @@ aligned to the right edge. */
   border: 0.0556rem solid var(--accent-border);
   box-shadow: var(--shadow);
   margin-left: -1.2222rem; /* (thumb − track thickness) / 2, to centre on the rod */
+  margin-top: 0; /* reset the horizontal (Classic) centring; here it's vertical */
 }
 
 /* Firefox equivalents (secondary; Tauri/Android are Chromium). */

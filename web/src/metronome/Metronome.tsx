@@ -26,6 +26,13 @@ import { isCompound, MIN_BPM, MAX_BPM } from '@mytronome/engine';
 import './Metronome.css';
 
 export function Metronome() {
+  const [layoutMode, setLayoutMode] = useLayoutMode();
+  // Pendulum layout: the time-signature section is collapsed by default.
+  const [tsOpen, setTsOpen] = useState(false);
+  // In the Pendulum layout with that section collapsed, the metronome plays a
+  // plain even tick — no accents, no subdivisions (a non-destructive override).
+  const flatten = layoutMode === 'pendulum' && !tsOpen;
+
   const {
     bpm,
     timeSignature,
@@ -42,7 +49,7 @@ export function Metronome() {
     setTimeSignature,
     cycleBeat,
     applySettings,
-  } = useMetronome();
+  } = useMetronome(flatten);
 
   const {
     presets,
@@ -78,7 +85,7 @@ export function Metronome() {
     if (!presetsOpen) dismissSessionExpired();
   }, [presetsOpen, dismissSessionExpired]);
 
-  const current = { bpm, timeSignature, pattern };
+  const current = { bpm, timeSignature, pattern, subdivisions };
   // Looked up fresh each render, so a rename in the drawer updates the header.
   const loadedPreset = presets.find((p) => p.id === loadedPresetId);
   const isModified =
@@ -113,12 +120,9 @@ export function Metronome() {
     [tempoWheelRef, tempoPointerRef],
   );
 
-  const [layoutMode, setLayoutMode] = useLayoutMode();
   const [theme, setTheme] = useTheme();
   const [accent, setAccent] = useAccent(theme);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // Pendulum layout: the time-signature control is collapsed by default.
-  const [tsOpen, setTsOpen] = useState(false);
 
   return (
     <>
@@ -242,6 +246,7 @@ export function Metronome() {
               min={MIN_BPM}
               max={MAX_BPM}
               onBpmChange={setBpm}
+              onToggle={toggle}
             />
             <div className="pendulum-readout">
               <div className="tempo-value-area" ref={tempoDisplayRef}>
@@ -265,10 +270,17 @@ export function Metronome() {
                 Time signature
               </button>
               {tsOpen && (
-                <TimeSignaturePicker
-                  value={timeSignature}
-                  onChange={setTimeSignature}
-                />
+                <div className="pendulum-ts-controls">
+                  <TimeSignaturePicker
+                    value={timeSignature}
+                    onChange={setTimeSignature}
+                  />
+                  <SubdivisionControl
+                    value={subdivisions}
+                    onChange={setSubdivisions}
+                    beatNoteValue={timeSignature.noteValue}
+                  />
+                </div>
               )}
             </div>
           </div>

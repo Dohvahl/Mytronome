@@ -9,6 +9,7 @@ export function createPreset(settings: PresetSettings, label = ''): Preset {
     bpm: settings.bpm,
     timeSignature: settings.timeSignature,
     pattern: [...settings.pattern],
+    subdivisions: settings.subdivisions,
     createdAt: now,
     updatedAt: now,
   };
@@ -41,7 +42,10 @@ export function updatePreset(
   };
 }
 
-/** True if two settings are musically identical (bpm, meter, and accents). */
+/**
+ * True if two settings are musically identical (bpm, meter, accents, and
+ * subdivision).
+ */
 export function samePresetSettings(
   a: PresetSettings,
   b: PresetSettings,
@@ -50,9 +54,24 @@ export function samePresetSettings(
     a.bpm === b.bpm &&
     a.timeSignature.beats === b.timeSignature.beats &&
     a.timeSignature.noteValue === b.timeSignature.noteValue &&
+    a.subdivisions === b.subdivisions &&
     a.pattern.length === b.pattern.length &&
     a.pattern.every((emphasis, i) => emphasis === b.pattern[i])
   );
+}
+
+/**
+ * Coerce a preset loaded from storage into the current shape, filling in fields
+ * that older saved data predates. `subdivisions` was added after launch, so
+ * presets saved before it default to 1 (no subdivision). This is the single
+ * migration point — apply it to anything read back from a store.
+ */
+export function normalizePreset(raw: Preset): Preset {
+  const subdivisions =
+    Number.isInteger(raw.subdivisions) && raw.subdivisions >= 1
+      ? raw.subdivisions
+      : 1;
+  return raw.subdivisions === subdivisions ? raw : { ...raw, subdivisions };
 }
 
 function copyLabel(label: string): string {

@@ -5,4 +5,5 @@ export {
   duplicatePreset,
   updatePreset,
   samePresetSettings,
+  normalizePreset,
 } from './presets';

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createPreset,
   duplicatePreset,
+  normalizePreset,
   updatePreset,
   type Preset,
   type PresetSettings,
@@ -120,7 +121,7 @@ export function usePresets() {
       if (!opts?.background) setLoading(true); // no spinner when we have cache
       setError(null);
       try {
-        const all = await store.list();
+        const all = (await store.list()).map(normalizePreset);
         if (refreshIdRef.current !== requestId) return; // superseded — drop it
         const ordered = orderPresets(all, readOrder(effectiveLocation));
         cacheRef.current[effectiveLocation] = ordered;
