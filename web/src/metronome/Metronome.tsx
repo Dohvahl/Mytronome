@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useMetronome } from './useMetronome';
-import { BeatIndicator } from './BeatIndicator';
-import { TimeSignaturePicker } from './TimeSignaturePicker';
+import { BeatIndicator } from './meter/BeatIndicator';
+import { TimeSignaturePicker } from './meter/TimeSignaturePicker';
 import { TempoControl } from './TempoControl';
 import { VolumeControl } from './VolumeControl';
 import { HelpHint } from './HelpHint';

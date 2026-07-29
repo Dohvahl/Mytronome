@@ -5,7 +5,7 @@ import {
   NOTE_VALUES,
   isSameSignature,
 } from './timeSignatures';
-import { usePointDragAdjust, useWheelAdjust } from './hooks';
+import { usePointDragAdjust, useWheelAdjust } from '../hooks';
 
 interface Props {
   value: TimeSignature;
