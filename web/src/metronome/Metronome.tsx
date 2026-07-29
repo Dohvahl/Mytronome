@@ -4,7 +4,6 @@ import { BeatIndicator } from './BeatIndicator';
 import { TimeSignaturePicker } from './TimeSignaturePicker';
 import { TempoControl } from './TempoControl';
 import { VolumeControl } from './VolumeControl';
-import { SubdivisionControl } from './SubdivisionControl';
 import { HelpHint } from './HelpHint';
 import { BrandHeader } from './BrandHeader';
 import { SettingsModal } from './SettingsModal';
@@ -23,6 +22,7 @@ import { isCompound, MIN_BPM, MAX_BPM } from '@mytronome/engine';
 import './Metronome.css';
 import { useLayoutMode } from './layouts/hooks';
 import { useAccent, useTheme } from './appearance/hooks';
+import { SubdivisionControl } from './subdivisions/SubdivisionControl';
 
 export function Metronome() {
   const [layoutMode, setLayoutMode] = useLayoutMode();

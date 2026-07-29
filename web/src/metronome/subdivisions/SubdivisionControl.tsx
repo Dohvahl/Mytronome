@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useWheelAdjust } from './hooks';
+import { useWheelAdjust } from '../hooks';
 import { subdivisionOptions, type SubdivisionOption } from './subdivisions';
 
 interface Props {

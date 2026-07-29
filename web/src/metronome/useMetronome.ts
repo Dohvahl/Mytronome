@@ -6,7 +6,7 @@ import {
   type BeatEmphasis,
   type TimeSignature,
 } from '@mytronome/engine';
-import { clampSubdivision } from './subdivisions';
+import { clampSubdivision } from './subdivisions/subdivisions';
 import { WebAudioOutput } from './webAudioOutput';
 
 const DEFAULT_BPM = 120;
