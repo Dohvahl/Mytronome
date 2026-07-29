@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useWheelAdjust } from '../hooks';
 import { subdivisionOptions, type SubdivisionOption } from './subdivisions';
+import { useWheelAdjust } from '../gestures';
 
 interface Props {
   value: number;

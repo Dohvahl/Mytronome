@@ -8,13 +8,6 @@ import { HelpHint } from './HelpHint';
 import { BrandHeader } from './BrandHeader';
 import { SettingsModal } from './SettingsModal';
 import { Pendulum } from './layouts/Pendulum';
-import {
-  useKeyHeld,
-  useKeyPressed,
-  usePointDragAdjust,
-  useResizableWidth,
-  useWheelAdjust,
-} from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
 import { usePresets } from '../presets/usePresets';
 import { samePresetSettings } from '@mytronome/presets';
@@ -23,6 +16,9 @@ import './Metronome.css';
 import { useLayoutMode } from './layouts/hooks';
 import { useAccent, useTheme } from './appearance/hooks';
 import { SubdivisionControl } from './subdivisions/SubdivisionControl';
+import { useResizableWidth } from '../presets/hooks';
+import { useKeyHeld, useKeyPressed } from './keyboard';
+import { usePointDragAdjust, useWheelAdjust } from './gestures';
 
 export function Metronome() {
   const [layoutMode, setLayoutMode] = useLayoutMode();

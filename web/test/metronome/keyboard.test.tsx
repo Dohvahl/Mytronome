@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useKeyHeld, useKeyPressed } from '../../src/metronome/hooks';
+import { useKeyHeld, useKeyPressed } from '../../src/metronome/keyboard';
 
 /**
  * Both hooks listen on `window`, so events are dispatched from a real element
