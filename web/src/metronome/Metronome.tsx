@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useMetronome } from './useMetronome';
 import { BeatIndicator } from './meter/BeatIndicator';
 import { TimeSignaturePicker } from './meter/TimeSignaturePicker';
-import { TempoControl } from './TempoControl';
+import { TempoControl } from './tempo/TempoControl';
 import { VolumeControl } from './VolumeControl';
 import { HelpHint } from './HelpHint';
 import { BrandHeader } from './BrandHeader';

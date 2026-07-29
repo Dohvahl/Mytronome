@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useResizableWidth } from '../../src/presets/hooks';
-import { resetDom } from './testDom';
+import { resetDom } from '../testDom';
 
 /**
  * The drag listens on `window` (so the pointer can leave the thin handle) and

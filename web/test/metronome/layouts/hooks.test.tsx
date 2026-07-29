@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { useLayoutMode } from '../../src/metronome/layouts/hooks';
-import { resetDom, stubMatchMedia } from './testDom';
+import { useLayoutMode } from '../../../src/metronome/layouts/hooks';
+import { resetDom, stubMatchMedia } from '../../testDom';
 
 /**
  * useLayoutMode's contract is almost entirely SIDE EFFECTS — a localStorage key

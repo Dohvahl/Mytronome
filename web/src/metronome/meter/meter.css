@@ -1,0 +1,214 @@
+/* Time signature + subdivision side by side */
+.meter-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8889rem;
+}
+
+/* --- Beat indicator --- */
+.beat-indicator {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  /* Gap shrinks on narrow rows so a full 16-beat bar still fits any screen. */
+  gap: clamp(0.1667rem, 2.5vw, 0.7778rem);
+  width: 100%;
+  /* Tall enough to hold the fixed-height bars plus their active-beat scale-up. */
+  min-height: 2.8889rem;
+}
+.beat-dot {
+  /* Rounded bars, not circles: a *fixed height* with a flexible width. Circles
+     coupled width and height, so shrinking to fit 16 beats also shortened them
+     into unusable specks. Here the height stays constant and only the width
+     narrows — few beats read as wide pills, 16 as slim bars, all equally tall
+     and tappable. min-width:0 lets them narrow enough that 16 always fit. */
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 1.6667rem;
+  height: 2.2222rem;
+  padding: 0;
+  border-radius: 0.6667rem;
+  border: 0.1111rem solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    background 0.06s ease,
+    border-color 0.06s ease,
+    opacity 0.06s ease;
+}
+.beat-dot:hover {
+  border-color: var(--accent-border);
+}
+
+/* Resting look per emphasis */
+.beat-dot.accent {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.beat-dot.muted {
+  border-style: dashed;
+  opacity: 0.4;
+}
+
+/* The currently sounding beat: scaled up and filled */
+.beat-dot.active {
+  transform: scale(1.3);
+}
+.beat-dot.active.accent {
+  background: var(--accent);
+}
+.beat-dot.active.normal {
+  background: var(--text-h);
+  border-color: var(--text-h);
+}
+.beat-dot.active.muted {
+  opacity: 0.7;
+  background: var(--accent-bg);
+}
+
+/* --- Time signature --- */
+.time-signature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6667rem;
+}
+
+/* #5 — presets dropdown */
+.ts-presets {
+  font-size: 0.8333rem;
+  padding: 0.3333rem 0.6667rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s;
+}
+.ts-presets:hover {
+  border-color: var(--accent-border);
+}
+
+/* #6 — display form: a dropdown-style button showing the current signature,
+   sized to match the subdivision selector. */
+.ts-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5556rem;
+  min-width: 3.5556rem;
+  padding: 0.2778rem 0.5556rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.ts-trigger:hover {
+  border-color: var(--accent-border);
+}
+.ts-trigger-value {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.ts-trigger-chevron {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* Edit form: a centered overlay on the same vertical plane as the trigger,
+   floating over a semi-transparent backdrop (so the row doesn't reflow). */
+.ts-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.25);
+}
+.ts-editor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 41;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4444rem;
+  padding: 0.6667rem 0.8889rem;
+  background: var(--bg);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.6667rem;
+  box-shadow: var(--shadow);
+}
+
+.ts-slash {
+  font: 300 1.2222rem/1 var(--heading);
+  color: var(--text);
+}
+
+/* A vertical select-wheel: current value centered and highlighted, with its
+   neighbours faint above and below. Scroll (or arrow keys) to change. */
+.ts-wheel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: clamp(2.6rem, 15vw, 5rem);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  overflow: hidden;
+  background: var(--bg);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  cursor: ns-resize;
+  user-select: none;
+  touch-action: none;
+}
+.ts-wheel:focus-visible {
+  outline: none;
+  border-color: var(--accent-border);
+}
+.ts-wheel-option {
+  height: clamp(0.5rem, 4vh, 3rem);
+  line-height: clamp(0.5rem, 4vh, 3rem);
+}
+.ts-wheel-option.ghost {
+  font-size: clamp(0.75rem, 2vh, 1.5rem);
+  color: var(--text);
+  opacity: 0.4;
+  cursor: pointer;
+}
+.ts-wheel-option.ghost:hover {
+  opacity: 0.75;
+}
+.ts-wheel-option.current {
+  font-size: clamp(1rem, 4vh, 3rem);
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.ts-accept {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.8889rem;
+  border: 0.0556rem solid var(--accent-border);
+  border-radius: 0.4444rem;
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.ts-accept:hover {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}

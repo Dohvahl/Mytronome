@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { resetDom, stubMatchMedia } from './testDom';
-import { useAccent, useTheme } from '../../src/metronome/appearance/hooks';
-import { DEFAULT_ACCENT } from '../../src/metronome/appearance/accent';
+import { resetDom, stubMatchMedia } from '../../testDom';
+import { useAccent, useTheme } from '../../../src/metronome/appearance/hooks';
+import { DEFAULT_ACCENT } from '../../../src/metronome/appearance/accent';
 
 /**
  * Theme and accent are the other two "invisible contract" hooks: storage keys
