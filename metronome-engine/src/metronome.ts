@@ -1,11 +1,12 @@
-import type { BeatEmphasis, BeatInfo, TimeSignature } from './types';
-import { MusicalSettings } from './musicalSettings';
 import {
   browserTimer,
   type AudioOutput,
   type IntervalTimer,
 } from './audioOutput';
 import { BeatCursor } from './beatCursor';
+import { MusicalSettings } from './musicalSettings';
+import { TempoRamp, type TempoRampConfig } from './tempoRamp';
+import type { BeatEmphasis, BeatInfo, TimeSignature } from './types';
 
 export interface MetronomeOptions {
   /** Starting tempo in beats per minute. Default 120. */
@@ -21,6 +22,8 @@ export interface MetronomeOptions {
   volume?: number;
   /** Clicks per beat: 1 = beat only, 2 = eighths, 3 = triplets, 4 = sixteenths… */
   subdivisions?: number;
+  /** Automatic tempo ramp-up. Defaults to 5 BPM every 4 bars (off). */
+  ramp?: Partial<TempoRampConfig>;
   /**
    * Called once per beat, at the moment the beat is *scheduled* (slightly
    * before it sounds), including muted beats. `beat.time` is the audio-clock
@@ -60,10 +63,13 @@ export class Metronome {
   private readonly timer: IntervalTimer;
   private readonly settings: MusicalSettings; // what we're playing
   private readonly cursor: BeatCursor; // where we are on the tick grid
+  private readonly tempoRamp: TempoRamp;
+
   private readonly onBeat?: (beat: BeatInfo) => void;
 
   private isRunning = false;
   private nextBeatTime = 0; // audio-clock time (s) of the next tick to schedule
+
   private timerId: number | null = null;
 
   /** Schedule beats this far (seconds) into the future. */
@@ -77,6 +83,8 @@ export class Metronome {
       this.settings.meter.beats,
       options.subdivisions ?? 1,
     );
+    this.tempoRamp = new TempoRamp(options.ramp);
+
     this.onBeat = options.onBeat;
     this.output = options.audioOutput;
     this.output.setVolume(options.volume ?? 1); // adapter clamps to 0..1
@@ -131,6 +139,15 @@ export class Metronome {
     this.output.setVolume(volume);
   }
 
+  /**
+   * The tempo ramp. Configure it through its own methods — `enable()`,
+   * `setBars()`, `setBPMStep()` — rather than replacing it wholesale, matching
+   * how the settings and cursor are owned rather than swapped.
+   */
+  get ramp(): TempoRamp {
+    return this.tempoRamp;
+  }
+
   /** Clicks per beat (1 = beat only, 2 = eighths, …). Safe to call while running. */
   setSubdivisions(subdivisions: number): void {
     this.cursor.setSubdivisions(subdivisions);
@@ -146,6 +163,7 @@ export class Metronome {
 
     this.isRunning = true;
     this.cursor.reset();
+    this.tempoRamp.reset();
     this.nextBeatTime = this.output.currentTime + 0.05; // brief lead-in
     this.timerId = this.timer.setInterval(
       () => this.scheduler(),
@@ -193,14 +211,25 @@ export class Metronome {
         }
 
         // Always notify — muted beats still advance the visual indicator.
-        this.onBeat?.({ beatIndex, time: this.nextBeatTime });
+        this.onBeat?.({
+          beatIndex,
+          time: this.nextBeatTime,
+          bpm: this.settings.tempo,
+          // The bump happens once `barsSinceBump` reaches `everyBars`, so the
+          // bar that sits one short of that is the last one at this tempo.
+          rampWarning: this.tempoRamp.needWarning(this.settings.tempo),
+        });
       } else {
         // An in-between subdivision: a softer tick (audio only, no visual).
         this.output.scheduleClick(this.nextBeatTime, 'sub');
       }
 
       this.nextBeatTime += secondsPerBeat / this.cursor.ticksPerBeat;
+
       this.cursor.advance();
+      if (this.cursor.atBarStart) {
+        this.settings.setBpm(this.tempoRamp.completeBar(this.settings.tempo));
+      }
     }
   }
 }

@@ -59,6 +59,15 @@ export class BeatCursor {
     return this.subIndex === 0;
   }
 
+  /**
+   * True when the cursor sits on the very first tick of a bar. Read straight
+   * after {@link advance} it means "that step just completed a bar" — the signal
+   * bar-counted behaviour hangs off.
+   */
+  get atBarStart(): boolean {
+    return this.subIndex === 0 && this.beatIndex === 0;
+  }
+
   /** Return to the downbeat, for a fresh run. */
   reset(): void {
     this.beatIndex = 0;
@@ -66,16 +75,16 @@ export class BeatCursor {
   }
 
   /**
-   * Step to the next tick. Reports whether that wrapped the cursor past the end
-   * of the bar, i.e. a bar just completed.
+   * Step to the next tick. Returns nothing on purpose: the scheduler runs this
+   * on every tick, so allocating a result object here would mean throwing one
+   * away tens of times a second. Ask {@link atBarStart} afterwards instead.
    */
-  advance(): { barCompleted: boolean } {
+  advance(): void {
     this.subIndex += 1;
-    if (this.subIndex < this.subdivisions) return { barCompleted: false };
+    if (this.subIndex < this.subdivisions) return;
 
     this.subIndex = 0;
     this.beatIndex = (this.beatIndex + 1) % this.beatsPerBar;
-    return { barCompleted: this.beatIndex === 0 };
   }
 
   /**
