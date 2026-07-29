@@ -8,9 +8,10 @@
    overrides, and the feature rules that follow are meant to sit after them.
    Reordering these imports silently changes the layout. */
 @import './shell.css';
-@import './help.css';
-@import './volume.css';
+@import './helpModal/help.css';
+@import './volume/volume.css';
 @import './tempo/tempo.css';
 @import './layouts/layouts.css';
 @import './meter/meter.css';
+@import './settingsModal/Settings.css';
 @import './subdivisions/subdivisions.css';
