@@ -1,8 +1,9 @@
+import { AccentPicker } from '../appearance/AccentPicker';
+import type { ThemeMode } from '../appearance/hooks';
+import { ThemeToggle } from '../appearance/ThemeToggle';
+import type { LayoutMode } from '../layouts/hooks';
+import { LayoutToggle } from '../layouts/LayoutToggle';
 import './Settings.css';
-import type { LayoutMode, ThemeMode } from './hooks';
-import { ThemeToggle } from './ThemeToggle';
-import { LayoutToggle } from './LayoutToggle';
-import { AccentPicker } from './AccentPicker';
 
 interface Props {
   theme: ThemeMode;

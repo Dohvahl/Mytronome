@@ -1,0 +1,73 @@
+/* Subdivision selector (custom dropdown so options can render notation) */
+.subdivision-picker {
+  position: relative;
+}
+.subdivision-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5556rem;
+  min-width: 3.5556rem;
+  padding: 0.2778rem 0.5556rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+.subdivision-trigger:hover {
+  border-color: var(--accent-border);
+}
+.subdivision-chevron {
+  font-size: 1rem;
+  color: var(--text);
+}
+.subdivision-menu {
+  position: absolute;
+  top: calc(100% + 0.2222rem);
+  left: 0;
+  z-index: 50;
+  margin: 0;
+  padding: 0.2222rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1111rem;
+  background: var(--bg);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  box-shadow: var(--shadow);
+  max-height: 14.4444rem;
+  overflow-y: auto;
+}
+.subdivision-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 3.3333rem;
+  padding: 0.3333rem 0.7778rem;
+  border: none;
+  border-radius: 0.3333rem;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+}
+.subdivision-menu button:hover {
+  background: var(--accent-bg);
+}
+.subdivision-menu button.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.sub-note {
+  font-family:
+    'Segoe UI Symbol', 'Noto Music', 'Noto Sans Symbols2', var(--sans);
+  font-size: 1.1111rem;
+  line-height: 1;
+}
+.triplet-glyph {
+  height: 1.2222rem;
+  width: auto;
+  display: block;
+}

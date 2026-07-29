@@ -1,29 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useMetronome } from './useMetronome';
-import { BeatIndicator } from './BeatIndicator';
-import { TimeSignaturePicker } from './TimeSignaturePicker';
-import { TempoControl } from './TempoControl';
-import { VolumeControl } from './VolumeControl';
-import { SubdivisionControl } from './SubdivisionControl';
-import { HelpHint } from './HelpHint';
+import { BeatIndicator } from './meter/BeatIndicator';
+import { TimeSignaturePicker } from './meter/TimeSignaturePicker';
+import { TempoControl } from './tempo/TempoControl';
+import { VolumeControl } from './volume/VolumeControl';
+import { HelpHint } from './helpModal/HelpHint';
 import { BrandHeader } from './BrandHeader';
-import { SettingsModal } from './SettingsModal';
-import { Pendulum } from './Pendulum';
-import {
-  useAccent,
-  useKeyHeld,
-  useKeyPressed,
-  useLayoutMode,
-  usePointDragAdjust,
-  useResizableWidth,
-  useTheme,
-  useWheelAdjust,
-} from './hooks';
+import { SettingsModal } from './settingsModal/SettingsModal';
+import { Pendulum } from './layouts/Pendulum';
 import { PresetsPanel } from '../presets/PresetsPanel';
 import { usePresets } from '../presets/usePresets';
 import { samePresetSettings } from '@mytronome/presets';
 import { isCompound, MIN_BPM, MAX_BPM } from '@mytronome/engine';
 import './Metronome.css';
+import { useLayoutMode } from './layouts/hooks';
+import { useAccent, useTheme } from './appearance/hooks';
+import { SubdivisionControl } from './subdivisions/SubdivisionControl';
+import { useResizableWidth } from '../presets/hooks';
+import { useKeyHeld, useKeyPressed } from './keyboard';
+import { usePointDragAdjust, useWheelAdjust } from './gestures';
 
 export function Metronome() {
   const [layoutMode, setLayoutMode] = useLayoutMode();
