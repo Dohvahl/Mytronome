@@ -8,15 +8,12 @@ import { SubdivisionControl } from './SubdivisionControl';
 import { HelpHint } from './HelpHint';
 import { BrandHeader } from './BrandHeader';
 import { SettingsModal } from './SettingsModal';
-import { Pendulum } from './Pendulum';
+import { Pendulum } from './layouts/Pendulum';
 import {
-  useAccent,
   useKeyHeld,
   useKeyPressed,
-  useLayoutMode,
   usePointDragAdjust,
   useResizableWidth,
-  useTheme,
   useWheelAdjust,
 } from './hooks';
 import { PresetsPanel } from '../presets/PresetsPanel';
@@ -24,6 +21,8 @@ import { usePresets } from '../presets/usePresets';
 import { samePresetSettings } from '@mytronome/presets';
 import { isCompound, MIN_BPM, MAX_BPM } from '@mytronome/engine';
 import './Metronome.css';
+import { useLayoutMode } from './layouts/hooks';
+import { useAccent, useTheme } from './appearance/hooks';
 
 export function Metronome() {
   const [layoutMode, setLayoutMode] = useLayoutMode();
