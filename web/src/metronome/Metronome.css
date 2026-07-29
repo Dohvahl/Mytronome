@@ -1,12 +1,11 @@
 /* Stylesheet manifest for the metronome. Each feature owns its own file, next
    to the components it styles; this file only decides the ORDER they load in.
 
-   The order is load-bearing, not cosmetic. Plain class selectors all carry the
-   same specificity, so when two rules target the same element the later one
-   wins — including rules inside a @media block, which adds no specificity of
-   its own. shell.css therefore has to come first: it holds the narrow-screen
-   overrides, and the feature rules that follow are meant to sit after them.
-   Reordering these imports silently changes the layout. */
+   Order still matters: plain class selectors share the same specificity, so
+   between two rules matching the same element the later one wins. Each feature
+   now keeps its own narrow-screen overrides at the end of its own file, so the
+   risk is contained — but a rule moved across files can still change the
+   cascade silently. */
 @import './shell.css';
 @import './helpModal/help.css';
 @import './volume/volume.css';
