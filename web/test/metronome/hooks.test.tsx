@@ -2,10 +2,7 @@
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  usePointDragAdjust,
-  useWheelAdjust,
-} from '../../src/metronome/gestures';
+import { usePointDragAdjust, useWheelAdjust } from '../../src/metronome/hooks';
 
 afterEach(() => cleanup());
 

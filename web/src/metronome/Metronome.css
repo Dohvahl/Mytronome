@@ -1,15 +1,938 @@
-/* Stylesheet manifest for the metronome. Each feature owns its own file, next
-   to the components it styles; this file only decides the ORDER they load in.
+.metronome {
+  flex: 1;
+  width: min(100%, 23.3333rem);
+  max-width: 23.3333rem;
+  margin: 0 auto;
+  padding: 1rem 1.3333rem 1.3333rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  box-sizing: border-box;
+}
 
-   Order still matters: plain class selectors share the same specificity, so
-   between two rules matching the same element the later one wins. Each feature
-   now keeps its own narrow-screen overrides at the end of its own file, so the
-   risk is contained — but a rule moved across files can still change the
-   cascade silently. */
-@import './shell.css';
-@import './helpModal/help.css';
-@import './volume/volume.css';
-@import './tempo/tempo.css';
-@import './layouts/layouts.css';
-@import './meter/meter.css';
-@import './subdivisions/subdivisions.css';
+@media (max-width: 640px) {
+  .metronome {
+    gap: 0.875rem;
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  .tempo-row {
+    gap: 0.75rem;
+  }
+
+  .meter-row {
+    gap: 0.6667rem;
+  }
+
+  .tempo-value-area {
+    height: 5.3333rem;
+  }
+
+  .play {
+    width: 7.3333rem;
+    padding: 0.6667rem 0;
+  }
+}
+
+/* --- "How to use" hint (top-right, mirrors the ☰ menu top-left) --- */
+:root {
+  --help-icon-color: var(--border);
+  --help-icon-border-radius: 2.4444rem;
+}
+.help-hint {
+  position: fixed;
+  top: calc(1.1111rem + env(safe-area-inset-top, 0px));
+  /* Sits just left of the settings gear, which takes the corner. */
+  right: 3.7778rem;
+  /* Below the drawer backdrop (z-index 20) so it dims with the rest of the
+     screen when the presets drawer is open. */
+  z-index: 10;
+}
+.settings-toggle {
+  position: fixed;
+  top: calc(1.1111rem + env(safe-area-inset-top, 0px));
+  right: 0.8889rem;
+  z-index: 10;
+  width: 2.4444rem;
+  height: 2.4444rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.settings-toggle:hover,
+.settings-toggle:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+.help-toggle {
+  width: var(--help-icon-border-radius);
+  height: var(--help-icon-border-radius);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5em;
+  font-weight: 600;
+  border: none;
+  background: var(--bg);
+  color: var(--help-icon-color);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.help-toggle:hover,
+.help-toggle:focus-visible {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  outline: none;
+}
+.help-toggle svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Drops down from the button,
+aligned to the right edge. */
+.help-panel {
+  position: absolute;
+  top: calc(100% + 0.4444rem);
+  right: 0;
+  width: 15.5556rem;
+  max-width: 86vw;
+  padding: 0.8889rem 1rem;
+  text-align: left;
+  background: var(--bg);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.6667rem;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 640px) {
+  .help-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+.help-title {
+  margin: 0 0 0.5556rem;
+  font-size: 0.8889rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+.help-group {
+  margin: 0.7778rem 0 0.3333rem;
+  font-size: 0.6667rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.0278rem;
+  color: var(--accent);
+}
+.help-group:first-of-type {
+  margin-top: 0;
+}
+.help-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3333rem;
+}
+.help-list li {
+  font-size: 0.7222rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+/* Show the desktop gestures by default and swap to the touch phrasing on coarse
+   (touch) pointers, where there's no scroll wheel or Shift key. */
+.help-list li.help-touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .help-list li.help-desktop {
+    display: none;
+  }
+  .help-list li.help-touch {
+    display: block;
+  }
+}
+.help-list kbd {
+  display: inline-block;
+  padding: 0.0556rem 0.3333rem;
+  font: 600 0.6667rem/1.4 var(--sans);
+  color: var(--text-h);
+  background: var(--accent-bg);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.2778rem;
+}
+.help-version {
+  margin: 0.7778rem 0 0;
+  padding-top: 0.6667rem;
+  border-top: 0.0556rem solid var(--border);
+  font-size: 0.6111rem;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+/* Name of the currently loaded preset — faint, and reserves its line so the
+   layout doesn't shift when it appears/disappears. */
+.loaded-preset {
+  min-height: 1.4em;
+  font-size: 1.2222rem;
+  font-weight: 500;
+  letter-spacing: 0.0111rem;
+  color: var(--text);
+}
+.loaded-modified {
+  color: var(--accent);
+}
+
+/* Volume control (top of the drawer) */
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5556rem;
+  padding-bottom: 0.8889rem;
+  border-bottom: 0.0556rem solid var(--border);
+}
+.volume-control .volume-icon {
+  display: inline-flex;
+  color: var(--text);
+}
+.volume-control input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+.volume-value {
+  width: 4ch;
+  text-align: right;
+  font-size: 0.7222rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.tempo-row {
+  display: flex;
+  align-items: center;
+  gap: 1.3333rem;
+}
+
+.step {
+  width: 3.1111rem;
+  height: 3.1111rem;
+  font-size: 1.5556rem;
+  line-height: 1;
+  border-radius: 50%;
+  border: 0.0556rem solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.step:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+/* When Shift is held the buttons read "-10"/"+10" — smaller so they fit. */
+.step-10 {
+  font-size: 1.2222rem;
+  font-weight: 600;
+}
+
+.tempo-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: default;
+  touch-action: none;
+}
+.tempo-display .unit {
+  font-size: 0.7778rem;
+  letter-spacing: 0.1667rem;
+  color: var(--text);
+}
+
+/* Big tempo number */
+/* Fixed-size area so switching display ↔ edit doesn't reflow the layout. */
+.tempo-value-area {
+  height: 6.6667rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Display mode — a bordered chip that reads as clickable. */
+.bpm-chip {
+  box-sizing: border-box;
+  width: 2.6em;
+  font: 600 3.5556rem/1.1 var(--heading);
+  color: var(--text-h);
+  padding: 0.2222rem 0;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.7778rem;
+  background: var(--bg);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.bpm-chip:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Edit mode — a WheelPicker-style box: typeable centre, faint neighbours. */
+.bpm-wheel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 2.6em;
+  font-size: 3.5556rem; /* so the em-based width matches the chip */
+  border: 0.0556rem solid var(--accent-border);
+  border-radius: 0.7778rem;
+  overflow: hidden;
+  background: var(--bg);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.bpm-ghost {
+  height: 1.3333rem;
+  line-height: 1.3333rem;
+  font-size: 0.8889rem;
+  color: var(--text);
+  opacity: 0.4;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.bpm-ghost:hover {
+  opacity: 0.75;
+}
+.bpm-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 3.8889rem;
+  padding: 0;
+  font: 600 3.5556rem/3.8889rem var(--heading);
+  text-align: center;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: none;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.bpm-input:focus {
+  outline: none;
+}
+.bpm-input::-webkit-outer-spin-button,
+.bpm-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* The Classic tempo slider, styled as a horizontal version of the Tower layout's
+   mechanical rod + sliding weight (the vertical variant is further down under
+   [data-layout='tower'], which overrides these). appearance:none so we paint the
+   rod (track) and weight (thumb) ourselves. */
+.tempo-slider {
+  width: 100%;
+  max-width: 17.7778rem;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2em; /* room for the weight to sit across the rod */
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+}
+/* The rod: a thin horizontal pole with faint tempo-scale tick marks. */
+.tempo-slider::-webkit-slider-runnable-track {
+  height: 0.4444rem;
+  border-radius: 0.2222rem;
+  background:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in srgb, var(--text) 50%, transparent) 0 0.0833rem,
+      transparent 0.0833rem 0.8333rem
+    ),
+    linear-gradient(180deg, var(--border), var(--text) 50%, var(--border));
+}
+/* The weight: a chunky block that slides along the rod — tall across it, narrow
+   along it. Negative top margin re-centres it over the thin rod. */
+.tempo-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 1.3333rem;
+  height: 2rem;
+  border-radius: 0.3333rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+  margin-top: -0.778rem; /* (thumb − track thickness) / 2, to centre on the rod */
+}
+/* Firefox equivalents (secondary; Tauri/Android are Chromium). */
+.tempo-slider::-moz-range-track {
+  height: 0.4444rem;
+  border-radius: 0.2222rem;
+  background: linear-gradient(
+    180deg,
+    var(--border),
+    var(--text) 50%,
+    var(--border)
+  );
+}
+.tempo-slider::-moz-range-thumb {
+  width: 1.3333rem;
+  height: 2rem;
+  border-radius: 0.3333rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+}
+
+/* ---------------------------------------------------------------------------
+   Tower layout (data-layout="tower") — the vertical, mechanical-metronome-style
+   arrangement. The classic horizontal layout above is the default; these rules
+   apply only under <html data-layout="tower">. Stage 1 is a functional reflow;
+   sizing and mechanical styling come in later stages.
+   --------------------------------------------------------------------------- */
+
+/* The wrapper is invisible to layout in classic mode (its children lay out in
+   the .metronome column exactly as before); in tower mode it becomes the row
+   that sits the vertical slider beside the tempo readout + step buttons. */
+.tempo-cluster {
+  display: contents;
+}
+:root[data-layout='tower'] .tempo-cluster {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Stack the +, number, − vertically beside the slider (column-reverse puts +
+   on top and − on bottom). */
+:root[data-layout='tower'] .tempo-row {
+  flex-direction: column-reverse;
+  gap: 0.8889rem;
+}
+
+/* --- Pendulum layout (data-layout="pendulum") — a mechanical-metronome mode:
+   the pendulum is the interface. The arm is an inverted pendulum, rising from a
+   fulcrum at its base and pivoting there; the weight rides it at a height set by
+   the tempo and is draggable to change it. The arm's rotate + transition-duration
+   are set inline (per-beat, from bpm); ease-in-out gives the slow-at-the-ends
+   motion of a real pendulum. Only rendered in this layout. --- */
+.pendulum-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+/* KNOB: the pendulum is the focus of this layout, so it's sized up. Scale the
+   four .pendulum* blocks together to resize it; the weight's travel is a ratio
+   of the arm height (Pendulum.tsx), so it follows automatically. */
+.pendulum {
+  position: relative;
+  width: 17rem; /* room for the taller arm to swing without clipping */
+  height: 15rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+.pendulum-arm {
+  position: relative;
+  width: 0.4444rem;
+  height: 14.2222rem;
+  border-radius: 0.2222rem;
+  background: linear-gradient(
+    90deg,
+    var(--border),
+    var(--text) 50%,
+    var(--border)
+  );
+  transform-origin: bottom center;
+  transition-property: transform;
+  transition-timing-function: ease-in-out;
+}
+.pendulum-weight {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%); /* `top` set inline from the tempo */
+  width: 2.8889rem;
+  height: 1.7778rem;
+  padding: 0;
+  border-radius: 0.3889rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+  cursor: grab;
+  touch-action: none; /* vertical drag sets tempo — don't scroll the page */
+}
+.pendulum-weight:active {
+  cursor: grabbing;
+}
+.pendulum-pivot {
+  position: absolute;
+  bottom: -0.4444rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.3333rem;
+  height: 1.3333rem;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: var(--shadow);
+}
+
+/* Compact BPM readout beneath the pendulum (smaller than the classic chip). */
+.pendulum-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pendulum-readout .tempo-value-area {
+  height: auto;
+}
+.pendulum-readout .bpm-chip,
+.pendulum-readout .bpm-wheel {
+  font-size: 2.2222rem;
+}
+
+/* Collapsible time-signature control. */
+.pendulum-ts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6667rem;
+}
+.pendulum-ts-toggle {
+  padding: 0.3333rem 0.8889rem;
+  border-radius: 0.4444rem;
+  border: 0.0556rem solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.7778rem;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.pendulum-ts-toggle:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+/* Time signature + subdivision sit side by side once the section is expanded. */
+.pendulum-ts-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6667rem;
+}
+
+/* The slider becomes the metronome's pendulum rod + sliding weight, and the
+   primary drag driver. writing-mode makes the native range vertical; the slow
+   end sits at the bottom (drag up = faster).
+   appearance:none so we paint the rod (track) and weight (thumb) ourselves. */
+:root[data-layout='tower'] .tempo-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 2.8889rem; /* room for the weight to sit across the rod */
+  height: 15rem;
+  max-width: none;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* The rod: a thin pole down the centre with faint tempo-scale tick marks.
+   (Chromium — the target engine — uses the -webkit- pseudo-elements.) */
+:root[data-layout='tower'] .tempo-slider::-webkit-slider-runnable-track {
+  width: 0.4444rem;
+  height: 100%;
+  border-radius: 0.2222rem;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--text) 50%, transparent) 0 0.0833rem,
+      transparent 0.0833rem 0.8333rem
+    ),
+    linear-gradient(90deg, var(--border), var(--text) 50%, var(--border));
+}
+
+/* The weight: a chunky block that slides on the rod — wide across it, short
+   along it. Negative inline margin re-centres it over the thin rod. */
+:root[data-layout='tower'] .tempo-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 2.8889rem;
+  height: 1.3333rem;
+  border-radius: 0.3333rem;
+  /* Top highlight → accent gives the weight a subtle convex, physical look. */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+  margin-left: -1.2222rem; /* (thumb − track thickness) / 2, to centre on the rod */
+  margin-top: 0; /* reset the horizontal (Classic) centring; here it's vertical */
+}
+
+/* Firefox equivalents (secondary; Tauri/Android are Chromium). */
+:root[data-layout='tower'] .tempo-slider::-moz-range-track {
+  width: 0.4444rem;
+  height: 100%;
+  border-radius: 0.2222rem;
+  background: linear-gradient(
+    90deg,
+    var(--border),
+    var(--text) 50%,
+    var(--border)
+  );
+}
+:root[data-layout='tower'] .tempo-slider::-moz-range-thumb {
+  width: 2.8889rem;
+  height: 1.3333rem;
+  border-radius: 0.3333rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 80%, #fff),
+    var(--accent) 60%
+  );
+  border: 0.0556rem solid var(--accent-border);
+  box-shadow: var(--shadow);
+}
+
+.play {
+  width: 8.8889rem;
+  padding: 0.7778rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 55.5rem;
+  border: 0.0556rem solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.play.running {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+/* Time signature + subdivision side by side */
+.meter-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8889rem;
+}
+
+/* Subdivision selector (custom dropdown so options can render notation) */
+.subdivision-picker {
+  position: relative;
+}
+.subdivision-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5556rem;
+  min-width: 3.5556rem;
+  padding: 0.2778rem 0.5556rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+.subdivision-trigger:hover {
+  border-color: var(--accent-border);
+}
+.subdivision-chevron {
+  font-size: 1rem;
+  color: var(--text);
+}
+.subdivision-menu {
+  position: absolute;
+  top: calc(100% + 0.2222rem);
+  left: 0;
+  z-index: 50;
+  margin: 0;
+  padding: 0.2222rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1111rem;
+  background: var(--bg);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  box-shadow: var(--shadow);
+  max-height: 14.4444rem;
+  overflow-y: auto;
+}
+.subdivision-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 3.3333rem;
+  padding: 0.3333rem 0.7778rem;
+  border: none;
+  border-radius: 0.3333rem;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+}
+.subdivision-menu button:hover {
+  background: var(--accent-bg);
+}
+.subdivision-menu button.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.sub-note {
+  font-family:
+    'Segoe UI Symbol', 'Noto Music', 'Noto Sans Symbols2', var(--sans);
+  font-size: 1.1111rem;
+  line-height: 1;
+}
+.triplet-glyph {
+  height: 1.2222rem;
+  width: auto;
+  display: block;
+}
+
+/* --- Beat indicator --- */
+.beat-indicator {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  /* Gap shrinks on narrow rows so a full 16-beat bar still fits any screen. */
+  gap: clamp(0.1667rem, 2.5vw, 0.7778rem);
+  width: 100%;
+  /* Tall enough to hold the fixed-height bars plus their active-beat scale-up. */
+  min-height: 2.8889rem;
+}
+.beat-dot {
+  /* Rounded bars, not circles: a *fixed height* with a flexible width. Circles
+     coupled width and height, so shrinking to fit 16 beats also shortened them
+     into unusable specks. Here the height stays constant and only the width
+     narrows — few beats read as wide pills, 16 as slim bars, all equally tall
+     and tappable. min-width:0 lets them narrow enough that 16 always fit. */
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 1.6667rem;
+  height: 2.2222rem;
+  padding: 0;
+  border-radius: 0.6667rem;
+  border: 0.1111rem solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    background 0.06s ease,
+    border-color 0.06s ease,
+    opacity 0.06s ease;
+}
+.beat-dot:hover {
+  border-color: var(--accent-border);
+}
+
+/* Resting look per emphasis */
+.beat-dot.accent {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.beat-dot.muted {
+  border-style: dashed;
+  opacity: 0.4;
+}
+
+/* The currently sounding beat: scaled up and filled */
+.beat-dot.active {
+  transform: scale(1.3);
+}
+.beat-dot.active.accent {
+  background: var(--accent);
+}
+.beat-dot.active.normal {
+  background: var(--text-h);
+  border-color: var(--text-h);
+}
+.beat-dot.active.muted {
+  opacity: 0.7;
+  background: var(--accent-bg);
+}
+
+/* --- Time signature --- */
+.time-signature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6667rem;
+}
+
+/* #5 — presets dropdown */
+.ts-presets {
+  font-size: 0.8333rem;
+  padding: 0.3333rem 0.6667rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s;
+}
+.ts-presets:hover {
+  border-color: var(--accent-border);
+}
+
+/* #6 — display form: a dropdown-style button showing the current signature,
+   sized to match the subdivision selector. */
+.ts-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5556rem;
+  min-width: 3.5556rem;
+  padding: 0.2778rem 0.5556rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.ts-trigger:hover {
+  border-color: var(--accent-border);
+}
+.ts-trigger-value {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.ts-trigger-chevron {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* Edit form: a centered overlay on the same vertical plane as the trigger,
+   floating over a semi-transparent backdrop (so the row doesn't reflow). */
+.ts-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.25);
+}
+.ts-editor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 41;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4444rem;
+  padding: 0.6667rem 0.8889rem;
+  background: var(--bg);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.6667rem;
+  box-shadow: var(--shadow);
+}
+
+.ts-slash {
+  font: 300 1.2222rem/1 var(--heading);
+  color: var(--text);
+}
+
+/* A vertical select-wheel: current value centered and highlighted, with its
+   neighbours faint above and below. Scroll (or arrow keys) to change. */
+.ts-wheel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: clamp(2.6rem, 15vw, 5rem);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  overflow: hidden;
+  background: var(--bg);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  cursor: ns-resize;
+  user-select: none;
+  touch-action: none;
+}
+.ts-wheel:focus-visible {
+  outline: none;
+  border-color: var(--accent-border);
+}
+.ts-wheel-option {
+  height: clamp(0.5rem, 4vh, 3rem);
+  line-height: clamp(0.5rem, 4vh, 3rem);
+}
+.ts-wheel-option.ghost {
+  font-size: clamp(0.75rem, 2vh, 1.5rem);
+  color: var(--text);
+  opacity: 0.4;
+  cursor: pointer;
+}
+.ts-wheel-option.ghost:hover {
+  opacity: 0.75;
+}
+.ts-wheel-option.current {
+  font-size: clamp(1rem, 4vh, 3rem);
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.ts-accept {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.8889rem;
+  border: 0.0556rem solid var(--accent-border);
+  border-radius: 0.4444rem;
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.ts-accept:hover {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}

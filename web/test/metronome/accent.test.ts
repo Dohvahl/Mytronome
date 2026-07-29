@@ -5,7 +5,7 @@ import {
   luminance,
   onAccent,
   usableAccent,
-} from '../../../src/metronome/appearance/accent';
+} from '../../src/metronome/accent';
 
 describe('hexToRgb', () => {
   it('parses 6-digit hex', () => {

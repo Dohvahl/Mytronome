@@ -1,4 +1,4 @@
-import { useWheelAdjust } from '../gestures';
+import { useWheelAdjust } from './hooks';
 
 const WHEEL_STEP = 0.05;
 

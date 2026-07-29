@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   subdivisionOptions,
   clampSubdivision,
-} from '../../../src/metronome/subdivisions/subdivisions';
+} from '../../src/metronome/subdivisions';
 
 const QUARTER_GLYPH = '\u{1D15F}';
 
