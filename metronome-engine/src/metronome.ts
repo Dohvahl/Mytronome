@@ -1,4 +1,5 @@
 import type { BeatEmphasis, BeatInfo, TimeSignature } from './types';
+import { MusicalSettings } from './musicalSettings';
 import {
   browserTimer,
   type AudioOutput,
@@ -40,33 +41,6 @@ export interface MetronomeOptions {
   timer?: IntervalTimer;
 }
 
-// Shared musical limits - the web app imports these instead of redefining them.
-// The C# API enforces the same limits in preset-api/Validation/PresetValidator.cs
-// (MinBpm / MaxBpm / MaxBeats / NoteValues); those can't be shared across the
-// TS/C# boundary, so keep the two in sync by hand.
-export const MIN_BPM = 40;
-export const MAX_BPM = 320;
-export const MAX_SUBDIVISIONS = 16;
-
-/** Compound meters (6/8, 9/8, 12/8, …) group their beats in threes. */
-export function isCompound(timeSignature: TimeSignature): boolean {
-  const { beats, noteValue } = timeSignature;
-  return (noteValue === 8 || noteValue === 16) && beats >= 6 && beats % 3 === 0;
-}
-
-/**
- * The default emphasis pattern: accent the downbeat, plus — in a compound meter
- * — the start of each group of three, so 6/8 feels like 2, 9/8 like 3, and 12/8
- * like 4 (instead of six even clicks like 6/4).
- */
-export function defaultPattern(timeSignature: TimeSignature): BeatEmphasis[] {
-  const compound = isCompound(timeSignature);
-  return Array.from({ length: timeSignature.beats }, (_, i) => {
-    const groupStart = compound ? i % 3 === 0 : i === 0;
-    return groupStart ? 'accent' : 'normal';
-  });
-}
-
 /**
  * A sample-accurate metronome. It plans clicks against an injected
  * {@link AudioOutput}'s clock and stays platform-free itself — the Web Audio
@@ -84,9 +58,7 @@ export function defaultPattern(timeSignature: TimeSignature): BeatEmphasis[] {
 export class Metronome {
   private readonly output: AudioOutput;
   private readonly timer: IntervalTimer;
-  private bpm: number;
-  private timeSignature: TimeSignature;
-  private pattern: BeatEmphasis[];
+  private readonly settings: MusicalSettings; // what we're playing
   private readonly cursor: BeatCursor; // where we are on the tick grid
   private readonly onBeat?: (beat: BeatInfo) => void;
 
@@ -100,12 +72,10 @@ export class Metronome {
   private readonly lookaheadMs = 25;
 
   constructor(options: MetronomeOptions) {
-    this.bpm = clampBpm(options.bpm ?? 120);
-    this.timeSignature = options.timeSignature ?? { beats: 4, noteValue: 4 };
-    this.pattern = options.pattern ?? defaultPattern(this.timeSignature);
+    this.settings = new MusicalSettings(options);
     this.cursor = new BeatCursor(
-      this.timeSignature.beats,
-      clampSubdivisions(options.subdivisions ?? 1),
+      this.settings.meter.beats,
+      options.subdivisions ?? 1,
     );
     this.onBeat = options.onBeat;
     this.output = options.audioOutput;
@@ -114,11 +84,11 @@ export class Metronome {
   }
 
   get tempo(): number {
-    return this.bpm;
+    return this.settings.tempo;
   }
 
   get meter(): TimeSignature {
-    return this.timeSignature;
+    return this.settings.meter;
   }
 
   get running(): boolean {
@@ -142,18 +112,18 @@ export class Metronome {
 
   /** Set the tempo. Clamped to a sane musical range. Safe to call while running. */
   setBpm(bpm: number): void {
-    this.bpm = clampBpm(bpm);
+    this.settings.setBpm(bpm);
   }
 
   /** Change the time signature. Safe to call while running. */
   setTimeSignature(timeSignature: TimeSignature): void {
-    this.timeSignature = timeSignature;
+    this.settings.setTimeSignature(timeSignature);
     this.cursor.setBeatsPerBar(timeSignature.beats);
   }
 
   /** Replace the per-beat emphasis pattern. Safe to call while running. */
   setPattern(pattern: BeatEmphasis[]): void {
-    this.pattern = pattern;
+    this.settings.setPattern(pattern);
   }
 
   /** Master output volume, 0 (silent) to 1 (full). Safe to call while running. */
@@ -163,7 +133,7 @@ export class Metronome {
 
   /** Clicks per beat (1 = beat only, 2 = eighths, …). Safe to call while running. */
   setSubdivisions(subdivisions: number): void {
-    this.cursor.setSubdivisions(clampSubdivisions(subdivisions));
+    this.cursor.setSubdivisions(subdivisions);
   }
 
   /** Start ticking. Must be triggered by a user gesture (browser autoplay rule). */
@@ -208,13 +178,12 @@ export class Metronome {
       this.nextBeatTime <
       this.output.currentTime + this.scheduleAheadTime
     ) {
-      const secondsPerBeat = 60 / this.bpm;
+      const secondsPerBeat = this.settings.secondsPerBeat;
 
       if (this.cursor.isMainBeat) {
         // The main beat: apply its emphasis and notify the UI.
         const beatIndex = this.cursor.currentBeat;
-        const emphasis =
-          this.pattern[beatIndex] ?? (beatIndex === 0 ? 'accent' : 'normal');
+        const emphasis = this.settings.emphasisFor(beatIndex);
 
         if (emphasis !== 'muted') {
           this.output.scheduleClick(
@@ -234,12 +203,4 @@ export class Metronome {
       this.cursor.advance();
     }
   }
-}
-
-function clampBpm(bpm: number): number {
-  return Math.max(MIN_BPM, Math.min(MAX_BPM, Math.round(bpm)));
-}
-
-function clampSubdivisions(value: number): number {
-  return Math.max(1, Math.min(MAX_SUBDIVISIONS, Math.round(value)));
 }

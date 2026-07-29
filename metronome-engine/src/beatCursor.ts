@@ -1,4 +1,16 @@
 /**
+ * The finest division the engine will schedule. Lives here because the cursor
+ * owns the subdivision half of the tick grid; the web app imports it to validate
+ * a saved subdivision.
+ */
+export const MAX_SUBDIVISIONS = 16;
+
+/** Round to a whole number of ticks per beat, within the supported range. */
+export function clampSubdivisions(value: number): number {
+  return Math.max(1, Math.min(MAX_SUBDIVISIONS, Math.round(value)));
+}
+
+/**
  * Where the metronome is on its tick grid.
  *
  * The grid has two levels: a bar holds `beatsPerBar` beats, and each beat is
@@ -20,10 +32,14 @@ export class BeatCursor {
   private beatIndex = 0;
   private subIndex = 0;
 
+  private subdivisions: number;
+
   constructor(
     private beatsPerBar: number,
-    private subdivisions: number,
-  ) {}
+    subdivisions: number,
+  ) {
+    this.subdivisions = clampSubdivisions(subdivisions);
+  }
 
   /** Zero-based index of the beat the next tick belongs to (0 = downbeat). */
   get currentBeat(): number {
@@ -74,7 +90,7 @@ export class BeatCursor {
 
   /** Change the ticks per beat, with the same mid-beat clamp as the meter. */
   setSubdivisions(subdivisions: number): void {
-    this.subdivisions = subdivisions;
-    if (this.subIndex >= subdivisions) this.subIndex = 0;
+    this.subdivisions = clampSubdivisions(subdivisions);
+    if (this.subIndex >= this.subdivisions) this.subIndex = 0;
   }
 }
