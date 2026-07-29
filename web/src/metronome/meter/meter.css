@@ -212,3 +212,11 @@
   background: var(--accent);
   color: var(--accent-contrast);
 }
+
+/* Narrow screens: tighten the meter row. Must come AFTER the rule above —
+   @media adds no specificity, so a later plain rule wins. */
+@media (max-width: 640px) {
+  .meter-row {
+    gap: 0.6667rem;
+  }
+}

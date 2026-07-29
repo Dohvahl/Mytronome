@@ -12,30 +12,6 @@
   box-sizing: border-box;
 }
 
-@media (max-width: 640px) {
-  .metronome {
-    gap: 0.875rem;
-    padding: 0.75rem 1rem 1rem;
-  }
-
-  .tempo-row {
-    gap: 0.75rem;
-  }
-
-  .meter-row {
-    gap: 0.6667rem;
-  }
-
-  .tempo-value-area {
-    height: 5.3333rem;
-  }
-
-  .play {
-    width: 7.3333rem;
-    padding: 0.6667rem 0;
-  }
-}
-
 /* Name of the currently loaded preset — faint, and reserves its line so the
    layout doesn't shift when it appears/disappears. */
 .loaded-preset {
@@ -66,4 +42,18 @@
 .play.running {
   background: var(--accent);
   color: var(--accent-contrast);
+}
+
+/* Narrow screens: tighten the frame and the play button. Must come AFTER the
+   rules above — @media adds no specificity, so a later plain rule would win. */
+@media (max-width: 640px) {
+  .metronome {
+    gap: 0.875rem;
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  .play {
+    width: 7.3333rem;
+    padding: 0.6667rem 0;
+  }
 }
