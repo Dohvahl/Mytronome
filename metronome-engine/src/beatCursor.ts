@@ -1,0 +1,80 @@
+/**
+ * Where the metronome is on its tick grid.
+ *
+ * The grid has two levels: a bar holds `beatsPerBar` beats, and each beat is
+ * split into `subdivisions` ticks. The cursor tracks which tick comes next and
+ * knows when advancing has wrapped it back to the downbeat — the signal any
+ * bar-counted behaviour hangs off.
+ *
+ * Position used to be four fields' worth of arithmetic spread across the
+ * metronome's start(), setTimeSignature(), setSubdivisions() and its scheduling
+ * loop. Gathering it here means "which tick is next, and did a bar just end?"
+ * is answered by one file, and the scheduler reads as a sequence of steps
+ * rather than index bookkeeping.
+ *
+ * It owns the grid dimensions rather than being handed them each tick, so the
+ * clamping a mid-run settings change needs (a shrinking meter can strand the
+ * cursor past the last beat) lives with the state it protects.
+ */
+export class BeatCursor {
+  private beatIndex = 0;
+  private subIndex = 0;
+
+  constructor(
+    private beatsPerBar: number,
+    private subdivisions: number,
+  ) {}
+
+  /** Zero-based index of the beat the next tick belongs to (0 = downbeat). */
+  get currentBeat(): number {
+    return this.beatIndex;
+  }
+
+  /** Ticks per beat — the scheduler spaces ticks by one beat divided by this. */
+  get ticksPerBeat(): number {
+    return this.subdivisions;
+  }
+
+  /**
+   * True when the next tick is the beat itself rather than one of the softer
+   * ticks in between. Only main beats carry emphasis and reach the UI.
+   */
+  get isMainBeat(): boolean {
+    return this.subIndex === 0;
+  }
+
+  /** Return to the downbeat, for a fresh run. */
+  reset(): void {
+    this.beatIndex = 0;
+    this.subIndex = 0;
+  }
+
+  /**
+   * Step to the next tick. Reports whether that wrapped the cursor past the end
+   * of the bar, i.e. a bar just completed.
+   */
+  advance(): { barCompleted: boolean } {
+    this.subIndex += 1;
+    if (this.subIndex < this.subdivisions) return { barCompleted: false };
+
+    this.subIndex = 0;
+    this.beatIndex = (this.beatIndex + 1) % this.beatsPerBar;
+    return { barCompleted: this.beatIndex === 0 };
+  }
+
+  /**
+   * Change how many beats a bar holds. If the cursor is already past the new
+   * last beat (the meter shrank mid-bar) it drops to the downbeat rather than
+   * counting to a beat that no longer exists.
+   */
+  setBeatsPerBar(beatsPerBar: number): void {
+    this.beatsPerBar = beatsPerBar;
+    if (this.beatIndex >= beatsPerBar) this.beatIndex = 0;
+  }
+
+  /** Change the ticks per beat, with the same mid-beat clamp as the meter. */
+  setSubdivisions(subdivisions: number): void {
+    this.subdivisions = subdivisions;
+    if (this.subIndex >= subdivisions) this.subIndex = 0;
+  }
+}

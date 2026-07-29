@@ -4,6 +4,7 @@ import {
   type AudioOutput,
   type IntervalTimer,
 } from './audioOutput';
+import { BeatCursor } from './beatCursor';
 
 export interface MetronomeOptions {
   /** Starting tempo in beats per minute. Default 120. */
@@ -86,13 +87,11 @@ export class Metronome {
   private bpm: number;
   private timeSignature: TimeSignature;
   private pattern: BeatEmphasis[];
-  private subdivisions: number;
+  private readonly cursor: BeatCursor; // where we are on the tick grid
   private readonly onBeat?: (beat: BeatInfo) => void;
 
   private isRunning = false;
   private nextBeatTime = 0; // audio-clock time (s) of the next tick to schedule
-  private nextBeatIndex = 0; // which beat of the measure comes next
-  private subIndex = 0; // subdivision within the current beat (0 = the beat)
   private timerId: number | null = null;
 
   /** Schedule beats this far (seconds) into the future. */
@@ -104,7 +103,10 @@ export class Metronome {
     this.bpm = clampBpm(options.bpm ?? 120);
     this.timeSignature = options.timeSignature ?? { beats: 4, noteValue: 4 };
     this.pattern = options.pattern ?? defaultPattern(this.timeSignature);
-    this.subdivisions = clampSubdivisions(options.subdivisions ?? 1);
+    this.cursor = new BeatCursor(
+      this.timeSignature.beats,
+      clampSubdivisions(options.subdivisions ?? 1),
+    );
     this.onBeat = options.onBeat;
     this.output = options.audioOutput;
     this.output.setVolume(options.volume ?? 1); // adapter clamps to 0..1
@@ -146,9 +148,7 @@ export class Metronome {
   /** Change the time signature. Safe to call while running. */
   setTimeSignature(timeSignature: TimeSignature): void {
     this.timeSignature = timeSignature;
-    if (this.nextBeatIndex >= timeSignature.beats) {
-      this.nextBeatIndex = 0;
-    }
+    this.cursor.setBeatsPerBar(timeSignature.beats);
   }
 
   /** Replace the per-beat emphasis pattern. Safe to call while running. */
@@ -163,10 +163,7 @@ export class Metronome {
 
   /** Clicks per beat (1 = beat only, 2 = eighths, …). Safe to call while running. */
   setSubdivisions(subdivisions: number): void {
-    this.subdivisions = clampSubdivisions(subdivisions);
-    if (this.subIndex >= this.subdivisions) {
-      this.subIndex = 0;
-    }
+    this.cursor.setSubdivisions(clampSubdivisions(subdivisions));
   }
 
   /** Start ticking. Must be triggered by a user gesture (browser autoplay rule). */
@@ -178,8 +175,7 @@ export class Metronome {
     void this.output.resume();
 
     this.isRunning = true;
-    this.nextBeatIndex = 0;
-    this.subIndex = 0;
+    this.cursor.reset();
     this.nextBeatTime = this.output.currentTime + 0.05; // brief lead-in
     this.timerId = this.timer.setInterval(
       () => this.scheduler(),
@@ -214,11 +210,11 @@ export class Metronome {
     ) {
       const secondsPerBeat = 60 / this.bpm;
 
-      if (this.subIndex === 0) {
+      if (this.cursor.isMainBeat) {
         // The main beat: apply its emphasis and notify the UI.
+        const beatIndex = this.cursor.currentBeat;
         const emphasis =
-          this.pattern[this.nextBeatIndex] ??
-          (this.nextBeatIndex === 0 ? 'accent' : 'normal');
+          this.pattern[beatIndex] ?? (beatIndex === 0 ? 'accent' : 'normal');
 
         if (emphasis !== 'muted') {
           this.output.scheduleClick(
@@ -228,22 +224,14 @@ export class Metronome {
         }
 
         // Always notify — muted beats still advance the visual indicator.
-        this.onBeat?.({
-          beatIndex: this.nextBeatIndex,
-          time: this.nextBeatTime,
-        });
+        this.onBeat?.({ beatIndex, time: this.nextBeatTime });
       } else {
         // An in-between subdivision: a softer tick (audio only, no visual).
         this.output.scheduleClick(this.nextBeatTime, 'sub');
       }
 
-      this.nextBeatTime += secondsPerBeat / this.subdivisions;
-      this.subIndex += 1;
-      if (this.subIndex >= this.subdivisions) {
-        this.subIndex = 0;
-        this.nextBeatIndex =
-          (this.nextBeatIndex + 1) % this.timeSignature.beats;
-      }
+      this.nextBeatTime += secondsPerBeat / this.cursor.ticksPerBeat;
+      this.cursor.advance();
     }
   }
 }
