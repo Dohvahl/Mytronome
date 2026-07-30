@@ -1,0 +1,57 @@
+/* Tempo ramp-up: the "a change is coming" warning.
+   ---------------------------------------------------------------------------
+   While the ramp is armed, the engine flags every beat of the bar BEFORE a bump
+   (BeatInfo.rampWarning). useMetronome mirrors that into React state, and
+   Metronome.tsx puts it on the metronome container as [data-ramp-warning].
+
+   Because the attribute is present for exactly that one bar, a looping
+   animation covers the whole bar on its own — it starts when the attribute
+   appears and stops when it goes. The duration below is therefore the pulse's
+   RHYTHM, not how long the warning lasts, so nothing has to know how long a bar
+   is (which changes with both tempo and meter). */
+
+:root {
+  /* One pulse cycle. Slow enough to read as a swell rather than a blink. */
+  --ramp-warning-period: 0.9s;
+  /* How far the pulse dips. Higher = subtler. */
+  --ramp-warning-dim: 0.5;
+}
+
+@keyframes ramp-warning-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: var(--ramp-warning-dim);
+  }
+}
+
+/* ===========================================================================
+   THE TARGET — the one thing to edit if you change your mind about what
+   pulses. Everything above is generic; only the selector below picks the
+   element. The container carries the flag, so any descendant is fair game.
+
+     .tempo-display   the BPM readout          (current)
+     .metronome       the whole panel          ("background")
+     .play            the start/stop button
+   =========================================================================== */
+.metronome[data-ramp-warning] .tempo-display {
+  animation: ramp-warning-pulse var(--ramp-warning-period) ease-in-out infinite;
+}
+
+/* Tint the number too, so the warning still reads on a screen where opacity
+   changes are easy to miss. Uses the accent so it follows the user's colour. */
+.metronome[data-ramp-warning] .bpm-chip {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Respect a reduced-motion preference: keep the warning visible, drop the
+   movement. A pulsing UI is exactly what this setting exists to suppress. */
+@media (prefers-reduced-motion: reduce) {
+  .metronome[data-ramp-warning] .tempo-display {
+    animation: none;
+    opacity: var(--ramp-warning-dim);
+  }
+}

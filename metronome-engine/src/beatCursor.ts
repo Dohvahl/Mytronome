@@ -33,11 +33,13 @@ export class BeatCursor {
   private subIndex = 0;
 
   private subdivisions: number;
+  private beatsPerBar: number;
 
-  constructor(
-    private beatsPerBar: number,
-    subdivisions: number,
-  ) {
+  // Fields are declared and assigned explicitly rather than using constructor
+  // parameter properties: those emit real runtime code, which the build's
+  // `erasableSyntaxOnly` setting disallows.
+  constructor(beatsPerBar: number, subdivisions: number) {
+    this.beatsPerBar = beatsPerBar;
     this.subdivisions = clampSubdivisions(subdivisions);
   }
 

@@ -13,3 +13,6 @@
 @import './layouts/layouts.css';
 @import './meter/meter.css';
 @import './subdivisions/subdivisions.css';
+/* Last: the ramp warning restyles elements the files above define (the tempo
+   display, the BPM chip), so it has to win on equal specificity. */
+@import './rampUp/rampUp.css';

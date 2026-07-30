@@ -37,11 +37,14 @@ export function Metronome() {
     beatTick,
     volume,
     subdivisions,
+    tempoRamp,
+    rampWarning,
     toggle,
     setBpm,
     setVolume,
     setSubdivisions,
     setTimeSignature,
+    setTempoRamp,
     cycleBeat,
     applySettings,
   } = useMetronome(flatten);
@@ -219,7 +222,7 @@ export function Metronome() {
 
       <BrandHeader />
 
-      <div className="metronome">
+      <div className="metronome" data-ramp-warning={rampWarning || undefined}>
         <div className="loaded-preset">
           {loadedPreset?.label}
           {loadedPreset?.label && isModified ? (
