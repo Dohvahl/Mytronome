@@ -5,6 +5,12 @@ import {
   MAX_SUBDIVISIONS,
   type BeatEmphasis,
   type TimeSignature,
+  type TempoRampConfig,
+  DEFAULT_RAMP_CONFIG,
+  MIN_RAMP_EVERY_BARS,
+  MAX_RAMP_EVERY_BARS,
+  MIN_RAMP_STEP_BPM,
+  MAX_RAMP_STEP_BPM,
 } from '@mytronome/engine';
 import { clampSubdivision } from './subdivisions/subdivisions';
 import { WebAudioOutput } from './webAudioOutput';
@@ -33,6 +39,32 @@ function readSavedSubdivisions(): number {
   return Number.isInteger(saved) && saved >= 1 && saved <= MAX_SUBDIVISIONS
     ? saved
     : 1;
+}
+
+const TEMPO_RAMP_KEY = 'mytronome.tempoRamp';
+
+function readSavedTempoRamp(): TempoRampConfig {
+  const raw = localStorage.getItem(TEMPO_RAMP_KEY);
+  if (!raw) return DEFAULT_RAMP_CONFIG;
+
+  let config: TempoRampConfig;
+  try {
+    const parsed = JSON.parse(raw);
+    config = parsed as TempoRampConfig;
+  } catch {
+    return DEFAULT_RAMP_CONFIG;
+  }
+
+  return config &&
+    typeof config.enabled === 'boolean' &&
+    Number.isInteger(config.everyBars) &&
+    config.everyBars >= MIN_RAMP_EVERY_BARS &&
+    config.everyBars <= MAX_RAMP_EVERY_BARS &&
+    Number.isInteger(config.stepBpm) &&
+    config.stepBpm >= MIN_RAMP_STEP_BPM &&
+    config.stepBpm <= MAX_RAMP_STEP_BPM
+    ? config
+    : DEFAULT_RAMP_CONFIG;
 }
 
 /**
@@ -70,6 +102,9 @@ export function useMetronome(flatten = false) {
   const [volume, setVolumeState] = useState(readSavedVolume);
   const [subdivisions, setSubdivisionsState] = useState(readSavedSubdivisions);
 
+  const [tempoRamp, setTempoRampState] =
+    useState<TempoRampConfig>(readSavedTempoRamp);
+
   // Create the engine when the component mounts; dispose it when it unmounts.
   useEffect(() => {
     const engine = new Metronome({
@@ -79,7 +114,12 @@ export function useMetronome(flatten = false) {
       pattern: defaultPattern(DEFAULT_TIME_SIGNATURE),
       volume: readSavedVolume(),
       subdivisions: readSavedSubdivisions(),
+      ramp: readSavedTempoRamp(),
       onBeat: (beat) => {
+        // the engine might have changed the tempo if the ramp function is in use.
+        // Update the tempo here so they don't get out of sync.
+        setBpmState(beat.bpm);
+
         // onBeat fires when a beat is *scheduled* (up to ~100ms early). Wait
         // until it actually sounds before flashing the visual, so they line up.
         // Two gaps to cover: (1) beat.time - currentTime, the scheduling lead;
@@ -124,6 +164,10 @@ export function useMetronome(flatten = false) {
   useEffect(() => {
     metronomeRef.current?.setSubdivisions(flatten ? 1 : subdivisions);
   }, [flatten, subdivisions]);
+
+  useEffect(() => {
+    metronomeRef.current?.setRampConfig(tempoRamp);
+  }, [tempoRamp]);
 
   const start = () => {
     metronomeRef.current?.start();
@@ -177,6 +221,12 @@ export function useMetronome(flatten = false) {
     if (nextSub !== subdivisions) setSubdivisions(nextSub);
   };
 
+  const setTempoRamp = (value: TempoRampConfig) => {
+    setTempoRampState(value);
+    if (value.enabled)
+      localStorage.setItem(TEMPO_RAMP_KEY, JSON.stringify(value));
+  };
+
   const cycleBeat = (index: number) => {
     const next = pattern.map((emphasis, i) =>
       i === index ? NEXT_EMPHASIS[emphasis] : emphasis,
@@ -220,6 +270,7 @@ export function useMetronome(flatten = false) {
     setVolume,
     setSubdivisions,
     setTimeSignature,
+    setTempoRamp,
     cycleBeat,
     applySettings,
   };

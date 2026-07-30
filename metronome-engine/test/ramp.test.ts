@@ -153,8 +153,7 @@ describe('ramp interaction with manual changes', () => {
     m.start();
     playBeats(output, timer, 7); // nearly two bars with the ramp off
 
-    m.ramp.setBPMStep(5);
-    m.ramp.setBars(2);
+    m.ramp.setRamp({ stepBpm: 5, everyBars: 2 });
     m.ramp.enable();
 
     playBeats(output, timer, 16);
@@ -190,8 +189,7 @@ describe('ramp settings are clamped', () => {
     expect(m.ramp.stepSize).toBe(MAX_RAMP_STEP_BPM);
     expect(m.ramp.after).toBe(1);
 
-    m.ramp.setBPMStep(0);
-    m.ramp.setBars(9999);
+    m.ramp.setRamp({ stepBpm: 0, everyBars: 9999 });
     expect(m.ramp.stepSize).toBe(1);
     expect(m.ramp.after).toBe(MAX_RAMP_EVERY_BARS);
   });

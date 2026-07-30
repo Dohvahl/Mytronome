@@ -139,9 +139,13 @@ export class Metronome {
     this.output.setVolume(volume);
   }
 
+  setRampConfig(ramp: TempoRampConfig): void {
+    this.ramp.setRamp(ramp);
+  }
+
   /**
    * The tempo ramp. Configure it through its own methods — `enable()`,
-   * `setBars()`, `setBPMStep()` — rather than replacing it wholesale, matching
+   * `setRamp()` — rather than replacing it wholesale, matching
    * how the settings and cursor are owned rather than swapped.
    */
   get ramp(): TempoRamp {

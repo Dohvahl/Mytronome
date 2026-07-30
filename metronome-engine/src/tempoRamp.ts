@@ -7,8 +7,11 @@ export const MAX_RAMP_STEP_BPM = 50;
 export const MIN_RAMP_EVERY_BARS = 1;
 export const MAX_RAMP_EVERY_BARS = 100;
 
-export const DEFAULT_RAMP_STEP_BPM = 5;
-export const DEFAULT_RAMP_EVERY_BARS = 4;
+export const DEFAULT_RAMP_CONFIG: TempoRampConfig = Object.freeze({
+  enabled: false,
+  stepBpm: 5,
+  everyBars: 4,
+});
 
 /**
  * The ramp's settings as plain data — what a caller passes in, and what a preset
@@ -30,16 +33,15 @@ export interface TempoRampConfig {
  */
 export class TempoRamp {
   private enabled: boolean;
-  private everyBars: number = DEFAULT_RAMP_EVERY_BARS;
-  private stepBpm: number = DEFAULT_RAMP_STEP_BPM;
+  private everyBars: number = DEFAULT_RAMP_CONFIG.everyBars;
+  private stepBpm: number = DEFAULT_RAMP_CONFIG.stepBpm;
 
   private barsSinceBump: number = 0; // Completed bars since the last ramp bump
 
   constructor(config: Partial<TempoRampConfig> = {}) {
     this.enabled = config.enabled ?? false;
     // Through the setters, so the same clamping applies to construction.
-    this.setBPMStep(config.stepBpm ?? DEFAULT_RAMP_STEP_BPM);
-    this.setBars(config.everyBars ?? DEFAULT_RAMP_EVERY_BARS);
+    this.setRamp(config);
   }
 
   /** How much to increase the tempo by. */
@@ -50,6 +52,17 @@ export class TempoRamp {
   /** Number of bars after which we increase the tempo. */
   get after(): number {
     return this.everyBars;
+  }
+
+  isValid(): boolean {
+    return (
+      Number.isInteger(this.everyBars) &&
+      this.everyBars >= MIN_RAMP_EVERY_BARS &&
+      this.everyBars <= MAX_RAMP_EVERY_BARS &&
+      Number.isInteger(this.stepBpm) &&
+      this.stepBpm >= MIN_RAMP_STEP_BPM &&
+      this.stepBpm <= MAX_RAMP_STEP_BPM
+    );
   }
 
   needWarning(currentBPM: number): boolean {
@@ -82,16 +95,19 @@ export class TempoRamp {
     this.enabled = false;
   }
 
-  setBars(bars: number): void {
+  setRamp(ramp: Partial<TempoRampConfig>): void {
+    if (ramp.enabled !== undefined)
+      ramp.enabled ? this.enable() : this.disable();
+    this.stepBpm = this.clampTo(
+      ramp.stepBpm ?? this.stepBpm,
+      MIN_RAMP_STEP_BPM,
+      MAX_RAMP_STEP_BPM,
+    );
     this.everyBars = this.clampTo(
-      bars,
+      ramp.everyBars ?? this.everyBars,
       MIN_RAMP_EVERY_BARS,
       MAX_RAMP_EVERY_BARS,
     );
-  }
-
-  setBPMStep(step: number): void {
-    this.stepBpm = this.clampTo(step, MIN_RAMP_STEP_BPM, MAX_RAMP_STEP_BPM);
   }
 
   reset() {
