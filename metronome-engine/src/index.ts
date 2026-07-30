@@ -1,13 +1,12 @@
 export { Metronome } from './metronome';
 export type { MetronomeOptions } from './metronome';
 export {
-  MusicalSettings,
   defaultPattern,
   isCompound,
   MIN_BPM,
   MAX_BPM,
 } from './musicalSettings';
-export { BeatCursor, MAX_SUBDIVISIONS, clampSubdivisions } from './beatCursor';
+export { MAX_SUBDIVISIONS, clampSubdivisions } from './beatCursor';
 export {
   TempoRamp,
   MIN_RAMP_STEP_BPM,

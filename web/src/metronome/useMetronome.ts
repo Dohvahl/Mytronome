@@ -104,6 +104,7 @@ export function useMetronome(flatten = false) {
 
   const [tempoRamp, setTempoRampState] =
     useState<TempoRampConfig>(readSavedTempoRamp);
+  const [rampWarning, setRampWarning] = useState(false);
 
   // Create the engine when the component mounts; dispose it when it unmounts.
   useEffect(() => {
@@ -131,6 +132,10 @@ export function useMetronome(flatten = false) {
           (beat.time - engine.currentTime + engine.outputLatency) * 1000,
         );
         const timerId = window.setTimeout(() => {
+          // if ramp function is in use, we may need to show the warning to
+          // the user in the last bar. This need to be in sync with the beat indicator.
+          setRampWarning(beat.rampWarning);
+
           setCurrentBeat(beat.beatIndex);
           setBeatTick((t) => t + 1);
           beatTimersRef.current = beatTimersRef.current.filter(
@@ -170,6 +175,7 @@ export function useMetronome(flatten = false) {
   }, [tempoRamp]);
 
   const start = () => {
+    setRampWarning(false);
     metronomeRef.current?.start();
     setIsRunning(true);
   };
@@ -181,6 +187,7 @@ export function useMetronome(flatten = false) {
     setIsRunning(false);
     setCurrentBeat(-1);
     setBeatTick(0);
+    setRampWarning(false);
   };
 
   const toggle = () => (isRunning ? stop() : start());
@@ -263,6 +270,8 @@ export function useMetronome(flatten = false) {
     beatTick,
     volume,
     subdivisions,
+    tempoRamp,
+    rampWarning,
     start,
     stop,
     toggle,
