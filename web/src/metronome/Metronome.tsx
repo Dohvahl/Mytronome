@@ -87,6 +87,45 @@ export function Metronome() {
     if (!presetsOpen) dismissSessionExpired();
   }, [presetsOpen, dismissSessionExpired]);
 
+  // Dismissing the ramp panel. Bound only while it's open, so there's no idle
+  // listener on the document.
+  //
+  // Tapping away closes it ONLY on narrow screens, where the panel covers the
+  // metronome and you must close it to play. With room to spare it sits beside
+  // the metronome harmlessly, and staying open saves a trip to the trigger on
+  // every adjustment — unlike the subdivision and time-signature pickers, which
+  // have to be dismissed before the app is usable again. Escape closes at any
+  // size, since that's a deliberate dismiss rather than an accidental one.
+  useEffect(() => {
+    if (!rampOpen) return;
+
+    // Matches the 640px breakpoint in rampUp.css, where the panel goes
+    // full-width — keep the two in step. `.matches` is live, so reading it at
+    // event time also covers the window being resized while the panel is open.
+    const narrow = window.matchMedia('(max-width: 640px)');
+
+    // pointerdown rather than click: it fires for mouse, touch and pen alike,
+    // and lands before a tap can activate whatever is underneath.
+    const onPointerDown = (e: PointerEvent) => {
+      if (!narrow.matches) return;
+      const target = e.target as Element | null;
+      // The trigger is excluded — it owns its own toggle, and closing here
+      // first would make its click reopen the panel we just shut.
+      if (target?.closest?.('.ramp, .ramp-toggle')) return;
+      setRampOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setRampOpen(false);
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [rampOpen]);
+
   const current = { bpm, timeSignature, pattern, subdivisions };
   // Looked up fresh each render, so a rename in the drawer updates the header.
   const loadedPreset = presets.find((p) => p.id === loadedPresetId);
