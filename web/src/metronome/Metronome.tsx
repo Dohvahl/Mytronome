@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useMetronome } from './useMetronome';
 import { NumberField } from './NumberField';
 import { BeatIndicator } from './meter/BeatIndicator';
@@ -287,7 +287,15 @@ export function Metronome() {
 
       <BrandHeader />
 
-      <div className="metronome" data-ramp-warning={rampWarning || undefined}>
+      <div
+        className="metronome"
+        data-ramp-warning={rampWarning || undefined}
+        // One beat's length, so the ramp warning can pulse in time rather than
+        // on a fixed loop of its own. The warning flag is raised in the same
+        // latency-compensated callback that advances the beat indicator, so the
+        // animation starts on a beat and a one-beat cycle keeps it there.
+        style={{ '--beat-seconds': `${60 / bpm}s` } as CSSProperties}
+      >
         <div className="loaded-preset">
           {loadedPreset?.label}
           {loadedPreset?.label && isModified ? (

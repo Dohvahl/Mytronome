@@ -6,24 +6,27 @@
 
    Because the attribute is present for exactly that one bar, a looping
    animation covers the whole bar on its own — it starts when the attribute
-   appears and stops when it goes. The duration below is therefore the pulse's
-   RHYTHM, not how long the warning lasts, so nothing has to know how long a bar
-   is (which changes with both tempo and meter). */
+   appears and stops when it goes, so nothing has to know how long a bar is.
+
+   One cycle lasts exactly one beat (--beat-seconds, set on .metronome from the
+   live tempo), which is what keeps the pulse ON the beat instead of running on
+   a clock of its own and drifting against the click. The flag is raised in the
+   same latency-compensated callback that advances the beat indicator, so the
+   animation begins on a beat and each cycle lands on the next one. */
 
 :root {
-  /* One pulse cycle. Slow enough to read as a swell rather than a blink. */
-  --ramp-warning-period: 0.9s;
   /* How far the pulse dips. Higher = subtler. */
   --ramp-warning-dim: 0.5;
 }
 
+/* Struck on the beat, then recovering across it — the shape of a pulse rather
+   than a symmetrical swell, so the accent lands with the click. */
 @keyframes ramp-warning-pulse {
-  0%,
+  0% {
+    opacity: var(--ramp-warning-dim);
+  }
   100% {
     opacity: 1;
-  }
-  50% {
-    opacity: var(--ramp-warning-dim);
   }
 }
 
@@ -37,7 +40,8 @@
      .play            the start/stop button
    =========================================================================== */
 .metronome[data-ramp-warning] .tempo-field {
-  animation: ramp-warning-pulse var(--ramp-warning-period) ease-in-out infinite;
+  /* The fallback only applies before the first beat sets a real tempo. */
+  animation: ramp-warning-pulse var(--beat-seconds, 0.5s) ease-out infinite;
 }
 
 /* Tint the number too, so the warning still reads on a screen where opacity
