@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMetronome } from './useMetronome';
+import { NumberField } from './NumberField';
 import { BeatIndicator } from './meter/BeatIndicator';
 import { TimeSignaturePicker } from './meter/TimeSignaturePicker';
-import { TempoControl } from './tempo/TempoControl';
 import { VolumeControl } from './volume/VolumeControl';
 import { HelpHint } from './helpModal/HelpHint';
 import { BrandHeader } from './BrandHeader';
@@ -18,7 +18,7 @@ import { useAccent, useTheme } from './appearance/hooks';
 import { SubdivisionControl } from './subdivisions/SubdivisionControl';
 import { useResizableWidth } from '../presets/hooks';
 import { useKeyHeld, useKeyPressed } from './keyboard';
-import { usePointDragAdjust, useWheelAdjust } from './gestures';
+import { useWheelAdjust } from './gestures';
 import { RampControl } from './rampUp/RampControl';
 
 export function Metronome() {
@@ -100,25 +100,10 @@ export function Metronome() {
 
   useKeyPressed(' ', toggle); // space toggles play/pause
 
-  // Scroll wheel over the tempo display or the slider nudges BPM (±10 with Shift).
-  const tempoWheelRef = useWheelAdjust<HTMLDivElement>((dir) =>
-    setBpm(bpm + dir * step),
-  );
-  const tempoPointerRef = usePointDragAdjust<HTMLDivElement>((dir) =>
-    setBpm(bpm + dir * step),
-  );
+  // Scroll wheel over the slider nudges BPM (±10 with Shift). The readout's own
+  // wheel/drag handling lives inside NumberField.
   const sliderWheelRef = useWheelAdjust<HTMLInputElement>((dir) =>
     setBpm(bpm + dir * step),
-  );
-  // The tempo display responds to both wheel and touch-drag; each layout's
-  // display element gets both. Memoized so switching layouts doesn't re-bind on
-  // every render (the underlying hook refs are stable).
-  const tempoDisplayRef = useCallback(
-    (el: HTMLDivElement | null) => {
-      tempoWheelRef(el);
-      tempoPointerRef(el);
-    },
-    [tempoWheelRef, tempoPointerRef],
   );
 
   const [theme, setTheme] = useTheme();
@@ -269,16 +254,16 @@ export function Metronome() {
               onToggle={toggle}
             />
             <div className="pendulum-readout">
-              <div className="tempo-value-area" ref={tempoDisplayRef}>
-                <TempoControl
-                  value={bpm}
-                  min={MIN_BPM}
-                  max={MAX_BPM}
-                  step={step}
-                  onChange={setBpm}
-                />
-              </div>
-              <span className="unit">BPM</span>
+              <NumberField
+                className="tempo-field"
+                name="Tempo"
+                label="BPM"
+                value={bpm}
+                min={MIN_BPM}
+                max={MAX_BPM}
+                step={step}
+                onChange={setBpm}
+              />
             </div>
             <div className="pendulum-ts">
               <button
@@ -316,18 +301,16 @@ export function Metronome() {
                   {stepBoost ? '−10' : '−'}
                 </button>
 
-                <div className="tempo-display" ref={tempoDisplayRef}>
-                  <div className="tempo-value-area">
-                    <TempoControl
-                      value={bpm}
-                      min={MIN_BPM}
-                      max={MAX_BPM}
-                      step={step}
-                      onChange={setBpm}
-                    />
-                  </div>
-                  <span className="unit">BPM</span>
-                </div>
+                <NumberField
+                  className="tempo-field"
+                  name="Tempo"
+                  label="BPM"
+                  value={bpm}
+                  min={MIN_BPM}
+                  max={MAX_BPM}
+                  step={step}
+                  onChange={setBpm}
+                />
 
                 <button
                   className={`step ${stepBoost ? 'step-10' : ''}`}

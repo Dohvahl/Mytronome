@@ -9,6 +9,7 @@
 @import './shell.css';
 @import './helpModal/help.css';
 @import './volume/volume.css';
+@import './numberField.css';
 @import './tempo/tempo.css';
 @import './layouts/layouts.css';
 @import './meter/meter.css';

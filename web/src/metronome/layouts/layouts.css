@@ -105,12 +105,11 @@
   flex-direction: column;
   align-items: center;
 }
-.pendulum-readout .tempo-value-area {
+.pendulum-readout .number-field-value {
   height: auto;
 }
-.pendulum-readout .bpm-chip,
-.pendulum-readout .bpm-wheel {
-  font-size: 2.2222rem;
+.pendulum-readout .tempo-field {
+  --number-field-size: 2.2222rem;
 }
 
 /* Collapsible time-signature control. */

@@ -1,0 +1,109 @@
+/* NumberField — the shared editable number control.
+   ---------------------------------------------------------------------------
+   Structure and default appearance only. Sizing is deliberately modest here so
+   a caller that just drops one in gets something sensible; consumers that want
+   a different scale set it themselves (see `.tempo-field` in tempo/tempo.css).
+
+   The sizes below are driven off one custom property so a consumer only has to
+   override that, not every rule. Widths use `em`, so they follow the font size
+   without needing their own override. */
+
+.number-field {
+  --number-field-size: 1.3333rem; /* the value's font size; everything scales off it */
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: default;
+  /* Vertical drag sets the value, so the browser mustn't scroll the page
+     instead. Covers the caption too, since that's part of the drag target. */
+  touch-action: none;
+}
+
+.number-field-label {
+  font-size: 0.7778rem;
+  letter-spacing: 0.1667rem;
+  color: var(--text);
+}
+
+/* Fixed height so switching display ↔ edit doesn't reflow the layout. */
+.number-field-value {
+  height: calc(var(--number-field-size) * 1.875);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Display mode — a bordered chip that reads as clickable. */
+.number-chip {
+  box-sizing: border-box;
+  width: 2.6em;
+  font: 600 var(--number-field-size) / 1.1 var(--heading);
+  color: var(--text-h);
+  padding: 0.0625em 0;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.21875em;
+  background: var(--bg);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.number-chip:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Edit mode — a wheel-picker box: typeable centre, faint neighbours. */
+.number-wheel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 2.6em;
+  font-size: var(
+    --number-field-size
+  ); /* so the em-based width matches the chip */
+  border: 0.0556rem solid var(--accent-border);
+  border-radius: 0.21875em;
+  overflow: hidden;
+  background: var(--bg);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.number-ghost {
+  /* font-size is a quarter of the value's; the height/line-height below are in
+     em of THAT, so 1.5 × 0.25 = 0.375 of the value's size. */
+  font-size: 0.25em;
+  height: 1.5em;
+  line-height: 1.5em;
+  color: var(--text);
+  opacity: 0.4;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.number-ghost:hover {
+  opacity: 0.75;
+}
+.number-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 1.09375em;
+  padding: 0;
+  font: 600 1em/1.09375em var(--heading);
+  text-align: center;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: none;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.number-input:focus {
+  outline: none;
+}
+.number-input::-webkit-outer-spin-button,
+.number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

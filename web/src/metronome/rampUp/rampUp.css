@@ -32,17 +32,17 @@
    pulses. Everything above is generic; only the selector below picks the
    element. The container carries the flag, so any descendant is fair game.
 
-     .tempo-display   the BPM readout          (current)
+     .tempo-field    the BPM readout          (current)
      .metronome       the whole panel          ("background")
      .play            the start/stop button
    =========================================================================== */
-.metronome[data-ramp-warning] .tempo-display {
+.metronome[data-ramp-warning] .tempo-field {
   animation: ramp-warning-pulse var(--ramp-warning-period) ease-in-out infinite;
 }
 
 /* Tint the number too, so the warning still reads on a screen where opacity
    changes are easy to miss. Uses the accent so it follows the user's colour. */
-.metronome[data-ramp-warning] .bpm-chip {
+.metronome[data-ramp-warning] .number-chip {
   border-color: var(--accent-border);
   color: var(--accent);
 }
@@ -50,7 +50,7 @@
 /* Respect a reduced-motion preference: keep the warning visible, drop the
    movement. A pulsing UI is exactly what this setting exists to suppress. */
 @media (prefers-reduced-motion: reduce) {
-  .metronome[data-ramp-warning] .tempo-display {
+  .metronome[data-ramp-warning] .tempo-field {
     animation: none;
     opacity: var(--ramp-warning-dim);
   }
