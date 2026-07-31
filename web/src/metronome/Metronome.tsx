@@ -290,6 +290,12 @@ export function Metronome() {
       <div
         className="metronome"
         data-ramp-warning={rampWarning || undefined}
+        // Flips every beat, which is what re-triggers the warning pulse. A CSS
+        // animation only restarts when its name changes, so the two alternating
+        // names below are keyed off this. It also means the pulse can't outlive
+        // the warning: both attributes change in the same render, so the rule
+        // stops matching the instant the warning ends.
+        data-beat-parity={beatTick % 2}
         // One beat's length, so the ramp warning can pulse in time rather than
         // on a fixed loop of its own. The warning flag is raised in the same
         // latency-compensated callback that advances the beat indicator, so the

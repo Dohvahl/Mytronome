@@ -17,11 +17,31 @@
 :root {
   /* How far the pulse dips. Higher = subtler. */
   --ramp-warning-dim: 0.5;
+
+  /* How much of a beat each strike occupies. Well under 1 on purpose: a pulse
+     that fills the whole beat is in constant motion, so there's no still moment
+     for the eye to read as "now". Striking quickly and then resting until the
+     next beat is what makes it land ON the beat — the same reason the beat dots
+     pop in 0.06s and hold. Raise toward 1 for a slower swell. */
+  --ramp-warning-strike: 0.35;
 }
 
 /* Struck on the beat, then recovering across it — the shape of a pulse rather
-   than a symmetrical swell, so the accent lands with the click. */
-@keyframes ramp-warning-pulse {
+   than a symmetrical swell, so the accent lands with the click.
+   Two identical copies on purpose: a CSS animation restarts only when its NAME
+   changes, so alternating between them each beat is what re-strikes the pulse.
+   A single `infinite` animation instead runs on its own clock, and would open a
+   fresh (dimmed) cycle on the downbeat after the warning bar — a stray flash
+   right when the tempo has already changed. */
+@keyframes ramp-warning-pulse-a {
+  0% {
+    opacity: var(--ramp-warning-dim);
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes ramp-warning-pulse-b {
   0% {
     opacity: var(--ramp-warning-dim);
   }
@@ -38,10 +58,63 @@
      .tempo-field    the BPM readout          (current)
      .metronome       the whole panel          ("background")
      .play            the start/stop button
+   The slider's thumb pulses alongside it — see further down.
    =========================================================================== */
+/* NOTE: every vendor pseudo-element below gets its OWN rule, never grouped
+   with the others by comma. A browser discards an ENTIRE selector list if any
+   one selector in it is unrecognised — so pairing ::-moz-range-thumb with
+   .tempo-field means Chromium throws away the whole thing, and the readout
+   silently stops pulsing. Repetition here is the price of that rule. */
+
+/* The readout. */
 .metronome[data-ramp-warning] .tempo-field {
-  /* The fallback only applies before the first beat sets a real tempo. */
-  animation: ramp-warning-pulse var(--beat-seconds, 0.5s) ease-out infinite;
+  /* One strike per beat, no looping. The fallback beat length only applies
+     before the first beat has set a real tempo. */
+  animation-duration: calc(
+    var(--beat-seconds, 0.5s) * var(--ramp-warning-strike)
+  );
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+}
+.metronome[data-ramp-warning][data-beat-parity='0'] .tempo-field {
+  animation-name: ramp-warning-pulse-a;
+}
+.metronome[data-ramp-warning][data-beat-parity='1'] .tempo-field {
+  animation-name: ramp-warning-pulse-b;
+}
+
+/* The slider's weight (Chromium — the platform target). */
+.metronome[data-ramp-warning] .tempo-slider::-webkit-slider-thumb {
+  animation-duration: calc(
+    var(--beat-seconds, 0.5s) * var(--ramp-warning-strike)
+  );
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+}
+.metronome[data-ramp-warning][data-beat-parity='0']
+  .tempo-slider::-webkit-slider-thumb {
+  animation-name: ramp-warning-pulse-a;
+}
+.metronome[data-ramp-warning][data-beat-parity='1']
+  .tempo-slider::-webkit-slider-thumb {
+  animation-name: ramp-warning-pulse-b;
+}
+
+/* The slider's weight (Firefox — secondary). */
+.metronome[data-ramp-warning] .tempo-slider::-moz-range-thumb {
+  animation-duration: calc(
+    var(--beat-seconds, 0.5s) * var(--ramp-warning-strike)
+  );
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+}
+.metronome[data-ramp-warning][data-beat-parity='0']
+  .tempo-slider::-moz-range-thumb {
+  animation-name: ramp-warning-pulse-a;
+}
+.metronome[data-ramp-warning][data-beat-parity='1']
+  .tempo-slider::-moz-range-thumb {
+  animation-name: ramp-warning-pulse-b;
 }
 
 /* Tint the number too, so the warning still reads on a screen where opacity
@@ -51,10 +124,29 @@
   color: var(--accent);
 }
 
+/* The slider's weight pulses on the same beat, so the warning is visible
+   wherever the eye happens to be — the readout or the slider.
+   Scope note: .tempo-slider exists only in the classic and tower layouts. The
+   pendulum draws its own .pendulum-weight element and renders no slider, so it
+   is deliberately untouched by this.
+   The custom properties reach the thumb by inheritance: --beat-seconds from
+   .metronome down to the input, and a pseudo-element inherits from the element
+   it belongs to. The thumbs are driven by the shared rules above, alongside the
+   readout — this note just records why they're in that selector list. */
+
 /* Respect a reduced-motion preference: keep the warning visible, drop the
    movement. A pulsing UI is exactly what this setting exists to suppress. */
 @media (prefers-reduced-motion: reduce) {
   .metronome[data-ramp-warning] .tempo-field {
+    animation: none;
+    opacity: var(--ramp-warning-dim);
+  }
+  /* Separate rules, for the same reason as above. */
+  .metronome[data-ramp-warning] .tempo-slider::-webkit-slider-thumb {
+    animation: none;
+    opacity: var(--ramp-warning-dim);
+  }
+  .metronome[data-ramp-warning] .tempo-slider::-moz-range-thumb {
     animation: none;
     opacity: var(--ramp-warning-dim);
   }
