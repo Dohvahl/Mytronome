@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { useMetronome } from './useMetronome';
 import { NumberField } from './NumberField';
 import { BeatIndicator } from './meter/BeatIndicator';
@@ -20,6 +20,7 @@ import { useResizableWidth } from '../presets/hooks';
 import { useKeyHeld, useKeyPressed } from './keyboard';
 import { useWheelAdjust } from './gestures';
 import { RampControl } from './rampUp/RampControl';
+import { RampIcon } from './rampUp/RampIcon';
 
 export function Metronome() {
   const [layoutMode, setLayoutMode] = useLayoutMode();
@@ -98,15 +99,6 @@ export function Metronome() {
   const stepBoost = shiftHeld && !presetsOpen;
   const step = stepBoost ? 10 : 1;
 
-  // The ramp trigger and its panel live at the left edge, exactly where the
-  // presets drawer slides over them. They're positioned at the drawer's outer
-  // edge and pulled back by a transform while it's closed, which is how the
-  // drawer itself works: `left` (untransitioned) tracks a resize drag exactly,
-  // while the transform animates so the two slide together on open/close.
-  const rampOffset = {
-    '--drawer-width': `${drawerWidth}px`,
-  } as CSSProperties;
-
   useKeyPressed(' ', toggle); // space toggles play/pause
 
   // Scroll wheel over the slider nudges BPM (±10 with Shift). The readout's own
@@ -123,7 +115,13 @@ export function Metronome() {
     <>
       <button
         className="menu-toggle"
-        onClick={() => setPresetsOpen((open) => !open)}
+        onClick={() => {
+          // The drawer covers the ramp panel, so don't leave it open behind it.
+          setPresetsOpen((open) => {
+            if (!open) setRampOpen(false);
+            return !open;
+          });
+        }}
         aria-label="Toggle presets panel"
         aria-expanded={presetsOpen}
       >
@@ -135,14 +133,24 @@ export function Metronome() {
       </button>
       <button
         className="ramp-toggle"
-        style={rampOffset}
-        data-drawer-open={presetsOpen || undefined}
         onClick={() => setRampOpen((open) => !open)}
-        aria-label="Toggle tempo ramp panel"
+        aria-label={
+          tempoRamp.enabled
+            ? `Tempo ramp: +${tempoRamp.stepBpm} BPM every ${tempoRamp.everyBars} bars. Toggle panel.`
+            : 'Toggle tempo ramp panel'
+        }
         aria-expanded={rampOpen}
         data-ramp-active={tempoRamp.enabled || undefined}
       >
-        Ramp
+        {/* Armed: show the settings, so a closed panel still says what's coming.
+            Off: just the icon — there's nothing worth reporting. */}
+        {tempoRamp.enabled ? (
+          <span className="ramp-summary">
+            +{tempoRamp.stepBpm}/{tempoRamp.everyBars}
+          </span>
+        ) : (
+          <RampIcon />
+        )}
       </button>
 
       <HelpHint />
@@ -229,8 +237,6 @@ export function Metronome() {
       </aside>
       <aside
         className={`ramp ${rampOpen ? 'open' : ''}`}
-        style={rampOffset}
-        data-drawer-open={presetsOpen || undefined}
         // When closed, `inert` removes the off-screen drawer from the tab order
         // and the accessibility tree, so its controls can't be focused or read.
         inert={!rampOpen}

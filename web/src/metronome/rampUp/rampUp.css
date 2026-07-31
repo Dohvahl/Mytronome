@@ -69,14 +69,11 @@
   position: fixed;
   /* Clears the ☰ button above: its top + height + a gap. */
   top: calc(4.1111rem + env(safe-area-inset-top, 0px));
-  /* Parked at the presets drawer's outer edge. --drawer-width is the drawer's
-     live width, set inline by Metronome.tsx; `left` carries no transition, so a
-     resize drag tracks the handle exactly. While the drawer is CLOSED the
-     transform below pulls the button back to the screen edge — animating that
-     (not `left`) is what makes the drawer appear to push the button aside. */
-  left: calc(0.8889rem + var(--drawer-width, 0px));
-  transform: translateX(calc(-1 * var(--drawer-width, 0px)));
-  z-index: 30;
+  left: 0.8889rem;
+  /* Below the drawer's backdrop (20), alongside the help and settings buttons.
+     While the presets drawer is open this is dimmed and unclickable — a click
+     lands on the backdrop and closes the drawer, same as those two. */
+  z-index: 10;
   min-height: 2.4444rem;
   padding: 0 0.6667rem;
   display: inline-flex;
@@ -93,17 +90,30 @@
   cursor: pointer;
   transition:
     border-color 0.15s,
-    color 0.15s,
-    /* Matches the drawer's own slide, so they move as one. */ transform 0.2s
-      ease;
-}
-/* Drawer open: stop pulling back, and the button rides out with it. */
-.ramp-toggle[data-drawer-open] {
-  transform: none;
+    color 0.15s;
 }
 .ramp-toggle:hover {
   border-color: var(--accent-border);
   color: var(--accent);
+}
+
+/* The glyph shown when the ramp is off. Sized to the hamburger's 1.2222rem so
+   the two buttons read as a pair; the shape is taller than wide, so it's square
+   here rather than matching the hamburger's 16px height exactly. */
+.ramp-icon {
+  width: 1.2222rem;
+  height: 1.2222rem;
+  display: block;
+}
+
+/* Armed: the trigger swaps the glyph for the live settings, e.g. "+5/4".
+   Tabular figures so the width doesn't jitter as the numbers change. */
+.ramp-summary {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7778rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 /* Armed: the panel may be closed, so the trigger has to carry the news. Without
@@ -118,41 +128,35 @@
    it holds three controls, and the presets sidebar already owns that pattern. */
 .ramp {
   position: fixed;
-  top: calc(4.1111rem + env(safe-area-inset-top, 0px));
-  /* Tracks the trigger, which itself tracks the drawer edge. */
-  left: calc(4.1111rem + var(--drawer-width, 0px));
-  z-index: 29;
+  /* Directly beneath the trigger: its top (4.1111) + height (2.4444) + a small
+     gap. Dropping down rather than opening sideways means the trigger's width
+     is its own business — it can size to its content without ever colliding. */
+  top: calc(6.8889rem + env(safe-area-inset-top, 0px));
+  left: 0.8889rem; /* aligned with the trigger's left edge */
+  z-index: 11; /* above the trigger, still under the drawer's backdrop */
   width: 15.5556rem;
-  max-width: calc(100vw - 5rem);
+  max-width: calc(100vw - 1.7778rem);
   padding: 0.8889rem;
   box-sizing: border-box;
   background: var(--bg);
   border: 0.0556rem solid var(--border);
   border-radius: 0.6667rem;
   box-shadow: var(--shadow);
-  /* Closed: slid back toward the trigger and faded out. visibility (not just
-     opacity) so it can't be clicked or focused while hidden, and so it still
-     transitions rather than snapping. */
+  /* Closed: nudged back up toward the trigger and faded out. visibility (not
+     just opacity) so it can't be clicked or focused while hidden, and so it
+     still transitions rather than snapping. */
   opacity: 0;
   visibility: hidden;
-  /* Two shifts share this transform: the drawer pull-back (as on the trigger)
-     and the popover's own small slide. Keeping them as separate properties lets
-     each change independently without one clobbering the other. */
-  --drawer-pull: calc(-1 * var(--drawer-width, 0px));
-  --popover-shift: -0.5556rem;
-  transform: translateX(calc(var(--drawer-pull) + var(--popover-shift)));
+  transform: translateY(-0.4444rem);
   transition:
     opacity 0.15s ease,
     transform 0.2s ease,
     visibility 0.15s;
 }
-.ramp[data-drawer-open] {
-  --drawer-pull: 0px;
-}
 .ramp.open {
   opacity: 1;
   visibility: visible;
-  --popover-shift: 0px;
+  transform: none;
 }
 
 .ramp-content {
@@ -161,17 +165,35 @@
   gap: 0.8889rem;
 }
 
-/* The controls: switch across the top, the two fields sharing the row below.
-   A grid rather than nested flex rows, so it needs no wrapper element around
-   the fields — they're siblings of the switch in the markup. */
+/* The controls: switch across the top, then the two fields with the separator
+   between them. A grid rather than nested flex rows, so no wrapper element is
+   needed — switch, field, separator and field are all siblings in the markup.
+   The middle column is `auto` so the separator takes only the width of its
+   word, leaving the two fields equal. */
 .ramp-control {
+  /* One knob for the whole row's scale: the fields derive their sizing from it
+     (via --number-field-size) and the separator matches their value box. */
+  --ramp-field-size: 1.65rem;
+
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr auto 1fr;
   align-items: start;
-  gap: 0.8889rem;
+  gap: 0.6667rem;
 }
 .ramp-control [role='switch'] {
   grid-column: 1 / -1;
+}
+
+/* The word between the fields. Height matches the fields' value box (the same
+   1.875 ratio numberField.css uses) so it sits on the numbers' centre line
+   rather than riding up level with the top of the chips. */
+.ramp-separator {
+  height: calc(var(--ramp-field-size) * 1.875);
+  display: flex;
+  align-items: center;
+  font-size: 0.7778rem;
+  color: var(--text);
+  white-space: nowrap;
 }
 
 /* role="switch" — styled from aria-checked, so the visual state can't drift
@@ -220,10 +242,10 @@
   box-shadow: inset -0.8889rem 0 0 -0.2222rem var(--bg);
 }
 
-/* The two NumberFields, one per grid column. */
+/* The two NumberFields, in the outer grid columns. */
 .ramp-bars,
 .ramp-step {
-  --number-field-size: 1.5556rem;
+  --number-field-size: var(--ramp-field-size);
 }
 
 /* Disabled ramp: the fields stay usable (you often set them before arming),
@@ -235,11 +257,10 @@
 
 /* Narrow screens: the panel would otherwise crowd the trigger. */
 @media (max-width: 640px) {
+  /* Same placement as everywhere else now — just stretched to the screen. */
   .ramp {
-    left: calc(0.8889rem + var(--drawer-width, 0px));
     right: 0.8889rem;
     width: auto;
     max-width: none;
-    top: calc(6.8889rem + env(safe-area-inset-top, 0px));
   }
 }
