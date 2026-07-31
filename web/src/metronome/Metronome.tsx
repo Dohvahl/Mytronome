@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useMetronome } from './useMetronome';
 import { NumberField } from './NumberField';
 import { BeatIndicator } from './meter/BeatIndicator';
@@ -98,6 +98,15 @@ export function Metronome() {
   const stepBoost = shiftHeld && !presetsOpen;
   const step = stepBoost ? 10 : 1;
 
+  // The ramp trigger and its panel live at the left edge, exactly where the
+  // presets drawer slides over them. They're positioned at the drawer's outer
+  // edge and pulled back by a transform while it's closed, which is how the
+  // drawer itself works: `left` (untransitioned) tracks a resize drag exactly,
+  // while the transform animates so the two slide together on open/close.
+  const rampOffset = {
+    '--drawer-width': `${drawerWidth}px`,
+  } as CSSProperties;
+
   useKeyPressed(' ', toggle); // space toggles play/pause
 
   // Scroll wheel over the slider nudges BPM (±10 with Shift). The readout's own
@@ -126,6 +135,8 @@ export function Metronome() {
       </button>
       <button
         className="ramp-toggle"
+        style={rampOffset}
+        data-drawer-open={presetsOpen || undefined}
         onClick={() => setRampOpen((open) => !open)}
         aria-label="Toggle tempo ramp panel"
         aria-expanded={rampOpen}
@@ -218,6 +229,8 @@ export function Metronome() {
       </aside>
       <aside
         className={`ramp ${rampOpen ? 'open' : ''}`}
+        style={rampOffset}
+        data-drawer-open={presetsOpen || undefined}
         // When closed, `inert` removes the off-screen drawer from the tab order
         // and the accessibility tree, so its controls can't be focused or read.
         inert={!rampOpen}

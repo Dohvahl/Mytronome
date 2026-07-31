@@ -55,3 +55,191 @@
     opacity: var(--ramp-warning-dim);
   }
 }
+
+/* ===========================================================================
+   The ramp panel — trigger button, sliding panel, and the controls inside.
+   Sits under the ☰ presets button and opens to the side on click (never hover
+   alone: hover doesn't exist on touch and skips the keyboard).
+   =========================================================================== */
+
+/* Trigger, stacked below the presets button and matching its look. Sized by its
+   content rather than fixed square, so it can grow when it shows the live
+   interval instead of just "Ramp". */
+.ramp-toggle {
+  position: fixed;
+  /* Clears the ☰ button above: its top + height + a gap. */
+  top: calc(4.1111rem + env(safe-area-inset-top, 0px));
+  /* Parked at the presets drawer's outer edge. --drawer-width is the drawer's
+     live width, set inline by Metronome.tsx; `left` carries no transition, so a
+     resize drag tracks the handle exactly. While the drawer is CLOSED the
+     transform below pulls the button back to the screen edge — animating that
+     (not `left`) is what makes the drawer appear to push the button aside. */
+  left: calc(0.8889rem + var(--drawer-width, 0px));
+  transform: translateX(calc(-1 * var(--drawer-width, 0px)));
+  z-index: 30;
+  min-height: 2.4444rem;
+  padding: 0 0.6667rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3333rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.5556rem;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 0.7778rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    /* Matches the drawer's own slide, so they move as one. */ transform 0.2s
+      ease;
+}
+/* Drawer open: stop pulling back, and the button rides out with it. */
+.ramp-toggle[data-drawer-open] {
+  transform: none;
+}
+.ramp-toggle:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Armed: the panel may be closed, so the trigger has to carry the news. Without
+   this the tempo climbing on its own looks like a fault. */
+.ramp-toggle[data-ramp-active] {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* The panel. A popover beside the trigger rather than a full-height drawer —
+   it holds three controls, and the presets sidebar already owns that pattern. */
+.ramp {
+  position: fixed;
+  top: calc(4.1111rem + env(safe-area-inset-top, 0px));
+  /* Tracks the trigger, which itself tracks the drawer edge. */
+  left: calc(4.1111rem + var(--drawer-width, 0px));
+  z-index: 29;
+  width: 15.5556rem;
+  max-width: calc(100vw - 5rem);
+  padding: 0.8889rem;
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.6667rem;
+  box-shadow: var(--shadow);
+  /* Closed: slid back toward the trigger and faded out. visibility (not just
+     opacity) so it can't be clicked or focused while hidden, and so it still
+     transitions rather than snapping. */
+  opacity: 0;
+  visibility: hidden;
+  /* Two shifts share this transform: the drawer pull-back (as on the trigger)
+     and the popover's own small slide. Keeping them as separate properties lets
+     each change independently without one clobbering the other. */
+  --drawer-pull: calc(-1 * var(--drawer-width, 0px));
+  --popover-shift: -0.5556rem;
+  transform: translateX(calc(var(--drawer-pull) + var(--popover-shift)));
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s ease,
+    visibility 0.15s;
+}
+.ramp[data-drawer-open] {
+  --drawer-pull: 0px;
+}
+.ramp.open {
+  opacity: 1;
+  visibility: visible;
+  --popover-shift: 0px;
+}
+
+.ramp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8889rem;
+}
+
+/* The controls: switch across the top, the two fields sharing the row below.
+   A grid rather than nested flex rows, so it needs no wrapper element around
+   the fields — they're siblings of the switch in the markup. */
+.ramp-control {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 0.8889rem;
+}
+.ramp-control [role='switch'] {
+  grid-column: 1 / -1;
+}
+
+/* role="switch" — styled from aria-checked, so the visual state can't drift
+   from what a screen reader announces. */
+.ramp-control [role='switch'] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5556rem;
+  padding: 0.4444rem 0.6667rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.8333rem;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.ramp-control [role='switch']:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.ramp-control [role='switch'][aria-checked='true'] {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+/* A track-and-knob after the text, so the state reads at a glance and not just
+   from the fill. Drawn in CSS — no extra markup needed. */
+.ramp-control [role='switch']::after {
+  content: '';
+  flex: none;
+  width: 1.7778rem;
+  height: 0.8889rem;
+  border-radius: 0.8889rem;
+  background: var(--border);
+  box-shadow: inset 0.8889rem 0 0 -0.2222rem var(--bg);
+  transition: background 0.15s;
+}
+.ramp-control [role='switch'][aria-checked='true']::after {
+  background: var(--accent);
+  box-shadow: inset -0.8889rem 0 0 -0.2222rem var(--bg);
+}
+
+/* The two NumberFields, one per grid column. */
+.ramp-bars,
+.ramp-step {
+  --number-field-size: 1.5556rem;
+}
+
+/* Disabled ramp: the fields stay usable (you often set them before arming),
+   but they recede so the switch reads as the primary control. */
+.ramp-control:not(:has([aria-checked='true'])) .ramp-bars,
+.ramp-control:not(:has([aria-checked='true'])) .ramp-step {
+  opacity: 0.55;
+}
+
+/* Narrow screens: the panel would otherwise crowd the trigger. */
+@media (max-width: 640px) {
+  .ramp {
+    left: calc(0.8889rem + var(--drawer-width, 0px));
+    right: 0.8889rem;
+    width: auto;
+    max-width: none;
+    top: calc(6.8889rem + env(safe-area-inset-top, 0px));
+  }
+}
