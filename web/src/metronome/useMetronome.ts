@@ -231,7 +231,10 @@ export function useMetronome(flatten = false) {
   const setTempoRamp = (value: TempoRampConfig) => {
     setTempoRampState(value);
     if (value.enabled)
-      localStorage.setItem(TEMPO_RAMP_KEY, JSON.stringify(value));
+      localStorage.setItem(
+        TEMPO_RAMP_KEY,
+        JSON.stringify({ ...value, enabled: false }),
+      );
   };
 
   const cycleBeat = (index: number) => {

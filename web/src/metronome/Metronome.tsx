@@ -19,6 +19,7 @@ import { SubdivisionControl } from './subdivisions/SubdivisionControl';
 import { useResizableWidth } from '../presets/hooks';
 import { useKeyHeld, useKeyPressed } from './keyboard';
 import { usePointDragAdjust, useWheelAdjust } from './gestures';
+import { RampControl } from './rampUp/RampControl';
 
 export function Metronome() {
   const [layoutMode, setLayoutMode] = useLayoutMode();
@@ -67,6 +68,8 @@ export function Metronome() {
 
   // Left presets drawer open/closed.
   const [presetsOpen, setPresetsOpen] = useState(false);
+  // Ramp section open/closed
+  const [rampOpen, setRampOpen] = useState(false);
   // Id of the most recently loaded preset, so we can show its (live) label.
   const [loadedPresetId, setLoadedPresetId] = useState<string | null>(null);
 
@@ -135,6 +138,15 @@ export function Metronome() {
           <span></span>
           <span></span>
         </span>
+      </button>
+      <button
+        className="ramp-toggle"
+        onClick={() => setRampOpen((open) => !open)}
+        aria-label="Toggle tempo ramp panel"
+        aria-expanded={rampOpen}
+        data-ramp-active={tempoRamp.enabled || undefined}
+      >
+        Ramp
       </button>
 
       <HelpHint />
@@ -218,6 +230,16 @@ export function Metronome() {
           aria-orientation="vertical"
           aria-label="Resize panel"
         />
+      </aside>
+      <aside
+        className={`ramp ${rampOpen ? 'open' : ''}`}
+        // When closed, `inert` removes the off-screen drawer from the tab order
+        // and the accessibility tree, so its controls can't be focused or read.
+        inert={!rampOpen}
+      >
+        <div className="ramp-content">
+          <RampControl current={tempoRamp} onChange={setTempoRamp} />
+        </div>
       </aside>
 
       <BrandHeader />
