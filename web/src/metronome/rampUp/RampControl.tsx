@@ -1,4 +1,11 @@
-import type { TempoRampConfig } from '@mytronome/engine';
+import {
+  MAX_RAMP_EVERY_BARS,
+  MAX_RAMP_STEP_BPM,
+  MIN_RAMP_EVERY_BARS,
+  MIN_RAMP_STEP_BPM,
+  type TempoRampConfig,
+} from '@mytronome/engine';
+import { NumberField } from '../NumberField';
 
 interface Props {
   current: TempoRampConfig;
@@ -16,8 +23,26 @@ export function RampControl({ current, onChange }: Props) {
       >
         Toggle Ramp
       </button>
-      <span>After {current.everyBars}</span>
-      <span>+BPM {current.stepBpm}</span>
+      <NumberField
+        className="ramp-bars"
+        name="After"
+        label="After"
+        value={current.everyBars}
+        min={MIN_RAMP_EVERY_BARS}
+        max={MAX_RAMP_EVERY_BARS}
+        step={1}
+        onChange={(n) => onChange({ ...current, everyBars: n })}
+      />
+      <NumberField
+        className="ramp-step"
+        name="+BPM"
+        label="+BPM"
+        value={current.stepBpm}
+        min={MIN_RAMP_STEP_BPM}
+        max={MAX_RAMP_STEP_BPM}
+        step={1}
+        onChange={(n) => onChange({ ...current, stepBpm: n })}
+      />
     </div>
   );
 }
