@@ -5,6 +5,11 @@
 }
 
 .step {
+  /* The field stacks its BPM caption under the digits, so centring the row
+     alone would sit these low. A bottom margin equal to the caption lifts each
+     button by half of it, putting them on the NUMBER's centre line — and it
+     holds whatever height the readout is scaled to. */
+  margin-bottom: 0.9333rem;
   width: 3.1111rem;
   height: 3.1111rem;
   font-size: 1.5556rem;
@@ -108,9 +113,12 @@
     gap: 0.75rem;
   }
 
-  /* Shorter box, same size digits — so this overrides the derived height
-     rather than shrinking --number-field-size. */
-  .tempo-field .number-field-value {
-    height: 5.3333rem;
+  /* Trim the readout to save vertical room. Override the SIZE, never the
+     derived height: in edit mode the wheel's own height is what fills the box,
+     so shrinking the box alone spills the editor over the caption below.
+     3.2rem against the 20px mobile root keeps the digits the same physical
+     size as on desktop, while the box comes out ~13px shorter than default. */
+  .tempo-field {
+    --number-field-size: 3.2rem;
   }
 }

@@ -105,11 +105,15 @@
   flex-direction: column;
   align-items: center;
 }
-.pendulum-readout .number-field-value {
-  height: auto;
-}
+/* The readout is smaller here than in the classic layout — the pendulum is the
+   focus — but only modestly: at 2.8889rem it's ~80% of the classic size rather
+   than the ~60% it used to be.
+   The value box keeps its derived height rather than the `height: auto` it once
+   had. Auto hugged the digits, which saved a little room but let the box grow
+   when the editor opened, shifting the time-signature section and Play button
+   down mid-edit. */
 .pendulum-readout .tempo-field {
-  --number-field-size: 2.2222rem;
+  --number-field-size: 2.8889rem;
 }
 
 /* Collapsible time-signature control. */

@@ -10,6 +10,7 @@
 
 .number-field {
   --number-field-size: 1.3333rem; /* the value's font size; everything scales off it */
+  --number-field-label-height: 0.9333rem; /* caption box; see .number-field-label */
 
   display: flex;
   flex-direction: column;
@@ -21,12 +22,21 @@
 }
 
 .number-field-label {
+  /* A known, fixed height rather than whatever line-height the root supplies:
+     callers laying controls out beside the field need it to work out where the
+     VALUE's centre line sits, since the caption hangs below it. */
+  height: var(--number-field-label-height);
+  line-height: var(--number-field-label-height);
   font-size: 0.7778rem;
   letter-spacing: 0.1667rem;
   color: var(--text);
 }
 
-/* Fixed height so switching display ↔ edit doesn't reflow the layout. */
+/* Fixed height so switching display ↔ edit doesn't reflow the layout. It has to
+   clear the edit-mode wheel, whose own height is 1.84375 of the size (two
+   ghosts at 0.375 plus the input at 1.09375) — which is why the ratio here is a
+   little larger. Consumers should retune --number-field-size rather than
+   setting this height directly, or the wheel will overflow the box. */
 .number-field-value {
   height: calc(var(--number-field-size) * 1.875);
   display: flex;
