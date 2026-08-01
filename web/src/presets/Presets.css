@@ -490,11 +490,38 @@
   background: transparent;
   cursor: pointer;
 }
+/* The label and, when the preset carries a tempo ramp, its badge — a row so the
+   badge sits beside the label rather than above the summary. Always present, so
+   the button's column doesn't reflow when a ramp is added or removed. */
+.preset-label-line {
+  display: flex;
+  /* Top-aligned, not centred: a label long enough to wrap would otherwise float
+     the badge into the middle of the text block instead of marking its start. */
+  align-items: flex-start;
+  gap: 0.2778rem;
+  width: 100%;
+  min-width: 0; /* let a long label wrap instead of forcing the row wider */
+}
 .preset-label {
   font-size: 0.8889rem;
   font-weight: 600;
   color: var(--text-h);
   text-justify: left;
+}
+/* Marks a preset saved with the ramp armed. Accent-coloured to match the ramp
+   trigger when it's active, and sized to the label rather than inheriting the
+   trigger's larger glyph. */
+.preset-ramp-badge {
+  display: flex;
+  flex: none; /* the label shrinks; the badge keeps its size */
+  /* Sits the glyph on the label's first line: (18px line box − 16px glyph) / 2.
+     Retune alongside the two sizes below if either changes. */
+  margin-top: 0.0556rem;
+  color: var(--accent);
+}
+.preset-ramp-badge .ramp-icon {
+  width: 0.8889rem;
+  height: 0.8889rem;
 }
 .preset-summary {
   font-size: 0.7222rem;

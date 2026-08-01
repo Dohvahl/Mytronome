@@ -100,4 +100,16 @@ describe('PresetItem', () => {
       'preset-label',
     );
   });
+
+  it('badges a preset saved with a tempo ramp, naming its settings', () => {
+    setup({ ramp: { enabled: true, stepBpm: 5, everyBars: 4 } });
+    expect(
+      screen.getByRole('img', { name: 'Tempo ramp: +5 BPM every 4 bars' }),
+    ).toBeTruthy();
+  });
+
+  it('shows no ramp badge on a preset without one', () => {
+    setup();
+    expect(screen.queryByRole('img')).toBeNull();
+  });
 });

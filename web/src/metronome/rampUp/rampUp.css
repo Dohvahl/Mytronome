@@ -1,0 +1,362 @@
+/* Tempo ramp-up: the "a change is coming" warning.
+   ---------------------------------------------------------------------------
+   While the ramp is armed, the engine flags every beat of the bar BEFORE a bump
+   (BeatInfo.rampWarning). useMetronome mirrors that into React state, and
+   Metronome.tsx puts it on the metronome container as [data-ramp-warning].
+
+   Because the attribute is present for exactly that one bar, a looping
+   animation covers the whole bar on its own — it starts when the attribute
+   appears and stops when it goes, so nothing has to know how long a bar is.
+
+   One cycle lasts exactly one beat (--beat-seconds, set on .metronome from the
+   live tempo), which is what keeps the pulse ON the beat instead of running on
+   a clock of its own and drifting against the click. The flag is raised in the
+   same latency-compensated callback that advances the beat indicator, so the
+   animation begins on a beat and each cycle lands on the next one. */
+
+:root {
+  /* How far the pulse dips. Higher = subtler. */
+  --ramp-warning-dim: 0.5;
+
+  /* How much of a beat each strike occupies. Well under 1 on purpose: a pulse
+     that fills the whole beat is in constant motion, so there's no still moment
+     for the eye to read as "now". Striking quickly and then resting until the
+     next beat is what makes it land ON the beat — the same reason the beat dots
+     pop in 0.06s and hold. Raise toward 1 for a slower swell. */
+  --ramp-warning-strike: 0.6;
+}
+
+/* Struck on the beat, then recovering across it — the shape of a pulse rather
+   than a symmetrical swell, so the accent lands with the click.
+   Two identical copies on purpose: a CSS animation restarts only when its NAME
+   changes, so alternating between them each beat is what re-strikes the pulse.
+   A single `infinite` animation instead runs on its own clock, and would open a
+   fresh (dimmed) cycle on the downbeat after the warning bar — a stray flash
+   right when the tempo has already changed. */
+@keyframes ramp-warning-pulse-a {
+  0% {
+    opacity: var(--ramp-warning-dim);
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes ramp-warning-pulse-b {
+  0% {
+    opacity: var(--ramp-warning-dim);
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ===========================================================================
+   THE TARGET — the one thing to edit if you change your mind about what
+   pulses. Everything above is generic; only the selector below picks the
+   element. The container carries the flag, so any descendant is fair game.
+
+     .tempo-field    the BPM readout          (current)
+     .metronome       the whole panel          ("background")
+     .play            the start/stop button
+   The slider's thumb pulses alongside it — see further down.
+   =========================================================================== */
+/* NOTE: every vendor pseudo-element below gets its OWN rule, never grouped
+   with the others by comma. A browser discards an ENTIRE selector list if any
+   one selector in it is unrecognised — so pairing ::-moz-range-thumb with
+   .tempo-field means Chromium throws away the whole thing, and the readout
+   silently stops pulsing. Repetition here is the price of that rule. */
+
+/* The readout. */
+.metronome[data-ramp-warning] .tempo-field {
+  /* One strike per beat, no looping. The fallback beat length only applies
+     before the first beat has set a real tempo. */
+  animation-duration: calc(
+    var(--beat-seconds, 0.5s) * var(--ramp-warning-strike)
+  );
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+}
+.metronome[data-ramp-warning][data-beat-parity='0'] .tempo-field {
+  animation-name: ramp-warning-pulse-a;
+}
+.metronome[data-ramp-warning][data-beat-parity='1'] .tempo-field {
+  animation-name: ramp-warning-pulse-b;
+}
+
+/* The slider's weight (Chromium — the platform target). */
+.metronome[data-ramp-warning] .tempo-slider::-webkit-slider-thumb {
+  animation-duration: calc(
+    var(--beat-seconds, 0.5s) * var(--ramp-warning-strike)
+  );
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+}
+.metronome[data-ramp-warning][data-beat-parity='0']
+  .tempo-slider::-webkit-slider-thumb {
+  animation-name: ramp-warning-pulse-a;
+}
+.metronome[data-ramp-warning][data-beat-parity='1']
+  .tempo-slider::-webkit-slider-thumb {
+  animation-name: ramp-warning-pulse-b;
+}
+
+/* The slider's weight (Firefox — secondary). */
+.metronome[data-ramp-warning] .tempo-slider::-moz-range-thumb {
+  animation-duration: calc(
+    var(--beat-seconds, 0.5s) * var(--ramp-warning-strike)
+  );
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+}
+.metronome[data-ramp-warning][data-beat-parity='0']
+  .tempo-slider::-moz-range-thumb {
+  animation-name: ramp-warning-pulse-a;
+}
+.metronome[data-ramp-warning][data-beat-parity='1']
+  .tempo-slider::-moz-range-thumb {
+  animation-name: ramp-warning-pulse-b;
+}
+
+/* Tint the number too, so the warning still reads on a screen where opacity
+   changes are easy to miss. Uses the accent so it follows the user's colour. */
+.metronome[data-ramp-warning] .number-chip {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* The slider's weight pulses on the same beat, so the warning is visible
+   wherever the eye happens to be — the readout or the slider.
+   Scope note: .tempo-slider exists only in the classic and tower layouts. The
+   pendulum draws its own .pendulum-weight element and renders no slider, so it
+   is deliberately untouched by this.
+   The custom properties reach the thumb by inheritance: --beat-seconds from
+   .metronome down to the input, and a pseudo-element inherits from the element
+   it belongs to. The thumbs are driven by the shared rules above, alongside the
+   readout — this note just records why they're in that selector list. */
+
+/* Respect a reduced-motion preference: keep the warning visible, drop the
+   movement. A pulsing UI is exactly what this setting exists to suppress. */
+@media (prefers-reduced-motion: reduce) {
+  .metronome[data-ramp-warning] .tempo-field {
+    animation: none;
+    opacity: var(--ramp-warning-dim);
+  }
+  /* Separate rules, for the same reason as above. */
+  .metronome[data-ramp-warning] .tempo-slider::-webkit-slider-thumb {
+    animation: none;
+    opacity: var(--ramp-warning-dim);
+  }
+  .metronome[data-ramp-warning] .tempo-slider::-moz-range-thumb {
+    animation: none;
+    opacity: var(--ramp-warning-dim);
+  }
+}
+
+/* ===========================================================================
+   The ramp panel — trigger button, sliding panel, and the controls inside.
+   Sits under the ☰ presets button and opens to the side on click (never hover
+   alone: hover doesn't exist on touch and skips the keyboard).
+   =========================================================================== */
+
+/* Trigger, stacked below the presets button and matching its look. Sized by its
+   content rather than fixed square, so it can grow when it shows the live
+   interval instead of just "Ramp". */
+.ramp-toggle {
+  position: fixed;
+  /* Clears the ☰ button above: its top + height + a gap. */
+  top: calc(4.1111rem + env(safe-area-inset-top, 0px));
+  left: 0.8889rem;
+  /* Below the drawer's backdrop (20), alongside the help and settings buttons.
+     While the presets drawer is open this is dimmed and unclickable — a click
+     lands on the backdrop and closes the drawer, same as those two. */
+  z-index: 10;
+  min-height: 2.4444rem;
+  padding: 0 0.6667rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3333rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.5556rem;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 0.7778rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.ramp-toggle:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* The glyph shown when the ramp is off. Sized to the hamburger's 1.2222rem so
+   the two buttons read as a pair; the shape is taller than wide, so it's square
+   here rather than matching the hamburger's 16px height exactly. */
+.ramp-icon {
+  width: 1.2222rem;
+  height: 1.2222rem;
+  display: block;
+}
+
+/* Armed: the trigger swaps the glyph for the live settings, e.g. "+5/4".
+   Tabular figures so the width doesn't jitter as the numbers change. */
+.ramp-summary {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7778rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Armed: the panel may be closed, so the trigger has to carry the news. Without
+   this the tempo climbing on its own looks like a fault. */
+.ramp-toggle[data-ramp-active] {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* The panel. A popover beside the trigger rather than a full-height drawer —
+   it holds three controls, and the presets sidebar already owns that pattern. */
+.ramp {
+  position: fixed;
+  /* Directly beneath the trigger: its top (4.1111) + height (2.4444) + a small
+     gap. Dropping down rather than opening sideways means the trigger's width
+     is its own business — it can size to its content without ever colliding. */
+  top: calc(6.8889rem + env(safe-area-inset-top, 0px));
+  left: 0.8889rem; /* aligned with the trigger's left edge */
+  z-index: 11; /* above the trigger, still under the drawer's backdrop */
+  width: 15.5556rem;
+  max-width: calc(100vw - 1.7778rem);
+  padding: 0.8889rem;
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.6667rem;
+  box-shadow: var(--shadow);
+  /* Closed: nudged back up toward the trigger and faded out. visibility (not
+     just opacity) so it can't be clicked or focused while hidden, and so it
+     still transitions rather than snapping. */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.4444rem);
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s ease,
+    visibility 0.15s;
+}
+.ramp.open {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+.ramp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8889rem;
+}
+
+/* The controls: switch across the top, then the two fields with the separator
+   between them. A grid rather than nested flex rows, so no wrapper element is
+   needed — switch, field, separator and field are all siblings in the markup.
+   The middle column is `auto` so the separator takes only the width of its
+   word, leaving the two fields equal. */
+.ramp-control {
+  /* One knob for the whole row's scale: the fields derive their sizing from it
+     (via --number-field-size) and the separator matches their value box. */
+  --ramp-field-size: 1.65rem;
+
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 0.6667rem;
+}
+.ramp-control [role='switch'] {
+  grid-column: 1 / -1;
+}
+
+/* The word between the fields. Height matches the fields' value box (the same
+   1.875 ratio numberField.css uses) so it sits on the numbers' centre line
+   rather than riding up level with the top of the chips. */
+.ramp-separator {
+  height: calc(var(--ramp-field-size) * 1.875);
+  display: flex;
+  align-items: center;
+  font-size: 0.7778rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* role="switch" — styled from aria-checked, so the visual state can't drift
+   from what a screen reader announces. */
+.ramp-control [role='switch'] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5556rem;
+  padding: 0.4444rem 0.6667rem;
+  border: 0.0556rem solid var(--border);
+  border-radius: 0.4444rem;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.8333rem;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.ramp-control [role='switch']:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.ramp-control [role='switch'][aria-checked='true'] {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+/* A track-and-knob after the text, so the state reads at a glance and not just
+   from the fill. Drawn in CSS — no extra markup needed. */
+.ramp-control [role='switch']::after {
+  content: '';
+  flex: none;
+  width: 1.7778rem;
+  height: 0.8889rem;
+  border-radius: 0.8889rem;
+  background: var(--border);
+  box-shadow: inset 0.8889rem 0 0 -0.2222rem var(--bg);
+  transition: background 0.15s;
+}
+.ramp-control [role='switch'][aria-checked='true']::after {
+  background: var(--accent);
+  box-shadow: inset -0.8889rem 0 0 -0.2222rem var(--bg);
+}
+
+/* The two NumberFields, in the outer grid columns. */
+.ramp-bars,
+.ramp-step {
+  --number-field-size: var(--ramp-field-size);
+}
+
+/* Disabled ramp: the fields stay usable (you often set them before arming),
+   but they recede so the switch reads as the primary control. */
+.ramp-control:not(:has([aria-checked='true'])) .ramp-bars,
+.ramp-control:not(:has([aria-checked='true'])) .ramp-step {
+  opacity: 0.55;
+}
+
+/* Narrow screens: the panel would otherwise crowd the trigger. */
+@media (max-width: 640px) {
+  /* Same placement as everywhere else now — just stretched to the screen. */
+  .ramp {
+    right: 0.8889rem;
+    width: auto;
+    max-width: none;
+  }
+}

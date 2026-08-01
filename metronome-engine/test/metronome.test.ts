@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { Metronome, defaultPattern, isCompound } from '../src/metronome';
+import { Metronome } from '../src/metronome';
 import type { MetronomeOptions } from '../src/metronome';
+import { defaultPattern, isCompound } from '../src/musicalSettings';
 import { MockAudioOutput } from './mocks';
 
 // The engine needs a platform audio adapter injected; these tests only exercise

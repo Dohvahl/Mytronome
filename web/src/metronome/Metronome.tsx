@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useMetronome } from './useMetronome';
+import { NumberField } from './NumberField';
 import { BeatIndicator } from './meter/BeatIndicator';
 import { TimeSignaturePicker } from './meter/TimeSignaturePicker';
-import { TempoControl } from './tempo/TempoControl';
 import { VolumeControl } from './volume/VolumeControl';
 import { HelpHint } from './helpModal/HelpHint';
 import { BrandHeader } from './BrandHeader';
@@ -18,7 +18,9 @@ import { useAccent, useTheme } from './appearance/hooks';
 import { SubdivisionControl } from './subdivisions/SubdivisionControl';
 import { useResizableWidth } from '../presets/hooks';
 import { useKeyHeld, useKeyPressed } from './keyboard';
-import { usePointDragAdjust, useWheelAdjust } from './gestures';
+import { useWheelAdjust } from './gestures';
+import { RampControl } from './rampUp/RampControl';
+import { RampIcon } from './rampUp/RampIcon';
 
 export function Metronome() {
   const [layoutMode, setLayoutMode] = useLayoutMode();
@@ -37,11 +39,14 @@ export function Metronome() {
     beatTick,
     volume,
     subdivisions,
+    tempoRamp,
+    rampWarning,
     toggle,
     setBpm,
     setVolume,
     setSubdivisions,
     setTimeSignature,
+    setTempoRamp,
     cycleBeat,
     applySettings,
   } = useMetronome(flatten);
@@ -64,6 +69,8 @@ export function Metronome() {
 
   // Left presets drawer open/closed.
   const [presetsOpen, setPresetsOpen] = useState(false);
+  // Ramp section open/closed
+  const [rampOpen, setRampOpen] = useState(false);
   // Id of the most recently loaded preset, so we can show its (live) label.
   const [loadedPresetId, setLoadedPresetId] = useState<string | null>(null);
 
@@ -80,11 +87,65 @@ export function Metronome() {
     if (!presetsOpen) dismissSessionExpired();
   }, [presetsOpen, dismissSessionExpired]);
 
-  const current = { bpm, timeSignature, pattern, subdivisions };
+  // Dismissing the ramp panel. Bound only while it's open, so there's no idle
+  // listener on the document.
+  //
+  // Tapping away closes it ONLY on narrow screens, where the panel covers the
+  // metronome and you must close it to play. With room to spare it sits beside
+  // the metronome harmlessly, and staying open saves a trip to the trigger on
+  // every adjustment — unlike the subdivision and time-signature pickers, which
+  // have to be dismissed before the app is usable again. Escape closes at any
+  // size, since that's a deliberate dismiss rather than an accidental one.
+  useEffect(() => {
+    if (!rampOpen) return;
+
+    // Matches the 640px breakpoint in rampUp.css, where the panel goes
+    // full-width — keep the two in step. `.matches` is live, so reading it at
+    // event time also covers the window being resized while the panel is open.
+    const narrow = window.matchMedia('(max-width: 640px)');
+
+    // pointerdown rather than click: it fires for mouse, touch and pen alike,
+    // and lands before a tap can activate whatever is underneath.
+    const onPointerDown = (e: PointerEvent) => {
+      if (!narrow.matches) return;
+      const target = e.target as Element | null;
+      // The trigger is excluded — it owns its own toggle, and closing here
+      // first would make its click reopen the panel we just shut.
+      if (target?.closest?.('.ramp, .ramp-toggle')) return;
+      setRampOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setRampOpen(false);
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [rampOpen]);
+
+  const current = {
+    bpm,
+    timeSignature,
+    pattern,
+    subdivisions,
+    ramp: tempoRamp,
+  };
   // Looked up fresh each render, so a rename in the drawer updates the header.
   const loadedPreset = presets.find((p) => p.id === loadedPresetId);
+  // A ramp raises the tempo by design, so the drift it causes isn't an edit the
+  // user made — while one is running, compare against the preset's own bpm so
+  // the "modified" marker still means "you changed something". Once stopped the
+  // tempo stays where the ramp left it, and that IS a difference worth showing.
+  const rampRunning = isRunning && tempoRamp.enabled;
   const isModified =
-    loadedPreset !== undefined && !samePresetSettings(current, loadedPreset);
+    loadedPreset !== undefined &&
+    !samePresetSettings(
+      rampRunning ? { ...current, bpm: loadedPreset.bpm } : current,
+      loadedPreset,
+    );
 
   // Holding Shift makes the +/- buttons step by 10 — but ignore Shift while the
   // presets drawer is open, so typing a capitalized label can't hijack tempo.
@@ -94,25 +155,10 @@ export function Metronome() {
 
   useKeyPressed(' ', toggle); // space toggles play/pause
 
-  // Scroll wheel over the tempo display or the slider nudges BPM (±10 with Shift).
-  const tempoWheelRef = useWheelAdjust<HTMLDivElement>((dir) =>
-    setBpm(bpm + dir * step),
-  );
-  const tempoPointerRef = usePointDragAdjust<HTMLDivElement>((dir) =>
-    setBpm(bpm + dir * step),
-  );
+  // Scroll wheel over the slider nudges BPM (±10 with Shift). The readout's own
+  // wheel/drag handling lives inside NumberField.
   const sliderWheelRef = useWheelAdjust<HTMLInputElement>((dir) =>
     setBpm(bpm + dir * step),
-  );
-  // The tempo display responds to both wheel and touch-drag; each layout's
-  // display element gets both. Memoized so switching layouts doesn't re-bind on
-  // every render (the underlying hook refs are stable).
-  const tempoDisplayRef = useCallback(
-    (el: HTMLDivElement | null) => {
-      tempoWheelRef(el);
-      tempoPointerRef(el);
-    },
-    [tempoWheelRef, tempoPointerRef],
   );
 
   const [theme, setTheme] = useTheme();
@@ -123,7 +169,13 @@ export function Metronome() {
     <>
       <button
         className="menu-toggle"
-        onClick={() => setPresetsOpen((open) => !open)}
+        onClick={() => {
+          // The drawer covers the ramp panel, so don't leave it open behind it.
+          setPresetsOpen((open) => {
+            if (!open) setRampOpen(false);
+            return !open;
+          });
+        }}
         aria-label="Toggle presets panel"
         aria-expanded={presetsOpen}
       >
@@ -132,6 +184,27 @@ export function Metronome() {
           <span></span>
           <span></span>
         </span>
+      </button>
+      <button
+        className="ramp-toggle"
+        onClick={() => setRampOpen((open) => !open)}
+        aria-label={
+          tempoRamp.enabled
+            ? `Tempo ramp: +${tempoRamp.stepBpm} BPM every ${tempoRamp.everyBars} bars. Toggle panel.`
+            : 'Toggle tempo ramp panel'
+        }
+        aria-expanded={rampOpen}
+        data-ramp-active={tempoRamp.enabled || undefined}
+      >
+        {/* Armed: show the settings, so a closed panel still says what's coming.
+            Off: just the icon — there's nothing worth reporting. */}
+        {tempoRamp.enabled ? (
+          <span className="ramp-summary">
+            +{tempoRamp.stepBpm}/{tempoRamp.everyBars}
+          </span>
+        ) : (
+          <RampIcon />
+        )}
       </button>
 
       <HelpHint />
@@ -216,10 +289,34 @@ export function Metronome() {
           aria-label="Resize panel"
         />
       </aside>
+      <aside
+        className={`ramp ${rampOpen ? 'open' : ''}`}
+        // When closed, `inert` removes the off-screen drawer from the tab order
+        // and the accessibility tree, so its controls can't be focused or read.
+        inert={!rampOpen}
+      >
+        <div className="ramp-content">
+          <RampControl current={tempoRamp} onChange={setTempoRamp} />
+        </div>
+      </aside>
 
       <BrandHeader />
 
-      <div className="metronome">
+      <div
+        className="metronome"
+        data-ramp-warning={rampWarning || undefined}
+        // Flips every beat, which is what re-triggers the warning pulse. A CSS
+        // animation only restarts when its name changes, so the two alternating
+        // names below are keyed off this. It also means the pulse can't outlive
+        // the warning: both attributes change in the same render, so the rule
+        // stops matching the instant the warning ends.
+        data-beat-parity={beatTick % 2}
+        // One beat's length, so the ramp warning can pulse in time rather than
+        // on a fixed loop of its own. The warning flag is raised in the same
+        // latency-compensated callback that advances the beat indicator, so the
+        // animation starts on a beat and a one-beat cycle keeps it there.
+        style={{ '--beat-seconds': `${60 / bpm}s` } as CSSProperties}
+      >
         <div className="loaded-preset">
           {loadedPreset?.label}
           {loadedPreset?.label && isModified ? (
@@ -244,16 +341,16 @@ export function Metronome() {
               onToggle={toggle}
             />
             <div className="pendulum-readout">
-              <div className="tempo-value-area" ref={tempoDisplayRef}>
-                <TempoControl
-                  value={bpm}
-                  min={MIN_BPM}
-                  max={MAX_BPM}
-                  step={step}
-                  onChange={setBpm}
-                />
-              </div>
-              <span className="unit">BPM</span>
+              <NumberField
+                className="tempo-field"
+                name="Tempo"
+                label="BPM"
+                value={bpm}
+                min={MIN_BPM}
+                max={MAX_BPM}
+                step={step}
+                onChange={setBpm}
+              />
             </div>
             <div className="pendulum-ts">
               <button
@@ -291,18 +388,16 @@ export function Metronome() {
                   {stepBoost ? '−10' : '−'}
                 </button>
 
-                <div className="tempo-display" ref={tempoDisplayRef}>
-                  <div className="tempo-value-area">
-                    <TempoControl
-                      value={bpm}
-                      min={MIN_BPM}
-                      max={MAX_BPM}
-                      step={step}
-                      onChange={setBpm}
-                    />
-                  </div>
-                  <span className="unit">BPM</span>
-                </div>
+                <NumberField
+                  className="tempo-field"
+                  name="Tempo"
+                  label="BPM"
+                  value={bpm}
+                  min={MIN_BPM}
+                  max={MAX_BPM}
+                  step={step}
+                  onChange={setBpm}
+                />
 
                 <button
                   className={`step ${stepBoost ? 'step-10' : ''}`}

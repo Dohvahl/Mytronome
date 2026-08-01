@@ -1,9 +1,12 @@
-import type { BeatEmphasis, BeatInfo, TimeSignature } from './types';
 import {
   browserTimer,
   type AudioOutput,
   type IntervalTimer,
 } from './audioOutput';
+import { BeatCursor } from './beatCursor';
+import { MusicalSettings } from './musicalSettings';
+import { TempoRamp, type TempoRampConfig } from './tempoRamp';
+import type { BeatEmphasis, BeatInfo, TimeSignature } from './types';
 
 export interface MetronomeOptions {
   /** Starting tempo in beats per minute. Default 120. */
@@ -19,6 +22,8 @@ export interface MetronomeOptions {
   volume?: number;
   /** Clicks per beat: 1 = beat only, 2 = eighths, 3 = triplets, 4 = sixteenths… */
   subdivisions?: number;
+  /** Automatic tempo ramp-up. Defaults to 5 BPM every 4 bars (off). */
+  ramp?: Partial<TempoRampConfig>;
   /**
    * Called once per beat, at the moment the beat is *scheduled* (slightly
    * before it sounds), including muted beats. `beat.time` is the audio-clock
@@ -39,33 +44,6 @@ export interface MetronomeOptions {
   timer?: IntervalTimer;
 }
 
-// Shared musical limits - the web app imports these instead of redefining them.
-// The C# API enforces the same limits in preset-api/Validation/PresetValidator.cs
-// (MinBpm / MaxBpm / MaxBeats / NoteValues); those can't be shared across the
-// TS/C# boundary, so keep the two in sync by hand.
-export const MIN_BPM = 40;
-export const MAX_BPM = 320;
-export const MAX_SUBDIVISIONS = 16;
-
-/** Compound meters (6/8, 9/8, 12/8, …) group their beats in threes. */
-export function isCompound(timeSignature: TimeSignature): boolean {
-  const { beats, noteValue } = timeSignature;
-  return (noteValue === 8 || noteValue === 16) && beats >= 6 && beats % 3 === 0;
-}
-
-/**
- * The default emphasis pattern: accent the downbeat, plus — in a compound meter
- * — the start of each group of three, so 6/8 feels like 2, 9/8 like 3, and 12/8
- * like 4 (instead of six even clicks like 6/4).
- */
-export function defaultPattern(timeSignature: TimeSignature): BeatEmphasis[] {
-  const compound = isCompound(timeSignature);
-  return Array.from({ length: timeSignature.beats }, (_, i) => {
-    const groupStart = compound ? i % 3 === 0 : i === 0;
-    return groupStart ? 'accent' : 'normal';
-  });
-}
-
 /**
  * A sample-accurate metronome. It plans clicks against an injected
  * {@link AudioOutput}'s clock and stays platform-free itself — the Web Audio
@@ -83,16 +61,15 @@ export function defaultPattern(timeSignature: TimeSignature): BeatEmphasis[] {
 export class Metronome {
   private readonly output: AudioOutput;
   private readonly timer: IntervalTimer;
-  private bpm: number;
-  private timeSignature: TimeSignature;
-  private pattern: BeatEmphasis[];
-  private subdivisions: number;
+  private readonly settings: MusicalSettings; // what we're playing
+  private readonly cursor: BeatCursor; // where we are on the tick grid
+  private readonly tempoRamp: TempoRamp;
+
   private readonly onBeat?: (beat: BeatInfo) => void;
 
   private isRunning = false;
   private nextBeatTime = 0; // audio-clock time (s) of the next tick to schedule
-  private nextBeatIndex = 0; // which beat of the measure comes next
-  private subIndex = 0; // subdivision within the current beat (0 = the beat)
+
   private timerId: number | null = null;
 
   /** Schedule beats this far (seconds) into the future. */
@@ -101,10 +78,13 @@ export class Metronome {
   private readonly lookaheadMs = 25;
 
   constructor(options: MetronomeOptions) {
-    this.bpm = clampBpm(options.bpm ?? 120);
-    this.timeSignature = options.timeSignature ?? { beats: 4, noteValue: 4 };
-    this.pattern = options.pattern ?? defaultPattern(this.timeSignature);
-    this.subdivisions = clampSubdivisions(options.subdivisions ?? 1);
+    this.settings = new MusicalSettings(options);
+    this.cursor = new BeatCursor(
+      this.settings.meter.beats,
+      options.subdivisions ?? 1,
+    );
+    this.tempoRamp = new TempoRamp(options.ramp);
+
     this.onBeat = options.onBeat;
     this.output = options.audioOutput;
     this.output.setVolume(options.volume ?? 1); // adapter clamps to 0..1
@@ -112,11 +92,11 @@ export class Metronome {
   }
 
   get tempo(): number {
-    return this.bpm;
+    return this.settings.tempo;
   }
 
   get meter(): TimeSignature {
-    return this.timeSignature;
+    return this.settings.meter;
   }
 
   get running(): boolean {
@@ -140,20 +120,18 @@ export class Metronome {
 
   /** Set the tempo. Clamped to a sane musical range. Safe to call while running. */
   setBpm(bpm: number): void {
-    this.bpm = clampBpm(bpm);
+    this.settings.setBpm(bpm);
   }
 
   /** Change the time signature. Safe to call while running. */
   setTimeSignature(timeSignature: TimeSignature): void {
-    this.timeSignature = timeSignature;
-    if (this.nextBeatIndex >= timeSignature.beats) {
-      this.nextBeatIndex = 0;
-    }
+    this.settings.setTimeSignature(timeSignature);
+    this.cursor.setBeatsPerBar(timeSignature.beats);
   }
 
   /** Replace the per-beat emphasis pattern. Safe to call while running. */
   setPattern(pattern: BeatEmphasis[]): void {
-    this.pattern = pattern;
+    this.settings.setPattern(pattern);
   }
 
   /** Master output volume, 0 (silent) to 1 (full). Safe to call while running. */
@@ -161,12 +139,22 @@ export class Metronome {
     this.output.setVolume(volume);
   }
 
+  setRampConfig(ramp: TempoRampConfig): void {
+    this.ramp.setRamp(ramp);
+  }
+
+  /**
+   * The tempo ramp. Configure it through its own methods — `enable()`,
+   * `setRamp()` — rather than replacing it wholesale, matching
+   * how the settings and cursor are owned rather than swapped.
+   */
+  get ramp(): TempoRamp {
+    return this.tempoRamp;
+  }
+
   /** Clicks per beat (1 = beat only, 2 = eighths, …). Safe to call while running. */
   setSubdivisions(subdivisions: number): void {
-    this.subdivisions = clampSubdivisions(subdivisions);
-    if (this.subIndex >= this.subdivisions) {
-      this.subIndex = 0;
-    }
+    this.cursor.setSubdivisions(subdivisions);
   }
 
   /** Start ticking. Must be triggered by a user gesture (browser autoplay rule). */
@@ -178,8 +166,8 @@ export class Metronome {
     void this.output.resume();
 
     this.isRunning = true;
-    this.nextBeatIndex = 0;
-    this.subIndex = 0;
+    this.cursor.reset();
+    this.tempoRamp.reset();
     this.nextBeatTime = this.output.currentTime + 0.05; // brief lead-in
     this.timerId = this.timer.setInterval(
       () => this.scheduler(),
@@ -212,13 +200,12 @@ export class Metronome {
       this.nextBeatTime <
       this.output.currentTime + this.scheduleAheadTime
     ) {
-      const secondsPerBeat = 60 / this.bpm;
+      const secondsPerBeat = this.settings.secondsPerBeat;
 
-      if (this.subIndex === 0) {
+      if (this.cursor.isMainBeat) {
         // The main beat: apply its emphasis and notify the UI.
-        const emphasis =
-          this.pattern[this.nextBeatIndex] ??
-          (this.nextBeatIndex === 0 ? 'accent' : 'normal');
+        const beatIndex = this.cursor.currentBeat;
+        const emphasis = this.settings.emphasisFor(beatIndex);
 
         if (emphasis !== 'muted') {
           this.output.scheduleClick(
@@ -229,29 +216,24 @@ export class Metronome {
 
         // Always notify — muted beats still advance the visual indicator.
         this.onBeat?.({
-          beatIndex: this.nextBeatIndex,
+          beatIndex,
           time: this.nextBeatTime,
+          bpm: this.settings.tempo,
+          // The bump happens once `barsSinceBump` reaches `everyBars`, so the
+          // bar that sits one short of that is the last one at this tempo.
+          rampWarning: this.tempoRamp.needWarning(this.settings.tempo),
         });
       } else {
         // An in-between subdivision: a softer tick (audio only, no visual).
         this.output.scheduleClick(this.nextBeatTime, 'sub');
       }
 
-      this.nextBeatTime += secondsPerBeat / this.subdivisions;
-      this.subIndex += 1;
-      if (this.subIndex >= this.subdivisions) {
-        this.subIndex = 0;
-        this.nextBeatIndex =
-          (this.nextBeatIndex + 1) % this.timeSignature.beats;
+      this.nextBeatTime += secondsPerBeat / this.cursor.ticksPerBeat;
+
+      this.cursor.advance();
+      if (this.cursor.atBarStart) {
+        this.settings.setBpm(this.tempoRamp.completeBar(this.settings.tempo));
       }
     }
   }
-}
-
-function clampBpm(bpm: number): number {
-  return Math.max(MIN_BPM, Math.min(MAX_BPM, Math.round(bpm)));
-}
-
-function clampSubdivisions(value: number): number {
-  return Math.max(1, Math.min(MAX_SUBDIVISIONS, Math.round(value)));
 }

@@ -25,4 +25,16 @@ export interface BeatInfo {
   beatIndex: number;
   /** AudioContext clock time (in seconds) at which this beat will sound. */
   time: number;
+  /**
+   * The tempo this beat plays at. Pinned to the beat rather than read live,
+   * because the ramp can change the engine's tempo between a beat being
+   * scheduled and the UI flashing it — a UI mirrors this to stay in step.
+   */
+  bpm: number;
+  /**
+   * True on every beat of the bar immediately BEFORE a ramp bump, so the UI can
+   * warn that the tempo is about to change (the pulse runs the whole bar).
+   * Always false when the ramp is off or the tempo is already at the maximum.
+   */
+  rampWarning: boolean;
 }
