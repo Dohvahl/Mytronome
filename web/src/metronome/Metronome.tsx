@@ -126,7 +126,13 @@ export function Metronome() {
     };
   }, [rampOpen]);
 
-  const current = { bpm, timeSignature, pattern, subdivisions };
+  const current = {
+    bpm,
+    timeSignature,
+    pattern,
+    subdivisions,
+    ramp: tempoRamp,
+  };
   // Looked up fresh each render, so a rename in the drawer updates the header.
   const loadedPreset = presets.find((p) => p.id === loadedPresetId);
   const isModified =

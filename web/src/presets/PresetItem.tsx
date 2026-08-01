@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Preset } from '@mytronome/presets';
 import { PencilIcon, UpdateIcon, CopyIcon, TrashIcon } from './icons';
+import { RampIcon } from '../metronome/rampUp/RampIcon';
 
 interface Props {
   preset: Preset;
@@ -55,6 +56,11 @@ export function PresetItem({
 
   const hasLabel = preset.label.trim() !== '';
   const summary = `${preset.bpm} BPM \u{00B7} ${preset.timeSignature.beats}/${preset.timeSignature.noteValue}`;
+  // A preset only carries a ramp when it was armed at save time, so its presence
+  // is the whole signal. Same wording as the ramp trigger's own label.
+  const rampLabel = preset.ramp
+    ? `Tempo ramp: +${preset.ramp.stepBpm} BPM every ${preset.ramp.everyBars} bars`
+    : undefined;
 
   const className = [
     'preset-item',
@@ -111,8 +117,23 @@ export function PresetItem({
               onClick={() => onLoad(preset)}
               title="Load this preset"
             >
-              <span className="preset-label">
-                {hasLabel ? preset.label : summary}
+              <span className="preset-label-line">
+                {rampLabel && (
+                  // role=img + aria-label so the badge contributes its meaning
+                  // to the load button's accessible name — the glyph itself is
+                  // aria-hidden.
+                  <span
+                    className="preset-ramp-badge"
+                    role="img"
+                    aria-label={rampLabel}
+                    title={rampLabel}
+                  >
+                    <RampIcon />
+                  </span>
+                )}
+                <span className="preset-label">
+                  {hasLabel ? preset.label : summary}
+                </span>
               </span>
               {hasLabel && <span className="preset-summary">{summary}</span>}
             </button>

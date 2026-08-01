@@ -250,6 +250,7 @@ export function useMetronome(flatten = false) {
     timeSignature: TimeSignature;
     pattern: BeatEmphasis[];
     subdivisions: number;
+    ramp?: TempoRampConfig;
   }) => {
     const engine = metronomeRef.current;
     engine?.setBpm(settings.bpm);
@@ -262,6 +263,12 @@ export function useMetronome(flatten = false) {
     setSubdivisions(
       clampSubdivision(settings.subdivisions, settings.timeSignature.noteValue),
     );
+
+    // A preset only carries a ramp when it was armed at save time, so one
+    // without a ramp switches it OFF — otherwise the last preset's ramp would
+    // keep running away with the tempo of a preset that never asked for it. The
+    // step/interval numbers are kept, so the panel doesn't jump around.
+    setTempoRamp(settings.ramp ?? { ...tempoRamp, enabled: false });
   };
 
   return {

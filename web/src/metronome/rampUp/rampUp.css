@@ -23,7 +23,7 @@
      for the eye to read as "now". Striking quickly and then resting until the
      next beat is what makes it land ON the beat — the same reason the beat dots
      pop in 0.06s and hold. Raise toward 1 for a slower swell. */
-  --ramp-warning-strike: 0.35;
+  --ramp-warning-strike: 0.6;
 }
 
 /* Struck on the beat, then recovering across it — the shape of a pulse rather
