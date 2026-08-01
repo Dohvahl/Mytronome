@@ -85,6 +85,14 @@ export function useMetronome(flatten = false) {
   const metronomeRef = useRef<Metronome | null>(null);
   // Pending visual-flash timers, so we can cancel them on stop/unmount.
   const beatTimersRef = useRef<number[]>([]);
+  // Counts tempo changes the USER made. A beat carries the tempo it was
+  // scheduled at, and its visual is held back until the beat sounds — a gap of
+  // up to a few hundred ms on mobile. If the tempo is moved by hand inside that
+  // window, the beat's now-stale value must not overwrite it, so each beat
+  // remembers the count it was scheduled under and checks it still holds. Ramp
+  // bumps deliberately don't count: they're exactly what the readout is waiting
+  // to show.
+  const tempoEditsRef = useRef(0);
 
   const [bpm, setBpmState] = useState(DEFAULT_BPM);
   const [timeSignature, setTimeSignatureState] = useState<TimeSignature>(
@@ -117,9 +125,8 @@ export function useMetronome(flatten = false) {
       subdivisions: readSavedSubdivisions(),
       ramp: readSavedTempoRamp(),
       onBeat: (beat) => {
-        // the engine might have changed the tempo if the ramp function is in use.
-        // Update the tempo here so they don't get out of sync.
-        setBpmState(beat.bpm);
+        // The tempo edit count as of scheduling — see tempoEditsRef.
+        const tempoEdits = tempoEditsRef.current;
 
         // onBeat fires when a beat is *scheduled* (up to ~100ms early). Wait
         // until it actually sounds before flashing the visual, so they line up.
@@ -132,6 +139,10 @@ export function useMetronome(flatten = false) {
           (beat.time - engine.currentTime + engine.outputLatency) * 1000,
         );
         const timerId = window.setTimeout(() => {
+          // The ramp may have moved the tempo; show it as the beat sounds, not
+          // when it was planned — unless the user has since set one themselves.
+          if (tempoEditsRef.current === tempoEdits) setBpmState(beat.bpm);
+
           // if ramp function is in use, we may need to show the warning to
           // the user in the last bar. This need to be in sync with the beat indicator.
           setRampWarning(beat.rampWarning);
@@ -196,6 +207,7 @@ export function useMetronome(flatten = false) {
     const engine = metronomeRef.current;
     if (!engine) return;
     engine.setBpm(value);
+    tempoEditsRef.current += 1; // supersede any beat still waiting to sound
     setBpmState(engine.tempo); // mirror back the clamped, rounded value
   };
 
@@ -230,11 +242,10 @@ export function useMetronome(flatten = false) {
 
   const setTempoRamp = (value: TempoRampConfig) => {
     setTempoRampState(value);
-    if (value.enabled)
-      localStorage.setItem(
-        TEMPO_RAMP_KEY,
-        JSON.stringify({ ...value, enabled: false }),
-      );
+    localStorage.setItem(
+      TEMPO_RAMP_KEY,
+      JSON.stringify({ ...value, enabled: false }),
+    );
   };
 
   const cycleBeat = (index: number) => {
@@ -255,6 +266,7 @@ export function useMetronome(flatten = false) {
     const engine = metronomeRef.current;
     engine?.setBpm(settings.bpm);
     engine?.setTimeSignature(settings.timeSignature);
+    tempoEditsRef.current += 1; // a preset's tempo outranks a beat mid-flight
     setBpmState(engine?.tempo ?? settings.bpm); // pattern synced by effect above
     setTimeSignatureState(settings.timeSignature);
     setPatternState(settings.pattern);

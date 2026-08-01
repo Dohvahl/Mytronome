@@ -135,8 +135,17 @@ export function Metronome() {
   };
   // Looked up fresh each render, so a rename in the drawer updates the header.
   const loadedPreset = presets.find((p) => p.id === loadedPresetId);
+  // A ramp raises the tempo by design, so the drift it causes isn't an edit the
+  // user made — while one is running, compare against the preset's own bpm so
+  // the "modified" marker still means "you changed something". Once stopped the
+  // tempo stays where the ramp left it, and that IS a difference worth showing.
+  const rampRunning = isRunning && tempoRamp.enabled;
   const isModified =
-    loadedPreset !== undefined && !samePresetSettings(current, loadedPreset);
+    loadedPreset !== undefined &&
+    !samePresetSettings(
+      rampRunning ? { ...current, bpm: loadedPreset.bpm } : current,
+      loadedPreset,
+    );
 
   // Holding Shift makes the +/- buttons step by 10 — but ignore Shift while the
   // presets drawer is open, so typing a capitalized label can't hijack tempo.

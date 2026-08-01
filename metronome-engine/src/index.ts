@@ -6,7 +6,7 @@ export {
   MIN_BPM,
   MAX_BPM,
 } from './musicalSettings';
-export { MAX_SUBDIVISIONS, clampSubdivisions } from './beatCursor';
+export { MAX_SUBDIVISIONS } from './beatCursor';
 export {
   TempoRamp,
   MIN_RAMP_STEP_BPM,

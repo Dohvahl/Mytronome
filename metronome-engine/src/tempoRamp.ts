@@ -65,9 +65,16 @@ export class TempoRamp {
     );
   }
 
+  /**
+   * True while the bar being played is the last one at this tempo.
+   *
+   * The comparison is `>=`, matching {@link completeBar}'s: shortening the
+   * interval mid-run can leave the count already past the new target, and that
+   * bar still ends in a bump — so it still has to be warned about.
+   */
   needWarning(currentBPM: number): boolean {
     return (
-      this.isActive(currentBPM) && this.barsSinceBump === this.everyBars - 1
+      this.isActive(currentBPM) && this.barsSinceBump >= this.everyBars - 1
     );
   }
 

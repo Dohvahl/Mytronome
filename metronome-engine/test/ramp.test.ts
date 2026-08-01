@@ -129,6 +129,26 @@ describe('ramp warning', () => {
     playBeats(output, timer, 5);
     expect(beats.every((b) => !b.rampWarning)).toBe(true);
   });
+
+  it('still warns when the interval is shortened past the bars already counted', () => {
+    const { m, output, timer, beats } = setup({
+      bpm: 120,
+      ramp: { enabled: true, stepBpm: 5, everyBars: 8 },
+    });
+    m.start();
+    playBeats(output, timer, 12); // three bars counted against an interval of 8
+
+    // Now bump every 2 bars instead. The count is already past that, so the bar
+    // in progress ends in a bump and has to say so — a warning that used to be
+    // missed, because the check was for the count landing exactly one short.
+    m.setRampConfig({ enabled: true, stepBpm: 5, everyBars: 2 });
+    const before = beats.length;
+    playBeats(output, timer, 16);
+    const after = beats.slice(before);
+
+    expect(after[0].rampWarning).toBe(true);
+    expect(after.some((b) => b.bpm === 125)).toBe(true);
+  });
 });
 
 describe('ramp interaction with manual changes', () => {
