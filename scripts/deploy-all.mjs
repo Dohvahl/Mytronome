@@ -46,14 +46,19 @@ function fail(message) {
   process.exit(1);
 }
 
+// npm is a .cmd shim on Windows and needs the extension when there's no shell.
+// git, node and gh are real executables, so they resolve as-is.
+const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+// Every command below runs WITHOUT `shell: true`. With a shell, arguments are
+// concatenated into a command line rather than passed as an argv array, so any
+// path containing a space breaks unless it's hand-quoted — and hand-quoting is
+// what Node's DEP0190 warning is about. No shell means no quoting to get wrong.
+
 /** Run a command, inheriting stdio. Exits the whole deploy if it fails. */
 function run(label, cmd, args, { allowFailure = false } = {}) {
   console.log(`\n──── ${label} ────`);
-  const result = spawnSync(cmd, args, {
-    cwd: repoRoot,
-    stdio: 'inherit',
-    shell: true, // npm/gh resolve through .cmd shims on Windows
-  });
+  const result = spawnSync(cmd, args, { cwd: repoRoot, stdio: 'inherit' });
   if (result.status !== 0 && !allowFailure) {
     fail(`${label} failed. Nothing after this step ran.`);
   }
@@ -62,11 +67,7 @@ function run(label, cmd, args, { allowFailure = false } = {}) {
 
 /** Run a command quietly and return its trimmed stdout ('' if it failed). */
 function capture(cmd, args) {
-  const r = spawnSync(cmd, args, {
-    cwd: repoRoot,
-    encoding: 'utf-8',
-    shell: true,
-  });
+  const r = spawnSync(cmd, args, { cwd: repoRoot, encoding: 'utf-8' });
   return r.status === 0 ? (r.stdout ?? '').trim() : '';
 }
 
@@ -106,10 +107,7 @@ if (capture('gh', ['--version']) === '') {
       'the release. https://cli.github.com',
   );
 }
-if (
-  spawnSync('gh', ['auth', 'status'], { shell: true, stdio: 'ignore' })
-    .status !== 0
-) {
+if (spawnSync('gh', ['auth', 'status'], { stdio: 'ignore' }).status !== 0) {
   fail('gh is not authenticated. Run: gh auth login');
 }
 
@@ -147,15 +145,15 @@ console.log(`\nShipping ${tag}`);
 
 // ── 3. Tests ────────────────────────────────────────────────────────────────
 if (skipTests) console.log('\nSkipping tests (--skip-tests).');
-else run('Tests', 'npm', ['test']);
+else run('Tests', NPM, ['test']);
 
 // ── 4-6. Build and deploy each platform ─────────────────────────────────────
 // Each Tauri build re-runs the web build itself (tauri.conf.json's
 // beforeBuildCommand), which is a second or two and keeps the bundled web app
 // guaranteed identical to the one just uploaded.
-run('Web (build + SFTP)', 'npm', ['run', 'deploy:web']);
-run('Desktop installers', 'npm', ['run', 'deploy:desktop']);
-run('Android AAB', 'npm', ['run', 'deploy:android:aab']);
+run('Web (build + SFTP)', NPM, ['run', 'deploy:web']);
+run('Desktop installers', NPM, ['run', 'deploy:desktop']);
+run('Android AAB', NPM, ['run', 'deploy:android:aab']);
 
 // ── 7. GitHub release ───────────────────────────────────────────────────────
 const bundleDir = path.join(
@@ -167,17 +165,34 @@ const androidOutputs = path.join(
   'desktop/src-tauri/gen/android/app/build/outputs/bundle',
 );
 
+// The bundle directory is never cleaned, so it holds an installer for every
+// version ever built on this machine. Tauri stamps the version into each name
+// (`Mytronome_1.3.1_x64-setup.exe`, `mytronome_1.3.1_amd64.deb`), and matching
+// on that is what keeps four old releases from being attached to this one.
+//
+// Deliberately not an mtime cutoff: re-running without a bump to recover from a
+// failed step is a supported path, and there the artifacts are correct but were
+// written by the earlier run.
+const versionTag = `_${version}_`;
+
 const artifacts = [
   // Installer formats across the three desktop platforms — only this machine's
   // will exist, the rest come from a build on that OS.
-  ...findFiles(bundleDir, (f) => /\.(exe|msi|dmg|deb|rpm|AppImage)$/i.test(f)),
+  ...findFiles(
+    bundleDir,
+    (f) =>
+      /\.(exe|msi|dmg|deb|rpm|AppImage)$/i.test(f) && f.includes(versionTag),
+  ),
+  // The AAB name carries no version, but Gradle writes exactly one and
+  // overwrites it on every build, so whatever is there belongs to this version.
   ...findFiles(androidOutputs, (f) => f.endsWith('.aab')),
 ];
 
 if (artifacts.length === 0) {
   fail(
-    'Every build reported success but no artifacts were found.\n' +
-      `Looked in ${path.relative(repoRoot, bundleDir)} and ` +
+    `Every build reported success but no artifacts for ${version} were found.\n` +
+      `Looked for names containing "${versionTag}" in ` +
+      `${path.relative(repoRoot, bundleDir)}, and an .aab in ` +
       `${path.relative(repoRoot, androidOutputs)}.`,
   );
 }
@@ -190,7 +205,6 @@ for (const f of artifacts) console.log(`  ${path.relative(repoRoot, f)}`);
 const releaseExists =
   spawnSync('gh', ['release', 'view', tag], {
     cwd: repoRoot,
-    shell: true,
     stdio: 'ignore',
   }).status === 0;
 
@@ -200,7 +214,7 @@ if (releaseExists) {
     'release',
     'upload',
     tag,
-    ...artifacts.map((f) => `"${f}"`),
+    ...artifacts,
     '--clobber',
   ]);
 } else {
@@ -208,7 +222,7 @@ if (releaseExists) {
     'release',
     'create',
     tag,
-    ...artifacts.map((f) => `"${f}"`),
+    ...artifacts,
     '--title',
     tag,
     '--generate-notes',

@@ -45,18 +45,23 @@ if (!hasEnvCreds && !hasWrapper) {
 
 // The wrapper sets the credentials itself, so prefer it when the environment
 // doesn't already carry them.
+//
+// No `shell: true`: with a shell the args are concatenated into a command line
+// instead of passed as argv, so anything containing a space needs hand-quoting
+// (Node's DEP0190 warning). npm is a .cmd shim on Windows and needs the
+// extension to resolve without one; a .bat takes no args here, and cmd.exe runs
+// it directly.
 const [cmd, args] = hasEnvCreds
-  ? ['npm', ['run', 'tauri', '-w', 'desktop', '--', 'build']]
-  : [wrapper, []];
+  ? [
+      process.platform === 'win32' ? 'npm.cmd' : 'npm',
+      ['run', 'tauri', '-w', 'desktop', '--', 'build'],
+    ]
+  : ['cmd.exe', ['/c', wrapper]];
 
 console.log(
-  `Building desktop bundles for ${process.platform} via ${path.basename(cmd)} ...`,
+  `Building desktop bundles for ${process.platform} via ${path.basename(cmd === 'cmd.exe' ? wrapper : cmd)} ...`,
 );
-const build = spawnSync(cmd, args, {
-  cwd: repoRoot,
-  stdio: 'inherit',
-  shell: true, // npm and .bat both need a shell on Windows
-});
+const build = spawnSync(cmd, args, { cwd: repoRoot, stdio: 'inherit' });
 
 if (build.status !== 0) process.exit(build.status ?? 1);
 console.log('✓ Desktop bundles built.');
