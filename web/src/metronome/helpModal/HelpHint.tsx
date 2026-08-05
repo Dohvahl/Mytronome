@@ -112,11 +112,38 @@ export function HelpHint() {
             </li>
           </ul>
 
+          <h3 className="help-group">Tempo ramp</h3>
+          <ul className="help-list">
+            <li>
+              The arrow button beside <kbd>&#9776;</kbd> opens the ramp &mdash;
+              an automatic speed-up for practice
+            </li>
+            <li>Set how much to add, and how many bars between increases</li>
+            <li>The tempo pulses through the bar before each increase</li>
+          </ul>
+
           <h3 className="help-group">Presets</h3>
           <ul className="help-list">
             <li>
               Open the <kbd>&#9776;</kbd> menu to save, load, and reorder
               presets
+            </li>
+            <li>
+              A preset saved with the ramp switched on restores it, and shows
+              the arrow beside its name
+            </li>
+          </ul>
+
+          <h3 className="help-group">Layouts &amp; appearance</h3>
+          <ul className="help-list">
+            <li>
+              The <kbd>&#9881;</kbd> gear sets the theme, accent colour, and
+              layout
+            </li>
+            <li>
+              In the pendulum layout, accents and subdivisions stay hidden until
+              you open <kbd>Time signature</kbd> &mdash; until then it plays an
+              even tick
             </li>
           </ul>
 

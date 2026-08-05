@@ -74,6 +74,13 @@ aligned to the right edge. */
   border: 0.0556rem solid var(--border);
   border-radius: 0.6667rem;
   box-shadow: var(--shadow);
+  /* The list has outgrown a phone screen. Without a cap the last group runs off
+     the bottom with no way to reach it — the panel is centred and fixed on
+     narrow screens, so there's nothing to scroll it into view. `contain` stops
+     the scroll chaining to the page once the list hits its end. */
+  max-height: 78vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 @media (max-width: 640px) {
   .help-panel {
