@@ -255,6 +255,12 @@ console.log(`  desktop  → installers attached to the ${tag} release`);
 console.log(
   `  android  → ${aab ? path.relative(repoRoot, aab) : 'no AAB found'}`,
 );
+// Uploading needs the Play Console UI (or a service account and the publishing
+// API), so it can't be scripted from here. Closed testing rather than
+// production on purpose: a personal developer account has to run a closed test
+// with 12 testers opted in for 14 continuous days before production access is
+// even offered. See play-store/listing.md.
 console.log(
-  '\nStill manual: upload the AAB in the Play Console (Production → Create new release).',
+  '\nStill manual: upload the AAB in the Play Console\n' +
+    '  → Test and release → Testing → Closed → Create new release',
 );
