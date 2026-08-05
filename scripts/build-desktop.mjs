@@ -46,22 +46,28 @@ if (!hasEnvCreds && !hasWrapper) {
 // The wrapper sets the credentials itself, so prefer it when the environment
 // doesn't already carry them.
 //
-// No `shell: true`: with a shell the args are concatenated into a command line
-// instead of passed as argv, so anything containing a space needs hand-quoting
-// (Node's DEP0190 warning). npm is a .cmd shim on Windows and needs the
-// extension to resolve without one; a .bat takes no args here, and cmd.exe runs
-// it directly.
-const [cmd, args] = hasEnvCreds
-  ? [
-      process.platform === 'win32' ? 'npm.cmd' : 'npm',
-      ['run', 'tauri', '-w', 'desktop', '--', 'build'],
-    ]
-  : ['cmd.exe', ['/c', wrapper]];
+// npm on Windows is a .cmd shim, and Node refuses to spawn .cmd/.bat without a
+// shell (it was a command-injection vector, CVE-2024-27980). Every argument
+// here is a literal, so there's nothing for the shell to mis-split. The .bat
+// goes through cmd.exe explicitly, which is a real executable and takes the
+// script path as plain argv — so a space in the repo path can't break it.
+const [cmd, args, useShell] = hasEnvCreds
+  ? ['npm', ['run', 'tauri', '-w', 'desktop', '--', 'build'], true]
+  : ['cmd.exe', ['/c', wrapper], false];
 
 console.log(
-  `Building desktop bundles for ${process.platform} via ${path.basename(cmd === 'cmd.exe' ? wrapper : cmd)} ...`,
+  `Building desktop bundles for ${process.platform} via ${hasEnvCreds ? 'npm' : path.basename(wrapper)} ...`,
 );
-const build = spawnSync(cmd, args, { cwd: repoRoot, stdio: 'inherit' });
+const build = spawnSync(cmd, args, {
+  cwd: repoRoot,
+  stdio: 'inherit',
+  shell: useShell,
+});
+
+if (build.error) {
+  console.error(`Couldn't start the desktop build: ${build.error.message}`);
+  process.exit(1);
+}
 
 if (build.status !== 0) process.exit(build.status ?? 1);
 console.log('✓ Desktop bundles built.');

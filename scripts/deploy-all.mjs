@@ -46,23 +46,41 @@ function fail(message) {
   process.exit(1);
 }
 
-// npm is a .cmd shim on Windows and needs the extension when there's no shell.
-// git, node and gh are real executables, so they resolve as-is.
-const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-
-// Every command below runs WITHOUT `shell: true`. With a shell, arguments are
-// concatenated into a command line rather than passed as an argv array, so any
-// path containing a space breaks unless it's hand-quoted — and hand-quoting is
-// what Node's DEP0190 warning is about. No shell means no quoting to get wrong.
-
-/** Run a command, inheriting stdio. Exits the whole deploy if it fails. */
-function run(label, cmd, args, { allowFailure = false } = {}) {
+/**
+ * Run a command, inheriting stdio. Exits the whole deploy if it fails.
+ *
+ * `shell` is a per-call decision, not a default, because the two concerns pull
+ * opposite ways. With a shell, arguments are concatenated into a command line
+ * instead of passed as argv, so anything containing a space has to be quoted by
+ * hand (Node's DEP0190 warning). Without one, Node refuses to spawn a .cmd or
+ * .bat at all — it was a command-injection vector (CVE-2024-27980) — and npm on
+ * Windows is exactly that.
+ *
+ * So: npm gets a shell, and every npm argument here is a literal script name
+ * with no path and no space in it. git, gh and node are real executables that
+ * spawn fine without one, which is what lets the release step pass file paths
+ * as plain argv.
+ */
+function run(label, cmd, args, { shell = false } = {}) {
   console.log(`\n──── ${label} ────`);
-  const result = spawnSync(cmd, args, { cwd: repoRoot, stdio: 'inherit' });
-  if (result.status !== 0 && !allowFailure) {
-    fail(`${label} failed. Nothing after this step ran.`);
+  const result = spawnSync(cmd, args, {
+    cwd: repoRoot,
+    stdio: 'inherit',
+    shell,
+  });
+  // A command that never started reports status null, not a failure code —
+  // report the spawn error rather than a bare "failed" with nothing above it.
+  if (result.error) fail(`${label} could not start: ${result.error.message}`);
+  if (result.status !== 0) {
+    fail(
+      `${label} failed (exit ${result.status}). Nothing after this step ran.`,
+    );
   }
-  return result.status === 0;
+}
+
+/** `npm run <script>` — see `run` for why this one needs a shell. */
+function runNpm(label, args) {
+  run(label, 'npm', args, { shell: true });
 }
 
 /** Run a command quietly and return its trimmed stdout ('' if it failed). */
@@ -145,15 +163,15 @@ console.log(`\nShipping ${tag}`);
 
 // ── 3. Tests ────────────────────────────────────────────────────────────────
 if (skipTests) console.log('\nSkipping tests (--skip-tests).');
-else run('Tests', NPM, ['test']);
+else runNpm('Tests', ['test']);
 
 // ── 4-6. Build and deploy each platform ─────────────────────────────────────
 // Each Tauri build re-runs the web build itself (tauri.conf.json's
 // beforeBuildCommand), which is a second or two and keeps the bundled web app
 // guaranteed identical to the one just uploaded.
-run('Web (build + SFTP)', NPM, ['run', 'deploy:web']);
-run('Desktop installers', NPM, ['run', 'deploy:desktop']);
-run('Android AAB', NPM, ['run', 'deploy:android:aab']);
+runNpm('Web (build + SFTP)', ['run', 'deploy:web']);
+runNpm('Desktop installers', ['run', 'deploy:desktop']);
+runNpm('Android AAB', ['run', 'deploy:android:aab']);
 
 // ── 7. GitHub release ───────────────────────────────────────────────────────
 const bundleDir = path.join(
