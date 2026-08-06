@@ -129,6 +129,105 @@ Expect `Verified using v2 scheme ... : true` and
 `Signer #1 certificate DN: CN=Mytronome, O=Dovall, C=CA`. (v1/JAR signing is
 correctly absent — `minSdk = 24`, so the v2 scheme covers every supported device.)
 
+## Native debug symbols
+
+> **Status: not working.** Half 1 below works; half 2 does not, and the cause is
+> unknown. Symbol emission is therefore **off by default** — `--symbols` on its
+> own only inflates the shipped libraries. Play merely recommends symbols, so
+> this does not block a release. Diagnosis so far is at the end of this section.
+
+A crash inside the Rust shell reaches Play as raw addresses unless the bundle
+carries debug symbols for the `.so` files. Play flags this on upload. Two halves
+are needed, and neither is on by default.
+
+Kotlin/Java stack traces are a separate mechanism — R8's `mapping.txt` goes up
+with the bundle automatically, so nothing here affects those.
+
+### 1. Cargo has to emit the debug info
+
+`npm run deploy:android:aab -- --symbols` runs `scripts/build-android.mjs` with
+`CARGO_PROFILE_RELEASE_DEBUG=1` set for that build only. Confirmed working —
+cargo reports `[optimized + debuginfo]` and the `.so` grows from ~15 MB to
+~60 MB per ABI.
+
+Deliberately an environment variable rather than `[profile.release]` in
+`src-tauri/Cargo.toml`: Cargo profiles are global, so setting it there would
+also fatten every Windows/macOS/Linux desktop binary and slow those builds for
+no benefit.
+
+`1` is line tables — function names and line numbers, without variable info.
+Full DWARF from Rust is enormous and adds little to a crash stack.
+
+### 2. The `ndk` block in `app/build.gradle.kts`
+
+Same regenerate problem as the signing block above: `tauri android init` wipes
+it. Re-append verbatim, after the signing block.
+
+```kotlin
+// --- Native debug symbols (Mytronome) --------------------------------------
+// NOT part of the Tauri template. Re-append verbatim after `tauri android init`.
+// See desktop/README.md → "Native debug symbols".
+android {
+    ndkVersion = "29.0.13846066"
+    buildTypes.getByName("release").ndk.debugSymbolLevel = "FULL"
+}
+```
+
+`ndkVersion` is the load-bearing half. AGP extracts symbols with the NDK's
+`llvm-objcopy` and strips the shipped `.so` with `llvm-strip`, and it finds
+neither unless it knows which NDK to use. Tauri drives cargo directly and never
+sets it, so out of the box AGP **fails silently**: it packages the libraries
+unstripped and produces no symbols. Set it to a version actually installed under
+`$ANDROID_HOME/ndk` — a wrong value fails loudly, which is the good case.
+
+The symbols travel in the bundle's metadata, not in the APKs Play generates from
+it, so installs don't grow. If Play ever rejects the bundle as too large, drop
+`FULL` to `SYMBOL_TABLE` — function names only, no line numbers, much smaller.
+
+### Verifying the symbols are in the bundle
+
+Check all three signals — the first two are what catch a silent strip failure:
+
+```sh
+cd src-tauri/gen/android/app/build
+du -sh intermediates/merged_native_libs intermediates/stripped_native_libs intermediates/native_debug_metadata
+unzip -l outputs/bundle/universalRelease/app-universal-release.aab | grep -iE "debugsymbols|\.so$"
+```
+
+Healthy: `stripped_native_libs` is far smaller than `merged_native_libs`,
+`native_debug_metadata` is non-empty, the `.so` entries in the bundle are a few
+MB each, and `BUNDLE-METADATA/com.android.tools.build.debugsymbols/` is listed.
+
+Broken: the two lib directories are the same size, `native_debug_metadata` is 0,
+and the `.so` entries match cargo's output byte for byte.
+
+### What has been ruled out
+
+The broken state above is where this currently sits. Checked and eliminated:
+
+- **`debugSymbolLevel` not applied** — the Kotlin DSL would fail to compile on an
+  unknown property, and the build succeeds. `native_debug_metadata` and
+  `native_symbol_tables` directories are created, which only happens when the
+  option is set.
+- **Missing `ndkVersion`** — added, NDK 29.0.13846066 resolves, `llvm-strip.exe`
+  is present at the expected path. No change.
+- **A silent tool failure** — AGP logs "Unable to strip the following libraries"
+  when it can't find the tool. That string appears nowhere in the build output
+  or logs.
+- **`keepDebugSymbols` suppressing the strip** — the Tauri template does set it,
+  but only inside the `debug` buildType.
+- **Symlinked inputs confusing the task** — Tauri symlinks the `.so` into
+  `jniLibs`, but both the merged and stripped intermediates are real files.
+
+So `stripUniversalReleaseDebugSymbols` runs, reports success, warns about
+nothing, and copies its input unchanged. The next thing to try is running it
+alone with logging:
+
+```sh
+cd src-tauri/gen/android
+./gradlew :app:stripUniversalReleaseDebugSymbols --rerun-tasks --info
+```
+
 ## App icons
 
 The master is `src-tauri/app-icon.svg` (the filled tile). `npm run gen:icon`
