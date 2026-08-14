@@ -94,6 +94,19 @@ recommendation. Confirm each against the Console's current wording.
 
 - **No data is collected or shared with the developer.** There is no Mytronome
   server in the shipped Android build; nothing is transmitted to us.
+- **Local storage is not "collection."** Play defines collection as transmitting
+  data off the device. Presets, ramp settings, subdivision, volume, storage
+  choice and drawer width all live in device-local storage and never leave it.
+- **The accounts tier is compiled out.** `authEmail` / `authToken` /
+  `refreshToken` appear in the source but `VITE_ENABLE_SERVER` is unset, so
+  `SERVER_ENABLED` is false, no sign-in UI renders, and those keys are never
+  written. Re-check this if the server tier is ever shipped — that build WOULD
+  collect data.
+- **Drive is the only data leaving the device, and it is a judgment call.** It
+  goes to the user's own `appDataFolder` at their initiation; the developer
+  never receives it. Declaring nothing reflects that. The conservative
+  alternative is "Files and docs" → collected, not shared, optional, app
+  functionality.
 - **No analytics, telemetry, tracking, or advertising SDKs.**
 - **Google Drive is optional and user-initiated.** Presets go to the
   `appDataFolder` — a private, app-scoped folder in the user's own Drive. The
@@ -119,16 +132,21 @@ questionnaire has to be filled in regardless — it's a release blocker.
 
 ---
 
-## Assets still needed
+## Assets
 
-None of these are in the repo yet.
+`npm run gen:store` regenerates the first two from `desktop/src-tauri/app-icon.svg`
+— rerun it whenever the branding changes, and upload the result.
 
-| Asset              | Spec                                     |
-| ------------------ | ---------------------------------------- |
-| App icon           | 512×512 PNG, 32-bit, no alpha            |
-| Feature graphic    | 1024×500 PNG or JPG, no alpha            |
-| Phone screenshots  | ≥2 (up to 8), 16:9 or 9:16, min 1080px   |
-| Tablet screenshots | only if a tablet form factor is declared |
+| Asset              | Spec                                     | Status                   |
+| ------------------ | ---------------------------------------- | ------------------------ |
+| App icon           | 512×512 PNG, 32-bit, no alpha            | ✅ `icon-512.png`        |
+| Feature graphic    | 1024×500 PNG or JPG, no alpha            | ✅ `feature-graphic.png` |
+| Phone screenshots  | ≥2 (up to 8), 16:9 or 9:16, min 1080px   | ❌ needs a device        |
+| Tablet screenshots | only if a tablet form factor is declared | — not declared           |
+
+The feature graphic keeps its content clear of the centre and the outer ~80px:
+Play crops it differently across surfaces and can overlay a play button in the
+middle.
 
 Screenshot suggestions, one per idea so the set reads as a tour:
 

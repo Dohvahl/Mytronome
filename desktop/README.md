@@ -129,6 +129,39 @@ Expect `Verified using v2 scheme ... : true` and
 `Signer #1 certificate DN: CN=Mytronome, O=Dovall, C=CA`. (v1/JAR signing is
 correctly absent — `minSdk = 24`, so the v2 scheme covers every supported device.)
 
+## Google Drive on Play builds
+
+Drive sign-in can work perfectly on every sideloaded build and fail for **every
+install from Play**. If a tester reports "error 10", this is why.
+
+Google matches a token request against the pair _(package name, signing
+certificate SHA-1)_ registered on an Android OAuth client. Play App Signing
+re-signs uploaded bundles with **Google's** key, so the certificate on a store
+install is not the release keystore's. The registered SHA-1 no longer matches,
+and Play Services rejects the request with `ApiException: 10
+(DEVELOPER_ERROR)`. Sideloaded APKs keep the upload certificate and keep
+working, which is what makes it look like a store-only mystery.
+
+The fix is a **second** Android OAuth client — clients hold one package/SHA-1
+pair each, so both are needed: the existing one for sideloads, a new one for
+Play.
+
+1. Play Console → your app → **Test and release → App integrity**
+2. Under **App signing key certificate**, copy the **SHA-1**. Not the upload key
+   certificate — that is the one you already have.
+3. Google Cloud Console → **Credentials → Create credentials → OAuth client ID**
+4. Type **Android**, package name `ca.dovall.mytronome`, paste that SHA-1
+5. No code change, no new build — it takes effect server-side within minutes
+
+The app-signing certificate does not exist until the first bundle is uploaded,
+so this can only be done after that.
+
+Read a local certificate's SHA-1 for comparison with:
+
+```sh
+keytool -list -v -keystore <path>/mytronome-release.jks -alias mytronome
+```
+
 ## Native debug symbols
 
 > **Status: not working.** Half 1 below works; half 2 does not, and the cause is

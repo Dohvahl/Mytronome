@@ -15,6 +15,8 @@ import app.tauri.plugin.Plugin
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.AuthorizationResult
 import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
 
 @InvokeArg
@@ -95,8 +97,39 @@ class DriveAuthPlugin(private val activity: Activity) : Plugin(activity) {
                 }
             }
             .addOnFailureListener { e ->
-                invoke.reject(e.message ?: "Authorization failed.")
+                invoke.reject(describeAuthFailure(e))
             }
+    }
+
+    /**
+     * Turn a Play Services failure into something a user — or a tester filing a
+     * report — can act on. An ApiException's own message is just the numeric
+     * status ("10: "), which tells nobody anything.
+     *
+     * DEVELOPER_ERROR is the one worth spelling out. It means Google didn't
+     * recognise the combination of package name and signing certificate that
+     * asked for the token, and it appears ONLY in builds signed by a
+     * certificate that has no matching Android OAuth client. Installs from Play
+     * are signed by Play's own app-signing key, not the upload key, so a build
+     * that authorizes perfectly when sideloaded can fail here for every single
+     * store install. See desktop/README.md → "Google Drive on Play builds".
+     */
+    private fun describeAuthFailure(e: Exception): String {
+        val api = e as? ApiException ?: return e.message ?: "Authorization failed."
+        return when (api.statusCode) {
+            CommonStatusCodes.DEVELOPER_ERROR ->
+                "Google Drive isn't set up for this build of the app (error 10). " +
+                    "This is a configuration problem, not something you did — " +
+                    "please report it."
+            CommonStatusCodes.NETWORK_ERROR ->
+                "Couldn't reach Google. Check your connection and try again."
+            CommonStatusCodes.CANCELED ->
+                "Google Drive sign-in was cancelled."
+            CommonStatusCodes.SIGN_IN_REQUIRED ->
+                "Add a Google account to this device, then try again."
+            else ->
+                "Google Drive sign-in failed (error ${api.statusCode})."
+        }
     }
 
     private fun resolveWithToken(invoke: Invoke, authResult: AuthorizationResult) {

@@ -22,6 +22,7 @@
     "deploy:web": "npm run build -w web && node scripts/deploy-web.mjs",
     "format": "npx prettier --write .",
     "gen:icon": "node scripts/gen-icon.mjs",
+    "gen:store": "node scripts/gen-store-assets.mjs",
     "bump:major": "node scripts/bumpVersion.mjs --major",
     "bump:minor": "node scripts/bumpVersion.mjs --minor",
     "bump:patch": "node scripts/bumpVersion.mjs --patch",
