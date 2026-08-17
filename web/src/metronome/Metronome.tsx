@@ -273,7 +273,9 @@ export function Metronome() {
               setLoadedPresetId(preset.id);
               setPresetsOpen(false);
             }}
-            onSave={savePreset}
+            onSave={(settings, label) =>
+              setLoadedPresetId(savePreset(settings, label).id)
+            }
             onUpdate={(preset, settings) => editPreset(preset, settings)}
             onRename={(preset, label) => editPreset(preset, { label })}
             onCopy={copyPreset}

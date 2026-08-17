@@ -211,10 +211,11 @@ export function usePresets() {
     setLocationState(next);
   };
 
-  const savePreset = (settings: PresetSettings, label: string) => {
+  const savePreset = (settings: PresetSettings, label: string): Preset => {
     const preset = createPreset(settings, label);
     commit([preset, ...presetsRef.current]); // new presets go to the top
     enqueueWrite(() => store.save(preset));
+    return preset;
   };
 
   const editPreset = (

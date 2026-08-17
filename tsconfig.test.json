@@ -12,5 +12,16 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["metronome-engine/test", "presets/test", "web/test"]
+  // The web app's ambient declarations are listed explicitly. `include` only
+  // covers the test dirs, and a .d.ts that declares globals has to be IN the
+  // program — being importable isn't enough. Without them, any test that
+  // reaches the app shell fails to typecheck on `import.meta.env`, the `*.css`
+  // side-effect imports, `__APP_VERSION__`, and the Google Identity globals.
+  "include": [
+    "metronome-engine/test",
+    "presets/test",
+    "web/test",
+    "web/src/vite-env.d.ts",
+    "web/src/cloud/google.d.ts"
+  ]
 }
