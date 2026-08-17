@@ -271,11 +271,19 @@ export function Metronome() {
             onLoad={(preset) => {
               applySettings(preset);
               setLoadedPresetId(preset.id);
+            }}
+            onSave={(settings, label) => {
+              setLoadedPresetId(savePreset(settings, label).id);
               setPresetsOpen(false);
             }}
-            onSave={savePreset}
-            onUpdate={(preset, settings) => editPreset(preset, settings)}
-            onRename={(preset, label) => editPreset(preset, { label })}
+            onUpdate={(preset, settings) => {
+              editPreset(preset, settings);
+              setPresetsOpen(false);
+            }}
+            onRename={(preset, label) => {
+              editPreset(preset, { label });
+              setPresetsOpen(false);
+            }}
             onCopy={copyPreset}
             onDelete={deletePreset}
             onReorder={reorderPresets}
